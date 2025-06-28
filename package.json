@@ -1,0 +1,27 @@
+{
+  "name": "super-student-html",
+  "version": "1.0.0",
+  "description": "Super Student game ported to HTML5 with modern web technologies",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "serve": "vite preview --port 3000"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  },
+  "keywords": [
+    "game",
+    "html5",
+    "canvas",
+    "educational",
+    "javascript"
+  ],
+  "author": "Teacher Evan and Teacher Lee",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

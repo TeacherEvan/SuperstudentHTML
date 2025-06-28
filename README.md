@@ -1,0 +1,143 @@
+# Super Student HTML Port
+
+This project reimplements the Super Student game using HTML, CSS, and JavaScript with modern build tooling via Vite. The code is modularized into separate files for maintainability and performance.
+
+## Features
+
+- **Educational Game Modes**: Colors, Shapes, Alphabet, Numbers, and Case matching
+- **Multiple Managers**: HUD, checkpoint, flamethrower, center piece, multi-touch, glass shatter effects
+- **Particle System**: Dynamic particle effects for explosions and visual feedback
+- **Sound System**: Audio playback with Web Audio API
+- **Responsive Design**: Full-screen canvas that adapts to window size
+- **Modern Build Pipeline**: Vite for development and production builds
+
+## Quick Start
+
+### Prerequisites
+- Node.js 16.0.0 or higher
+- npm (comes with Node.js)
+
+### Development Setup
+
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+2. **Start development server:**
+   ```bash
+   npm run dev
+   ```
+   This will start a local development server with hot reload at `http://localhost:5173`
+
+3. **Open your browser** and navigate to the local server URL
+
+### Production Build
+
+```bash
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+The production build will be generated in the `dist/` directory with optimized and minified assets.
+
+## Development Workflow
+
+### Development Server
+- **Hot Reload**: Changes to JS, CSS, and HTML files trigger automatic page refresh
+- **Asset Processing**: Images, fonts, and audio files are automatically processed
+- **Source Maps**: Enabled for easier debugging
+- **ES6 Modules**: Full support for modern JavaScript modules
+
+### Project Structure
+```
+/
+├── index.html              # Main HTML page
+├── package.json           # Dependencies and scripts
+├── vite.config.js         # Build configuration
+├── css/
+│   └── styles.css         # Global styles and UI
+├── js/
+│   ├── main.js           # Entry point and game loop
+│   ├── resourceManager.js # Asset loading and management
+│   ├── particleSystem.js # Particle effects system
+│   ├── soundManager.js   # Audio management
+│   ├── managers/         # Game system managers
+│   └── levels/           # Game level implementations
+└── assets/
+    ├── fonts/           # Font files (.woff2, .woff, .ttf)
+    ├── images/          # Sprites, UI, backgrounds
+    └── sounds/          # Audio effects and music
+```
+
+## Asset Guidelines
+
+### Images
+- **Formats**: PNG (sprites), JPG (backgrounds), SVG (icons), WebP (optimized)
+- **Naming**: Descriptive names like `player-idle.png`, `letter-a.svg`
+- **Organization**: Group by category in subdirectories
+- **Size**: Keep reasonable file sizes for web delivery
+
+### Fonts
+- **Formats**: WOFF2 (preferred), WOFF (fallback), TTF (fallback)
+- **Required**: `regular`, `target`, `title` font variants
+- **Loading**: Automatically loaded via ResourceManager
+
+### Audio
+- **Formats**: MP3 (preferred), WAV (high quality), OGG (alternative)
+- **Categories**: Sound effects (SFX) and background music
+- **Size Limits**: < 1MB for SFX, < 5MB for music
+- **Sample Rate**: 44.1kHz recommended
+
+## Available Scripts
+
+- `npm run dev` - Start development server with hot reload
+- `npm run build` - Build optimized production bundle
+- `npm run preview` - Preview production build locally
+- `npm run serve` - Serve production build on port 3000
+
+## Browser Support
+
+- **Primary Target**: Google Chrome (latest)
+- **Requirements**: ES2020+ support, Canvas API, Web Audio API
+- **Features Used**: ES6 modules, async/await, Canvas 2D, Web Audio
+
+## Controls
+
+- **Mouse/Touch**: Click on color items to destroy them
+- **Space**: Pause/Resume game
+- **R**: Restart game (when paused/game over)
+- **Escape**: Pause game or return to menu
+
+## Performance Optimization
+
+- **Particle Pooling**: Reuse particle objects to reduce GC pressure
+- **Asset Bundling**: Vite optimizes and bundles assets for production
+- **Delta Time**: Consistent animation timing across different framerates
+- **Canvas Optimization**: Efficient rendering with minimal state changes
+
+## Troubleshooting
+
+### Development Issues
+- **Port conflicts**: Change port in `vite.config.js` if 5173 is in use
+- **Module errors**: Ensure all imports use correct file paths
+- **Asset loading**: Check console for failed resource loads
+
+### Build Issues
+- **Missing assets**: Verify asset paths are relative to project root
+- **Bundle size**: Use `npm run build` to check output file sizes
+- **Browser compatibility**: Test in target browsers after building
+
+## Contributing
+
+1. Follow the existing code structure and naming conventions
+2. Test changes in development mode before building
+3. Ensure all assets are properly organized in the `assets/` directory
+4. Update documentation when adding new features
+
+## License
+
+MIT License

@@ -1,0 +1,273 @@
+/* Reset and base styles */
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+}
+
+/* Full-screen canvas */
+#game-canvas {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* Welcome screen overlay */
+#welcome-screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  text-align: center;
+}
+
+#welcome-screen h1 {
+  font-size: 72px;
+  margin: 10px 0;
+}
+
+#welcome-screen p {
+  font-size: 24px;
+  margin: 5px 0;
+}
+
+.welcome-button {
+  padding: 15px 30px;
+  margin: 10px;
+  font-size: 18px;
+  color: #fff;
+  background: #007ACC;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.welcome-button:hover {
+  background: #005A9E;
+}
+
+.welcome-button:active {
+  background: #003F6B;
+}
+
+/* Footer credit */
+#welcome-screen footer {
+  position: absolute;
+  bottom: 20px;
+  font-size: 12px;
+}
+
+/* Settings modal overlay */
+#settings-modal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.modal-content {
+  background: #2C2C54;
+  border-radius: 10px;
+  padding: 30px;
+  color: #fff;
+  position: relative;
+  z-index: 1001;
+  min-width: 300px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.modal-content h2 {
+  margin-top: 0;
+  color: #4ECDC4;
+  text-align: center;
+}
+
+.modal-content label {
+  display: block;
+  margin: 15px 0 5px 0;
+  font-weight: bold;
+}
+
+.modal-content select,
+.modal-content input[type="range"] {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 15px;
+  background: #40407A;
+  color: #fff;
+  border: 1px solid #706FD3;
+  border-radius: 4px;
+}
+
+.modal-content button {
+  padding: 10px 20px;
+  margin: 10px 5px 0 0;
+  background: #4ECDC4;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.modal-content button:hover {
+  background: #45B7D1;
+}
+
+.modal-content button:last-child {
+  background: #FF6B6B;
+}
+
+.modal-content button:last-child:hover {
+  background: #FF5252;
+}
+
+/* Level progression menu styles */
+.progress-summary {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.progress-summary p {
+  margin: 5px 0;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.level-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.level-card {
+  padding: 20px;
+  border-radius: 15px;
+  text-align: center;
+  transition: all 0.3s ease;
+  position: relative;
+  border: 2px solid transparent;
+}
+
+.level-card.unlocked {
+  background: linear-gradient(145deg, rgba(0, 200, 255, 0.2), rgba(0, 100, 255, 0.2));
+  border-color: rgba(0, 200, 255, 0.5);
+  cursor: pointer;
+}
+
+.level-card.unlocked:hover {
+  transform: translateY(-5px);
+  background: linear-gradient(145deg, rgba(0, 200, 255, 0.3), rgba(0, 100, 255, 0.3));
+  border-color: rgba(0, 200, 255, 0.8);
+  box-shadow: 0 10px 25px rgba(0, 200, 255, 0.3);
+}
+
+.level-card.completed {
+  background: linear-gradient(145deg, rgba(0, 255, 100, 0.2), rgba(0, 200, 50, 0.2));
+  border-color: rgba(0, 255, 100, 0.5);
+  cursor: pointer;
+}
+
+.level-card.completed:hover {
+  transform: translateY(-5px);
+  background: linear-gradient(145deg, rgba(0, 255, 100, 0.3), rgba(0, 200, 50, 0.3));
+  border-color: rgba(0, 255, 100, 0.8);
+  box-shadow: 0 10px 25px rgba(0, 255, 100, 0.3);
+}
+
+.level-card.locked {
+  background: linear-gradient(145deg, rgba(100, 100, 100, 0.2), rgba(50, 50, 50, 0.2));
+  border-color: rgba(100, 100, 100, 0.3);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.level-status {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.level-card h3 {
+  margin: 10px 0;
+  font-size: 20px;
+  color: #ffffff;
+}
+
+.level-description {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 10px 0;
+}
+
+.level-difficulty {
+  font-size: 16px;
+  color: #ffdd44;
+  margin: 10px 0;
+}
+
+.level-score {
+  font-size: 14px;
+  color: #00ff88;
+  font-weight: bold;
+  margin: 10px 0;
+}
+
+.level-locked {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  font-style: italic;
+}
+
+.menu-actions {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.reset-button {
+  background: linear-gradient(145deg, #ff4444, #cc0000);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 25px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.reset-button:hover {
+  background: linear-gradient(145deg, #ff6666, #ff0000);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 68, 68, 0.4);
+}
