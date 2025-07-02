@@ -7,11 +7,17 @@ export class InputHandler {
     this.pointerMoveListeners = [];
     this.keyDownListeners = [];
 
+    // Bind methods to preserve 'this' context
+    this._boundHandlePointerDown = (e) => this._handlePointerDown(e);
+    this._boundHandlePointerUp = (e) => this._handlePointerUp(e);
+    this._boundHandlePointerMove = (e) => this._handlePointerMove(e);
+    this._boundHandleKeyDown = (e) => this._handleKeyDown(e);
+
     // Bind events
-    canvas.addEventListener('pointerdown', (e) => this._handlePointerDown(e));
-    canvas.addEventListener('pointerup', (e) => this._handlePointerUp(e));
-    canvas.addEventListener('pointermove', (e) => this._handlePointerMove(e));
-    window.addEventListener('keydown', (e) => this._handleKeyDown(e));
+    canvas.addEventListener('pointerdown', this._boundHandlePointerDown);
+    canvas.addEventListener('pointerup', this._boundHandlePointerUp);
+    canvas.addEventListener('pointermove', this._boundHandlePointerMove);
+    window.addEventListener('keydown', this._boundHandleKeyDown);
   }
 
   _handlePointerDown(event) {
@@ -55,5 +61,24 @@ export class InputHandler {
 
   onKeyDown(callback) {
     this.keyDownListeners.push(callback);
+  }
+
+  // Cleanup method to prevent memory leaks
+  destroy() {
+    if (this.canvas) {
+      this.canvas.removeEventListener('pointerdown', this._boundHandlePointerDown);
+      this.canvas.removeEventListener('pointerup', this._boundHandlePointerUp);
+      this.canvas.removeEventListener('pointermove', this._boundHandlePointerMove);
+    }
+    window.removeEventListener('keydown', this._boundHandleKeyDown);
+    
+    // Clear all listeners
+    this.pointerDownListeners = [];
+    this.pointerUpListeners = [];
+    this.pointerMoveListeners = [];
+    this.keyDownListeners = [];
+    
+    // Clear references
+    this.canvas = null;
   }
 }
