@@ -1,7 +1,7 @@
 export class ProgressManager {
   constructor() {
     this.storageKey = 'superstudent_progress';
-    this.levels = ['colors', 'shapes', 'alphabet', 'numbers', 'clcase'];
+    this.levels = ['colors', 'shapes', 'alphabet', 'numbers', 'clcase', 'bubblepop'];
     this.progress = this.loadProgress();
   }
 

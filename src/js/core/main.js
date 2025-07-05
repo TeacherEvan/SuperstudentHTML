@@ -15,6 +15,7 @@ import ShapesLevel from '../levels/shapesLevel.js';
 import AlphabetLevel from '../levels/alphabetLevel.js';
 import NumbersLevel from '../levels/numbersLevel.js';
 import ClCaseLevel from '../levels/clCaseLevel.js';
+import BubblePopLevel from '../levels/bubblePop/bubblePopLevel.js';
 import { LevelMenu } from '../ui/levelMenu.js';
 import { InputHandler } from '../inputHandler.js';
 import { getDisplaySettings } from '../config/displayModes.js';
@@ -153,6 +154,9 @@ function startLevel(levelName) {
       break;
     case 'clcase':
       currentLevel = new ClCaseLevel(canvas, ctx, managers, helpers);
+      break;
+    case 'bubblepop':
+      currentLevel = new BubblePopLevel(canvas, ctx, managers, helpers);
       break;
     default:
       currentLevel = new ColorsLevel(canvas, ctx, managers, helpers);
