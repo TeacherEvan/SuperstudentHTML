@@ -8,6 +8,11 @@ export default class GlassShatterManager {
     this.fadeAlpha = 0;
     this.shatterTime = 0;
     this.maxShatterTime = 2000; // 2 seconds
+
+    // Off-screen buffer for pre-rendered cracks
+    this.offscreenCanvas = null;
+    this.offscreenCtx = null;
+    this.shatterCenter = { x: 0, y: 0 };
   }
 
   createShatterEffect(impactX, impactY, intensity = 1) {
@@ -16,6 +21,12 @@ export default class GlassShatterManager {
     this.shatterTime = 0;
     this.generateShatterPattern(impactX, impactY, intensity);
     this.createShatterParticles(impactX, impactY, intensity);
+
+    // Cache center for radial effects
+    this.shatterCenter = { x: impactX, y: impactY };
+
+    // (Re)render cracks onto off-screen bitmap for cheap per-frame draw
+    this.renderCracksToOffscreen();
   }
 
   generateShatterPattern(centerX, centerY, intensity) {
@@ -104,34 +115,11 @@ export default class GlassShatterManager {
   }
 
   draw() {
-    if (!this.isShattered || this.fadeAlpha <= 0) return;
-    
+    if (!this.isShattered || this.fadeAlpha <= 0 || !this.offscreenCanvas) return;
+
     this.ctx.save();
     this.ctx.globalAlpha = this.fadeAlpha;
-    this.ctx.strokeStyle = '#E8F4F8';
-    this.ctx.lineWidth = 2;
-    this.ctx.shadowColor = '#FFFFFF';
-    this.ctx.shadowBlur = 5;
-    
-    // Draw crack pattern
-    this.shatterPattern.forEach(crack => {
-      if (crack.length < 2) return;
-      
-      this.ctx.beginPath();
-      this.ctx.moveTo(crack[0].x, crack[0].y);
-      
-      for (let i = 1; i < crack.length; i++) {
-        this.ctx.lineTo(crack[i].x, crack[i].y);
-      }
-      
-      this.ctx.stroke();
-    });
-    
-    // Add overall glass overlay effect
-    this.ctx.globalAlpha = this.fadeAlpha * 0.3;
-    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    
+    this.ctx.drawImage(this.offscreenCanvas, 0, 0);
     this.ctx.restore();
   }
 
@@ -140,6 +128,11 @@ export default class GlassShatterManager {
     this.shatterPattern = [];
     this.fadeAlpha = 0;
     this.shatterTime = 0;
+
+    // Clear off-screen buffer to free memory
+    if (this.offscreenCtx) {
+      this.offscreenCtx.clearRect(0, 0, this.offscreenCanvas.width, this.offscreenCanvas.height);
+    }
   }
 
   isActive() {
@@ -148,5 +141,52 @@ export default class GlassShatterManager {
 
   triggerShatter(x, y, intensity = 1) {
     this.createShatterEffect(x, y, intensity);
+  }
+
+  /**
+   * Pre-render all cracks and subtle glass overlay into an off-screen canvas so
+   * the main draw() step can simply blit a bitmap each frame – this drastically
+   * reduces per-frame CPU usage compared to re-tracing every Path2D.
+   */
+  renderCracksToOffscreen() {
+    // Initialise off-screen canvas once or when main canvas resizes
+    if (!this.offscreenCanvas || this.offscreenCanvas.width !== this.canvas.width || this.offscreenCanvas.height !== this.canvas.height) {
+      this.offscreenCanvas = document.createElement('canvas');
+      this.offscreenCanvas.width = this.canvas.width;
+      this.offscreenCanvas.height = this.canvas.height;
+      this.offscreenCtx = this.offscreenCanvas.getContext('2d');
+    }
+
+    const ctx = this.offscreenCtx;
+    ctx.clearRect(0, 0, this.offscreenCanvas.width, this.offscreenCanvas.height);
+
+    // Crack stroke style
+    ctx.strokeStyle = '#E8F4F8';
+    ctx.shadowColor = '#FFFFFF';
+    ctx.shadowBlur = 5;
+
+    // Build a single Path2D containing all cracks for optimal stroking
+    const path = new Path2D();
+    this.shatterPattern.forEach(crack => {
+      if (crack.length < 2) return;
+      path.moveTo(crack[0].x, crack[0].y);
+      for (let i = 1; i < crack.length; i++) {
+        path.lineTo(crack[i].x, crack[i].y);
+      }
+    });
+
+    // We can vary line width per stroke to add realism – here we randomise
+    // slightly around 2px but only once during pre-render so cost is minimal.
+    ctx.lineWidth = 1.5 + Math.random() * 1; // 1.5-2.5 px
+    ctx.stroke(path);
+
+    // Radial highlight overlay – brighter near impact, fading outward
+    const { x: cx, y: cy } = this.shatterCenter;
+    const maxRadius = Math.hypot(this.canvas.width, this.canvas.height);
+    const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxRadius);
+    gradient.addColorStop(0, 'rgba(255,255,255,0.15)');
+    gradient.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, this.offscreenCanvas.width, this.offscreenCanvas.height);
   }
 }
