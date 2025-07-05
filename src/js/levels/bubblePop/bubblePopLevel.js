@@ -25,18 +25,26 @@ export default class BubblePopLevel extends BaseLevel {
     if (this.soundsLoaded) return;
     const soundPromises = [];
     const basePath = 'assets/bubblePop/sounds';
-    // Letter sounds
+    const SAMPLE_DATA_URI = 'data:audio/wav;base64,UklGRmQAAABXQVZFZm10IBAAAAABAAEAgD4AAIA+AAABAAgAZGF0YQAAAC7AAAAEQAAAAUAAAAEAAAABcADwAAAAAAAEAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABACAEQAAQAEQABQAEQAAQAEQAAAAA=';
+
     this.letters.forEach(letter => {
       const name = `letter_${letter}`;
       const url = `${basePath}/letters/${letter}.mp3`;
-      // Only push if not already loaded
-      if (!this.managers.sound.buffers[name]) {
-        soundPromises.push(this.managers.sound.loadSound(name, url, 'sfx').catch(() => {}));
-      }
+      if (this.managers.sound.buffers[name]) return;
+      soundPromises.push(
+        this.managers.sound.loadSound(name, url, 'sfx').catch(() =>
+          this.managers.sound.loadSound(name, SAMPLE_DATA_URI, 'sfx')
+        )
+      );
     });
+
     // Pop sound
     if (!this.managers.sound.buffers['bubble_pop']) {
-      soundPromises.push(this.managers.sound.loadSound('bubble_pop', `${basePath}/pop.mp3`, 'sfx').catch(() => {}));
+      soundPromises.push(
+        this.managers.sound.loadSound('bubble_pop', `${basePath}/pop.mp3`, 'sfx').catch(() =>
+          this.managers.sound.loadSound('bubble_pop', SAMPLE_DATA_URI, 'sfx')
+        )
+      );
     }
     await Promise.all(soundPromises);
     this.soundsLoaded = true;

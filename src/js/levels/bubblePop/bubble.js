@@ -6,11 +6,19 @@ export default class Bubble {
     this.letter = letter;
     this.speed = speed; // pixels per second upward
     this.markedForRemoval = false;
+
+    // Wobble properties
+    this.wobblePhase = Math.random() * Math.PI * 2;
+    this.wobbleSpeed = 2 + Math.random() * 2; // radians per second
+    this.wobbleMagnitude = 2 + Math.random() * 3; // pixels
   }
 
   update(deltaTime) {
     const dt = deltaTime / 1000; // convert to seconds
     this.y -= this.speed * dt;
+
+    // Update wobble phase
+    this.wobblePhase += this.wobbleSpeed * dt;
     if (this.y + this.radius < 0) {
       this.markedForRemoval = true;
     }
@@ -24,6 +32,12 @@ export default class Bubble {
 
   draw(ctx) {
     ctx.save();
+
+    // Apply wobble translation
+    const wobbleX = Math.sin(this.wobblePhase) * this.wobbleMagnitude;
+    const wobbleY = Math.cos(this.wobblePhase * 0.9) * this.wobbleMagnitude * 0.5;
+    ctx.translate(wobbleX, wobbleY);
+
     // Bubble body with simple radial gradient
     const gradient = ctx.createRadialGradient(
       this.x - this.radius * 0.4,
@@ -40,11 +54,18 @@ export default class Bubble {
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.fill();
 
-    // Bubble highlight
+    // Bubble highlight shine
     ctx.strokeStyle = 'rgba(255,255,255,0.7)';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Draw shine arc for extra polish
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(this.x - this.radius * 0.4, this.y - this.radius * 0.4, this.radius * 0.6, 1.1, 1.9);
     ctx.stroke();
 
     // Draw letter label
