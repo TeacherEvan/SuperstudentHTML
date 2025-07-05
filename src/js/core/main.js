@@ -275,6 +275,21 @@ function restartGame() {
   }
 }
 
+function cleanupGame() {
+  // Cleanup current level
+  if (currentLevel && typeof currentLevel.destroy === 'function') {
+    currentLevel.destroy();
+  }
+  
+  // Cleanup managers
+  if (managers.input && typeof managers.input.destroy === 'function') {
+    managers.input.destroy();
+  }
+  if (managers.multiTouch && typeof managers.multiTouch.destroy === 'function') {
+    managers.multiTouch.destroy();
+  }
+}
+
 function handleLevelComplete(levelName, score) {
   progressManager.completeLevel(levelName, score);
   gameState = 'completed';
@@ -312,7 +327,7 @@ function render() {
   
   // Render managers
   if (managers.centerPiece) managers.centerPiece.draw(ctx);
-  if (managers.particleManager) managers.particleManager.updateAndDraw(ctx);
+  if (managers.particleManager) managers.particleManager.updateAndDraw(ctx, gameLoop ? gameLoop.lastDeltaTime : 16);
   if (managers.flamethrower) managers.flamethrower.draw(ctx);
   if (managers.glassShatter) managers.glassShatter.draw(ctx);
   if (managers.hud) managers.hud.draw(ctx);

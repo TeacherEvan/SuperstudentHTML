@@ -6,6 +6,9 @@ export default class ParticleManager {
   constructor(maxParticles = 500) {
     this.maxParticles = maxParticles;
     this.particles = [];
+ cursor/fix-three-bugs-in-the-codebase-9907
+    this.lastUpdateTime = performance.now();
+
     this.particlePool = [];
     this.activeParticles = 0;
     
@@ -29,6 +32,7 @@ export default class ParticleManager {
     
     // Initialize particle pool
     this.initializePool();
+ main
   }
 
   initializePool() {
@@ -231,6 +235,18 @@ export default class ParticleManager {
     this.activeParticles--;
   }
 
+ cursor/fix-three-bugs-in-the-codebase-9907
+  updateAndDraw(ctx, deltaTime) {
+    // Use provided deltaTime, or calculate it if not provided (for backwards compatibility)
+    const actualDeltaTime = deltaTime !== undefined ? deltaTime : this._calculateDeltaTime();
+    
+    this.particles = this.particles.filter(p => p.age < p.duration);
+    this.particles.forEach(p => {
+      p.x += p.dx * (actualDeltaTime / 16); // Normalize to 16ms baseline for consistent speed
+      p.y += p.dy * (actualDeltaTime / 16);
+      p.age += actualDeltaTime;
+      ctx.fillStyle = p.color;
+
   updateAndDraw(ctx) {
     const now = performance.now();
     const deltaTime = 16; // Assume 60fps for consistency
@@ -376,6 +392,7 @@ export default class ParticleManager {
       ctx.rotate(particle.rotation);
       
       ctx.fillStyle = particle.color;
+main
       ctx.beginPath();
       ctx.arc(0, 0, particle.size, 0, Math.PI * 2);
       ctx.fill();
@@ -384,6 +401,12 @@ export default class ParticleManager {
     });
   }
 
+ cursor/fix-three-bugs-in-the-codebase-9907
+  _calculateDeltaTime() {
+    const now = performance.now();
+    const deltaTime = now - this.lastUpdateTime;
+    this.lastUpdateTime = now;
+    return deltaTime;
   drawStarParticles(ctx, particles) {
     particles.forEach(particle => {
       ctx.save();
@@ -535,5 +558,6 @@ export default class ParticleManager {
       performanceMode: this.performanceMode,
       fps: Math.round(1000 / this.avgFrameTime)
     };
+ main
   }
 }
