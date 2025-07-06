@@ -4,12 +4,9 @@ export default class SoundManager {
   constructor() {
     const audioConfig = getAudioConfig();
     this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
- cursor/fix-three-bugs-in-the-codebase-9907
     // Store current volume for reference
     this.volume = audioConfig.masterVolume;
 
-    
-   main
     // Master gain
     this.masterGain = this.audioContext.createGain();
     this.masterGain.gain.value = this.volume;
@@ -34,7 +31,6 @@ export default class SoundManager {
     // Buffers storage
     this.buffers = {}; // { name: { buffer, type } }
     this.activeSources = {};
-  cursor/fix-three-bugs-in-the-codebase-9907
     this.sounds = {}; // For preloaded audio compatibility
 
     
@@ -104,7 +100,6 @@ export default class SoundManager {
       explosionData[i] = noise * envelope * 0.3;
     }
     this.buffers['explosion'] = { buffer: explosionBuffer, type: 'sfx' };
- main
   }
 
   async loadSound(name, url, type = 'sfx') {
@@ -319,17 +314,11 @@ export default class SoundManager {
   }
 
   setMasterVolume(value) {
-cursor/fix-three-bugs-in-the-codebase-9907
     this.volume = value; // Keep volume property in sync
     this.masterGain.gain.value = value;
   }
 
   // Add missing setGlobalVolume method that's called in main.js
-    this.volume = value;
-    this.masterGain.gain.value = value;
-  }
-
- main
   setGlobalVolume(value) {
     this.setMasterVolume(value);
   }

@@ -6,7 +6,6 @@ export default class ParticleManager {
   constructor(maxParticles = 500) {
     this.maxParticles = maxParticles;
     this.particles = [];
- cursor/fix-three-bugs-in-the-codebase-9907
     this.lastUpdateTime = performance.now();
 
     this.particlePool = [];
@@ -32,7 +31,6 @@ export default class ParticleManager {
     
     // Initialize particle pool
     this.initializePool();
- main
   }
 
   initializePool() {
@@ -235,7 +233,6 @@ export default class ParticleManager {
     this.activeParticles--;
   }
 
- cursor/fix-three-bugs-in-the-codebase-9907
   updateAndDraw(ctx, deltaTime) {
     // Use provided deltaTime, or calculate it if not provided (for backwards compatibility)
     const actualDeltaTime = deltaTime !== undefined ? deltaTime : this._calculateDeltaTime();
@@ -246,25 +243,11 @@ export default class ParticleManager {
       p.y += p.dy * (actualDeltaTime / 16);
       p.age += actualDeltaTime;
       ctx.fillStyle = p.color;
-
-  updateAndDraw(ctx) {
-    const now = performance.now();
-    const deltaTime = 16; // Assume 60fps for consistency
-    
-    // Update particles
-    this.updateParticles(deltaTime);
-    
-    // Clean up inactive particles periodically
-    if (now - this.lastCleanupTime > this.cleanupInterval) {
-      this.cleanupInactiveParticles();
-      this.lastCleanupTime = now;
-    }
-    
-    // Draw particles
-    this.drawParticles(ctx);
+      ctx.fillRect(p.x, p.y, p.size, p.size);
+    });
     
     // Performance monitoring
-    this.monitorPerformance(now);
+    this.monitorPerformance(performance.now());
   }
 
   updateParticles(deltaTime) {
@@ -392,7 +375,6 @@ export default class ParticleManager {
       ctx.rotate(particle.rotation);
       
       ctx.fillStyle = particle.color;
-main
       ctx.beginPath();
       ctx.arc(0, 0, particle.size, 0, Math.PI * 2);
       ctx.fill();
@@ -401,12 +383,13 @@ main
     });
   }
 
- cursor/fix-three-bugs-in-the-codebase-9907
   _calculateDeltaTime() {
     const now = performance.now();
     const deltaTime = now - this.lastUpdateTime;
     this.lastUpdateTime = now;
     return deltaTime;
+  }
+
   drawStarParticles(ctx, particles) {
     particles.forEach(particle => {
       ctx.save();
@@ -558,6 +541,5 @@ main
       performanceMode: this.performanceMode,
       fps: Math.round(1000 / this.avgFrameTime)
     };
- main
   }
 }
