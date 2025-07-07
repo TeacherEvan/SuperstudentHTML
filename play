@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+# -----------------------------------------------------------------------------
+# Super Student HTML — Play Helper Script
+# -----------------------------------------------------------------------------
+# This script makes it dead-simple to run the game.
+# 1. Installs npm dependencies if they are not already present.
+# 2. Starts the Vite development server so the game can be played immediately.
+# -----------------------------------------------------------------------------
+
+set -euo pipefail
+
+# Always run from the project root even if the script was invoked from elsewhere
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+cd "$SCRIPT_DIR"
+
+# -----------------------------------------------------------------------------
+# Helper functions
+# -----------------------------------------------------------------------------
+command_exists() {
+  command -v "$1" &>/dev/null
+}
+
+require() {
+  if ! command_exists "$1"; then
+    echo "Error: '$1' command not found. Please install it and try again." >&2
+    exit 1
+  fi
+}
+
+# -----------------------------------------------------------------------------
+# Pre-flight checks
+# -----------------------------------------------------------------------------
+require "npm"  # Ensure Node.js/npm is available
+
+printf "\n===== Super Student HTML — PLAY MODE =====\n\n"
+
+# Install dependencies (skipped if already installed)
+echo "Installing/Updating dependencies…"
+npm install --no-fund --no-audit --silent
+
+echo "Starting development server (this may take a moment)…"
+# We use the dev server (port 3000, hot-reload) which is perfect for demos.
+# If you prefer the production build, press CTRL-C and run: npm run build && npm run preview
+npm run dev --silent
