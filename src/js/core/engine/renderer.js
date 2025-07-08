@@ -7,12 +7,26 @@ export class Renderer {
 
   setupCanvas() {
     // Adjust canvas size and scale for high-DPI displays
-    const { width, height } = this.canvas.getBoundingClientRect();
-    this.canvas.width = width * (window.devicePixelRatio || 1);
-    this.canvas.height = height * (window.devicePixelRatio || 1);
-    this.canvas.style.width = width + 'px';
-    this.canvas.style.height = height + 'px';
-    this.ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+    const rect = this.canvas.getBoundingClientRect();
+    const width = rect.width || this.canvas.offsetWidth || 800; // Fallback to 800px
+    const height = rect.height || this.canvas.offsetHeight || 600; // Fallback to 600px
+    
+    // Ensure minimum dimensions to prevent division by zero
+    const minWidth = Math.max(width, 1);
+    const minHeight = Math.max(height, 1);
+    
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    
+    // Set canvas internal dimensions
+    this.canvas.width = minWidth * devicePixelRatio;
+    this.canvas.height = minHeight * devicePixelRatio;
+    
+    // Set canvas CSS dimensions
+    this.canvas.style.width = minWidth + 'px';
+    this.canvas.style.height = minHeight + 'px';
+    
+    // Scale the context to match device pixel ratio
+    this.ctx.scale(devicePixelRatio, devicePixelRatio);
   }
 
   clear() {

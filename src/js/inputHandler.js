@@ -79,20 +79,32 @@ export class InputHandler {
 
   // Cleanup method to prevent memory leaks
   destroy() {
-    if (this.canvas) {
-      this.canvas.removeEventListener('pointerdown', this._boundHandlePointerDown);
-      this.canvas.removeEventListener('pointerup', this._boundHandlePointerUp);
-      this.canvas.removeEventListener('pointermove', this._boundHandlePointerMove);
+    // Always attempt to remove event listeners, even if canvas is null
+    // Store the original canvas reference before clearing
+    const originalCanvas = this.canvas;
+    
+    if (originalCanvas) {
+      originalCanvas.removeEventListener('pointerdown', this._boundHandlePointerDown);
+      originalCanvas.removeEventListener('pointerup', this._boundHandlePointerUp);
+      originalCanvas.removeEventListener('pointermove', this._boundHandlePointerMove);
     }
+    
+    // Always remove window event listener
     window.removeEventListener('keydown', this._boundHandleKeyDown);
     
-    // Clear all listeners
-    this.pointerDownListeners = [];
-    this.pointerUpListeners = [];
-    this.pointerMoveListeners = [];
-    this.keyDownListeners = [];
+    // Clear all listeners arrays to prevent memory leaks
+    this.pointerDownListeners.length = 0;
+    this.pointerUpListeners.length = 0;
+    this.pointerMoveListeners.length = 0;
+    this.keyDownListeners.length = 0;
     
-    // Clear references
+    // Clear bound function references
+    this._boundHandlePointerDown = null;
+    this._boundHandlePointerUp = null;
+    this._boundHandlePointerMove = null;
+    this._boundHandleKeyDown = null;
+    
+    // Clear canvas reference
     this.canvas = null;
   }
 }
