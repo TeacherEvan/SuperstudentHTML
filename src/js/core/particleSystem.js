@@ -241,7 +241,11 @@ export default class ParticleManager {
     this.updateParticles(actualDeltaTime);
     
     // Clean up inactive particles to prevent memory leaks
-    this.cleanupInactiveParticles();
+    const currentTime = performance.now();
+    if (currentTime - this.lastCleanupTime >= this.cleanupInterval) {
+      this.cleanupInactiveParticles();
+      this.lastCleanupTime = currentTime;
+    }
     
     // Draw all particles with advanced rendering (circles, stars, trails, etc.)
     this.drawParticles(ctx);
