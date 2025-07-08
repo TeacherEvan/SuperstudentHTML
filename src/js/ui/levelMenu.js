@@ -38,6 +38,12 @@ export class LevelMenu {
         label: 'Case Level', 
         description: 'a through z in order',
         difficulty: '★★★'
+      },
+      { 
+        name: 'phonics', 
+        label: 'Phonics Bubbles', 
+        description: 'Pop bubbles and learn letter sounds! 🫧',
+        difficulty: '★☆☆'
       }
     ];
   }

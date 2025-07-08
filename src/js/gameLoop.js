@@ -22,6 +22,7 @@ export class GameLoop {
     const now = performance.now();
     const deltaTime = now - this.lastTime;
     this.lastTime = now;
+    this.lastDeltaTime = deltaTime; // Store for use by particle system
     this.updateFn(deltaTime);
     this.renderFn();
     requestAnimationFrame(() => this._loop());
