@@ -34,7 +34,6 @@ export default class SoundManager {
     this.sounds = {}; // For preloaded audio compatibility
 
     // Enhanced features
-    this.volume = audioConfig.masterVolume;
     this.sounds = {}; // Direct sound access for ResourceManager
     this.phonicsCache = new Map(); // Cache for phonics sounds
     this.soundQueue = []; // Queue for sequenced sounds
