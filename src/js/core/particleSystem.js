@@ -234,20 +234,27 @@ export default class ParticleManager {
   }
 
   updateAndDraw(ctx, deltaTime) {
-    // Use provided deltaTime, or calculate it if not provided (for backwards compatibility)
+    // Calculate delta time (ms). If caller provides deltaTime use it, else compute internally for backwards-compatibility.
     const actualDeltaTime = deltaTime !== undefined ? deltaTime : this._calculateDeltaTime();
-    
-    // Update all particles with proper physics and visual effects
+cursor/fix-particle-system-update-and-rendering-3036
+
+    // 1. Update all particles (physics, life, visual properties).
     this.updateParticles(actualDeltaTime);
-    
-    // Clean up inactive particles to prevent memory leaks
-    this.cleanupInactiveParticles();
-    
-    // Draw all particles with advanced rendering (circles, stars, trails, etc.)
+
+    // 2. Periodically clean up inactive / expired particles to avoid memory leaks.
+    const now = performance.now();
+    if (now - this.lastCleanupTime >= this.cleanupInterval) {
+      this.cleanupInactiveParticles();
+      this.lastCleanupTime = now;
+    }
+
+    // 3. Draw active particles using their respective specialised renderers.
     this.drawParticles(ctx);
-    
-    // Performance monitoring
-    this.monitorPerformance(performance.now());
+
+    // 4. Monitor frame performance and auto-tune system if necessary.
+    this.monitorPerformance(now);
+
+
   }
 
   updateParticles(deltaTime) {
