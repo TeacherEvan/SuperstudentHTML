@@ -4,12 +4,12 @@ export default class SoundManager {
   constructor() {
     const audioConfig = getAudioConfig();
     this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    // Store current volume for reference
-    this.volume = audioConfig.masterVolume;
+    // Store current volume for reference (use private field to avoid setter during construction)
+    this._volume = audioConfig.masterVolume;
     
     // Master gain
     this.masterGain = this.audioContext.createGain();
-    this.masterGain.gain.value = this.volume;
+    this.masterGain.gain.value = this._volume;
     this.masterGain.connect(this.audioContext.destination);
     
     // Category gains
@@ -312,13 +312,14 @@ export default class SoundManager {
   }
 
   setMasterVolume(value) {
-    this.volume = value; // Keep volume property in sync
-    this.masterGain.gain.value = value;
+    // Update cached volume and underlying gain without triggering setter recursion
+    this._volume = value;
+    if (this.masterGain) {
+      this.masterGain.gain.value = value;
+    }
   }
 
-  setGlobalVolume(value) {
-    this.setMasterVolume(value);
-  }
+  // (Removed duplicate setGlobalVolume; kept alias in legacy section below)
 
   setCategoryVolume(category, value) {
     if (this.gains[category]) {
@@ -343,7 +344,7 @@ export default class SoundManager {
    * ensuring the masterGain node stays in sync.
    */
   get volume() {
-    return this.masterGain.gain.value;
+    return this._volume;
   }
 
   set volume(value) {

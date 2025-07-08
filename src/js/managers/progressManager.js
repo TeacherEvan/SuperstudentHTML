@@ -1,7 +1,8 @@
 export class ProgressManager {
   constructor() {
     this.storageKey = 'superstudent_progress';
-    this.levels = ['colors', 'shapes', 'alphabet', 'numbers', 'clcase'];
+    // Added 'phonics' to ensure it can be tracked/unlocked
+    this.levels = ['colors', 'shapes', 'alphabet', 'numbers', 'clcase', 'phonics'];
     this.progress = this.loadProgress();
   }
 
@@ -15,9 +16,9 @@ export class ProgressManager {
       console.warn('Failed to load progress:', error);
     }
     
-    // Default progress - ALL levels unlocked from start
+    // Default progress - start with only the first level unlocked so players earn progression
     return {
-      unlockedLevels: ['colors', 'shapes', 'alphabet', 'numbers', 'clcase'],
+      unlockedLevels: ['colors'],
       completedLevels: [],
       scores: {},
       totalScore: 0
@@ -71,8 +72,9 @@ export class ProgressManager {
   }
 
   resetProgress() {
+    // Reset to initial state (only first level unlocked)
     this.progress = {
-      unlockedLevels: ['colors', 'shapes', 'alphabet', 'numbers', 'clcase'],
+      unlockedLevels: ['colors'],
       completedLevels: [],
       scores: {},
       totalScore: 0

@@ -7,21 +7,26 @@ export default class MultiTouchManager {
       pointermove: [],
       pointerup: []
     };
-    
+    // Bind handlers once so we can both add and remove them reliably
+    this._boundPointerDown = this.handlePointerDown.bind(this);
+    this._boundPointerMove = this.handlePointerMove.bind(this);
+    this._boundPointerUp = this.handlePointerUp.bind(this);
+    this._boundPreventDefault = (e) => e.preventDefault();
+
     this.setupEventListeners();
   }
 
   setupEventListeners() {
     // Pointer events (supports mouse, touch, pen)
-    this.canvas.addEventListener('pointerdown', (e) => this.handlePointerDown(e));
-    this.canvas.addEventListener('pointermove', (e) => this.handlePointerMove(e));
-    this.canvas.addEventListener('pointerup', (e) => this.handlePointerUp(e));
-    this.canvas.addEventListener('pointercancel', (e) => this.handlePointerUp(e));
-    
+    this.canvas.addEventListener('pointerdown', this._boundPointerDown);
+    this.canvas.addEventListener('pointermove', this._boundPointerMove);
+    this.canvas.addEventListener('pointerup', this._boundPointerUp);
+    this.canvas.addEventListener('pointercancel', this._boundPointerUp);
+
     // Prevent default touch behaviors
-    this.canvas.addEventListener('touchstart', (e) => e.preventDefault());
-    this.canvas.addEventListener('touchmove', (e) => e.preventDefault());
-    this.canvas.addEventListener('touchend', (e) => e.preventDefault());
+    this.canvas.addEventListener('touchstart', this._boundPreventDefault);
+    this.canvas.addEventListener('touchmove', this._boundPreventDefault);
+    this.canvas.addEventListener('touchend', this._boundPreventDefault);
   }
 
   handlePointerDown(e) {
@@ -132,13 +137,14 @@ export default class MultiTouchManager {
   }
 
   destroy() {
-    this.canvas.removeEventListener('pointerdown', this.handlePointerDown);
-    this.canvas.removeEventListener('pointermove', this.handlePointerMove);
-    this.canvas.removeEventListener('pointerup', this.handlePointerUp);
-    this.canvas.removeEventListener('pointercancel', this.handlePointerUp);
-    this.canvas.removeEventListener('touchstart', (e) => e.preventDefault());
-    this.canvas.removeEventListener('touchmove', (e) => e.preventDefault());
-    this.canvas.removeEventListener('touchend', (e) => e.preventDefault());
+    this.canvas.removeEventListener('pointerdown', this._boundPointerDown);
+    this.canvas.removeEventListener('pointermove', this._boundPointerMove);
+    this.canvas.removeEventListener('pointerup', this._boundPointerUp);
+    this.canvas.removeEventListener('pointercancel', this._boundPointerUp);
+
+    this.canvas.removeEventListener('touchstart', this._boundPreventDefault);
+    this.canvas.removeEventListener('touchmove', this._boundPreventDefault);
+    this.canvas.removeEventListener('touchend', this._boundPreventDefault);
     this.clear();
   }
 }
