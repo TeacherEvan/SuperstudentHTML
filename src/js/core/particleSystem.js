@@ -91,6 +91,10 @@ export default class ParticleManager {
     if (this.activeParticles >= this.maxParticles) {
       // Remove oldest particle to make room
       this.removeOldestParticle();
+      if (this.activeParticles >= this.maxParticles) {
+        // Still at capacity, don't create new particle
+        return null;
+      }
     }
     
     // Get particle from pool
@@ -125,7 +129,10 @@ export default class ParticleManager {
     particle.physics.bounce = options.bounce || false;
     particle.physics.friction = options.friction || 0.99;
     
-    this.particles.push(particle);
+    // Only add to particles array if not already there
+    if (!this.particles.includes(particle)) {
+      this.particles.push(particle);
+    }
     this.activeParticles++;
     
     return particle;

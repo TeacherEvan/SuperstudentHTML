@@ -40,10 +40,24 @@ export class InputHandler {
   }
 
   _getPointerPosition(event) {
+    if (!this.canvas) {
+      console.warn('Canvas not available for pointer position calculation');
+      return { x: 0, y: 0 };
+    }
+    
     const rect = this.canvas.getBoundingClientRect();
+    if (!rect) {
+      console.warn('Could not get canvas bounding rect');
+      return { x: 0, y: 0 };
+    }
+    
+    // Prevent division by zero
+    const scaleX = rect.width > 0 ? this.canvas.width / rect.width : 1;
+    const scaleY = rect.height > 0 ? this.canvas.height / rect.height : 1;
+    
     return {
-      x: (event.clientX - rect.left) * (this.canvas.width / rect.width),
-      y: (event.clientY - rect.top) * (this.canvas.height / rect.height)
+      x: (event.clientX - rect.left) * scaleX,
+      y: (event.clientY - rect.top) * scaleY
     };
   }
 
