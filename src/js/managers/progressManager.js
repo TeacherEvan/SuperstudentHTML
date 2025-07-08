@@ -15,9 +15,9 @@ export class ProgressManager {
       console.warn('Failed to load progress:', error);
     }
     
-    // Default progress - only colors level unlocked initially
+    // Default progress - ALL levels unlocked from start
     return {
-      unlockedLevels: ['colors'],
+      unlockedLevels: ['colors', 'shapes', 'alphabet', 'numbers', 'clcase'],
       completedLevels: [],
       scores: {},
       totalScore: 0
@@ -72,7 +72,7 @@ export class ProgressManager {
 
   resetProgress() {
     this.progress = {
-      unlockedLevels: ['colors'],
+      unlockedLevels: ['colors', 'shapes', 'alphabet', 'numbers', 'clcase'],
       completedLevels: [],
       scores: {},
       totalScore: 0

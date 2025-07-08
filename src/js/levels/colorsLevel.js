@@ -20,7 +20,7 @@ export default class ColorsLevel extends BaseLevel {
     this.mother = {
       x: this.canvas.width / 2,
       y: this.canvas.height / 2,
-      radius: managers.displaySettings.motherRadius,
+      radius: this.managers?.displaySettings?.motherRadius || GAME_CONFIG.DOT_RADIUS,
       color: `rgb(${rgb})`
     };
     // Show memory dot then disperse

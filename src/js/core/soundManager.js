@@ -88,6 +88,31 @@ export default class SoundManager {
     }
   }
 
+  // BEGIN LEGACY COMPATIBILITY HELPERS ---------------------------------
+  /**
+   * Legacy alias: maintain backward-compatibility with older game code
+   * that still calls soundManager.setGlobalVolume(value).
+   * Internally forwards to setMasterVolume.
+   * @param {number} value
+   */
+  setGlobalVolume(value) {
+    this.setMasterVolume(value);
+  }
+
+  /**
+   * Getter/Setter pair for direct volume access (0-1). Allows existing
+   * code that references soundManager.volume to continue to work while
+   * ensuring the masterGain node stays in sync.
+   */
+  get volume() {
+    return this.masterGain.gain.value;
+  }
+
+  set volume(value) {
+    this.setMasterVolume(value);
+  }
+  // END LEGACY COMPATIBILITY HELPERS -----------------------------------
+
   // Ensure AudioContext is running after user interaction
   async resumeContext() {
     if (this.audioContext.state === 'suspended') {

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Student Debug</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #000;
+            color: #fff;
+        }
+        
+        #game-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #001122;
+        }
+        
+        #welcome-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            text-align: center;
+            z-index: 100;
+        }
+        
+        .welcome-button {
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 18px;
+            color: #fff;
+            background: #007ACC;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="game-canvas"></canvas>
+    <div id="welcome-screen">
+        <h1>Super Student DEBUG</h1>
+        <p>Debug version to test welcome screen</p>
+        <button class="welcome-button" onclick="alert('Start button works!')">Start Game</button>
+        <button class="welcome-button" onclick="alert('Options button works!')">Options</button>
+    </div>
+    
+    <script>
+        console.log('🔧 DEBUG: HTML loaded');
+        console.log('🔧 DEBUG: Canvas element:', document.getElementById('game-canvas'));
+        console.log('🔧 DEBUG: Welcome screen element:', document.getElementById('welcome-screen'));
+        
+        // Simple canvas test
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        // Draw something to test canvas
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(50, 50, 100, 100);
+        ctx.fillStyle = '#fff';
+        ctx.font = '20px Arial';
+        ctx.fillText('Canvas Test - Red Square', 60, 200);
+        
+        console.log('🔧 DEBUG: Canvas test complete');
+    </script>
+</body>
+</html> 

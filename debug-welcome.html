@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome Screen Debug</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Canvas for game rendering -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- Welcome screen overlay -->
+    <div id="welcome-screen">
+        <h1>Super Student</h1>
+        <p class="game-description">Educational action game featuring five distinct game modes, each targeting different learning objectives</p>
+        <p class="instruction-text">Select your display mode and click 'Start Game' to begin</p>
+        
+        <!-- Display Mode Selection Interface -->
+        <div class="display-mode-selection">
+            <label for="display-mode-welcome">Display Mode:</label>
+            <select id="display-mode-welcome">
+                <option value="DEFAULT">Default (Standard Resolution)</option>
+                <option value="QBOARD">QBoard (Large Display Optimized)</option>
+            </select>
+        </div>
+        
+        <div class="button-group">
+            <button class="welcome-button" id="start-button">Start Game</button>
+            <button class="welcome-button" id="options-button">Options</button>
+        </div>
+        
+        <!-- Credits and Collaboration Text -->
+        <footer class="credits">
+            <div class="collaboration-text">
+                <p>Built with modern web technologies: HTML5 Canvas, JavaScript ES6+, CSS Grid</p>
+                <p>Educational game designed for collaborative learning environments</p>
+            </div>
+            <div class="version-info">v1.0 — Debug Version</div>
+        </footer>
+    </div>
+
+    <script>
+        console.log('🔥 Debug: Starting welcome screen test...');
+        
+        // Setup canvas
+        const canvas = document.getElementById('game-canvas');
+        if (canvas) {
+            console.log('✅ Canvas found');
+            const ctx = canvas.getContext('2d');
+            
+            // Resize canvas
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            // Fill with dark blue background
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            console.log('✅ Canvas setup complete');
+        } else {
+            console.error('❌ Canvas not found');
+        }
+        
+        // Check welcome screen
+        const welcome = document.getElementById('welcome-screen');
+        if (welcome) {
+            console.log('✅ Welcome screen found');
+            console.log('Display style:', welcome.style.display);
+            console.log('Computed style:', window.getComputedStyle(welcome).display);
+        } else {
+            console.error('❌ Welcome screen not found');
+        }
+        
+        // Test display mode selector
+        const displayModeSelect = document.getElementById('display-mode-welcome');
+        if (displayModeSelect) {
+            console.log('✅ Display mode selector found');
+            displayModeSelect.addEventListener('change', (event) => {
+                console.log('🎛️ Display mode changed to:', event.target.value);
+                alert(`Display mode set to: ${event.target.value}`);
+            });
+        }
+        
+        // Add button functionality
+        document.getElementById('start-button')?.addEventListener('click', () => {
+            console.log('🎮 Start button clicked!');
+            alert('Start button works! Welcome screen content updated per SuperStudentHTML.md specification.');
+        });
+        
+        document.getElementById('options-button')?.addEventListener('click', () => {
+            console.log('⚙️ Options button clicked!');
+            alert('Options button works!');
+        });
+        
+        console.log('🔥 Debug welcome screen test complete - All new content loaded!');
+    </script>
+</body>
+</html> 

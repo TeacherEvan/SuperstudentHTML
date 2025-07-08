@@ -20,10 +20,12 @@ import { InputHandler } from '../inputHandler.js';
 import { getDisplaySettings } from '../config/displayModes.js';
 import { getAudioConfig } from '../config/audioConfig.js';
 import { GAME_CONFIG } from '../config/constants.js';
+import { WelcomeScreen } from '../ui/welcomeScreen.js';
+import { initializeErrorTracker } from '../utils/errorTracker.js';
 
-const canvas = document.getElementById('game-canvas');
-const renderer = new Renderer(canvas);
-const ctx = renderer.ctx;
+let canvas;
+let renderer;
+let ctx;
 
 // Current display-specific settings
 let displaySettings;
@@ -37,6 +39,7 @@ let currentLevelName = '';
 let gameState = 'menu'; // menu, playing, paused, gameOver
 let lastTime = 0;
 let gameLoop;
+let welcomeScreen;
 
 function resizeCanvas() {
   renderer.setupCanvas();
@@ -48,67 +51,61 @@ function resizeCanvas() {
   }
 }
 
-// Show welcome screen with start and options
-function showWelcomeScreen() {
-  console.log('🏠 showWelcomeScreen() called');
-  const welcome = document.getElementById('welcome-screen');
-  console.log('🏠 Welcome element found:', welcome);
+// Initialize and show welcome screen with animated background
+function initializeWelcomeScreen() {
+  console.log('🏠 Initializing WelcomeScreen class with animated background...');
   
-  if (!welcome) {
-    console.error('❌ CRITICAL: welcome-screen element not found in DOM!');
-    return;
-  }
+  // Create WelcomeScreen instance as specified in SuperStudentHTML.md
+  welcomeScreen = new WelcomeScreen(canvas, ctx, resourceManager);
+  welcomeScreen.setCallbacks(showLevelMenu, showOptions);
+  welcomeScreen.show();
   
-  console.log('🏠 Setting welcome screen HTML...');
-  welcome.innerHTML = `
-    <h1>Super Student</h1>
-    <p>Train your brain with fun puzzles</p>
-    <p>Click 'Start Game' to begin</p>
-    <button class="welcome-button" id="start-button">Start Game</button>
-    <button class="welcome-button" id="options-button">Options</button>
-    <footer>v1.0 — Developed by YourName</footer>
-  `;
-  
-  // Make sure it's visible
-  welcome.style.display = 'flex';
-  console.log('🏠 Welcome screen display set to flex');
-
-  const startBtn = document.getElementById('start-button');
-  const optionsBtn = document.getElementById('options-button');
-  
-  console.log('🏠 Start button found:', startBtn);
-  console.log('🏠 Options button found:', optionsBtn);
-  
-  if (startBtn) {
-    startBtn.addEventListener('click', showLevelMenu);
-    console.log('🏠 Start button event listener added');
-  }
-  
-  if (optionsBtn) {
-    optionsBtn.addEventListener('click', showOptions);
-    console.log('🏠 Options button event listener added');
-  }
-  
-  console.log('🏠 Welcome screen setup complete!');
+  console.log('✅ WelcomeScreen initialized with animated background!');
 }
 
 // Show level selection menu
 function showLevelMenu() {
-  const welcome = document.getElementById('welcome-screen');
-  welcome.innerHTML = '';
-  welcome.style.display = 'flex';
-  const menu = new LevelMenu('welcome-screen', startLevel);
+  console.log('🎮 Showing level menu...');
+  
+  // Hide the welcome screen first
+  if (welcomeScreen) {
+    welcomeScreen.hide();
+  }
+  
+  // Create a temporary container for level menu
+  const menuContainer = document.createElement('div');
+  menuContainer.id = 'level-menu-container';
+  menuContainer.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    color: white;
+  `;
+  document.body.appendChild(menuContainer);
+  
+  const menu = new LevelMenu('level-menu-container', startLevel);
   menu.show();
+  gameState = 'menu';
 }
 
 // Start the selected level
 function startLevel(levelName) {
-  if (!progressManager.isLevelUnlocked(levelName)) {
-    alert('This level is locked. Complete previous levels to unlock it.');
-    return;
+  console.log(`🎯 Starting level: ${levelName}`);
+  
+  // Remove level menu container
+  const menuContainer = document.getElementById('level-menu-container');
+  if (menuContainer) {
+    menuContainer.remove();
   }
-
-  document.getElementById('welcome-screen').style.display = 'none';
+  
   gameState = 'playing';
   currentLevelName = levelName;
   initializeManagers();
@@ -319,6 +316,15 @@ window.onload = async () => {
   console.log('🎮 Super Student: Starting initialization...');
   
   try {
+    // Initialize canvas and renderer first
+    canvas = document.getElementById('game-canvas');
+    if (!canvas) {
+      throw new Error('Canvas element with id "game-canvas" not found!');
+    }
+    renderer = new Renderer(canvas);
+    ctx = renderer.ctx;
+    console.log('✅ Canvas and renderer initialized');
+    
     resizeCanvas();
     console.log('✅ Canvas resized');
     
@@ -365,9 +371,14 @@ window.onload = async () => {
      console.log('✅ Game loop started');
      
      console.log('🎯 Showing welcome screen...');
-     showWelcomeScreen();
+     welcomeScreen = new WelcomeScreen(canvas, ctx, resourceManager);
+     welcomeScreen.setCallbacks(showLevelMenu, showOptions);
+     welcomeScreen.show();
      setupGlobalEventListeners();
      console.log('✅ Welcome screen should be visible now!');
+     
+     // Initialize global error tracker immediately so early errors are captured
+     initializeErrorTracker();
      
   } catch (error) {
     console.error('❌ CRITICAL ERROR during initialization:', error);

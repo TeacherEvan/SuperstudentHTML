@@ -5,7 +5,7 @@ export default class CenterPieceManager {
     this.particleManager = particleManager;
     this.centerX = canvas.width / 2;
     this.centerY = canvas.height / 2;
-    this.radius = Math.min(canvas.width, canvas.height) * 0.1;
+    this.radius = Math.max(10, Math.min(canvas.width, canvas.height) * 0.1);
     this.rotation = 0;
     this.pulsePhase = 0;
     this.swirlParticles = [];
@@ -61,7 +61,8 @@ export default class CenterPieceManager {
     this.ctx.save();
     
     // Draw center piece
-    const pulseSize = this.radius + Math.sin(this.pulsePhase) * 10;
+    let pulseSize = this.radius + Math.sin(this.pulsePhase) * 10;
+    if (pulseSize < 2) pulseSize = 2;
     
     // Outer glow
     this.ctx.shadowColor = '#4ECDC4';
@@ -134,7 +135,7 @@ export default class CenterPieceManager {
     this.canvas = canvas;
     this.centerX = canvas.width / 2;
     this.centerY = canvas.height / 2;
-    this.radius = Math.min(canvas.width, canvas.height) * 0.1;
+    this.radius = Math.max(10, Math.min(canvas.width, canvas.height) * 0.1);
   }
 
   reset() {
