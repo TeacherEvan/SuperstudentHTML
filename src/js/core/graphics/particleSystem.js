@@ -489,9 +489,12 @@ export default class ParticleManager {
     const frameTime = now - (this.lastFrameTime || now);
     this.frameTimeHistory.push(frameTime);
     
+    // Prevent memory leak by limiting history size
+    if (this.frameTimeHistory.length > 120) {
+      this.frameTimeHistory.splice(0, this.frameTimeHistory.length - 60);
+    }
+    
     if (this.frameTimeHistory.length > 60) {
-      this.frameTimeHistory.shift();
-      
       // Calculate average frame time
       const sum = this.frameTimeHistory.reduce((a, b) => a + b, 0);
       this.avgFrameTime = sum / this.frameTimeHistory.length;
@@ -544,5 +547,38 @@ export default class ParticleManager {
       performanceMode: this.performanceMode,
       fps: Math.round(1000 / this.avgFrameTime)
     };
+  }
+
+  /**
+   * Properly destroys the particle system and cleans up all resources to prevent memory leaks
+   */
+  destroy() {
+    // Clear all active particles
+    this.clear();
+    
+    // Clean up arrays and objects
+    this.particles = [];
+    this.particlePool = [];
+    this.frameTimeHistory = [];
+    this.renderBatch = [];
+    
+    // Clear cache
+    this.colorCache.clear();
+    
+    // Reset counters
+    this.activeParticles = 0;
+    this.lastUpdateTime = 0;
+    this.lastCleanupTime = 0;
+    this.lastFrameTime = 0;
+    this.avgFrameTime = 16;
+    
+    // Reset effects
+    this.globalEffects = {
+      wind: { x: 0, y: 0 },
+      gravity: 0.1,
+      turbulence: 0
+    };
+    
+    console.log('🗑️ ParticleManager destroyed and cleaned up');
   }
 }
