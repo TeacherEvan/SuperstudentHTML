@@ -236,6 +236,7 @@ export default class ParticleManager {
   updateAndDraw(ctx, deltaTime) {
     // Calculate delta time (ms). If caller provides deltaTime use it, else compute internally for backwards-compatibility.
     const actualDeltaTime = deltaTime !== undefined ? deltaTime : this._calculateDeltaTime();
+cursor/fix-particle-system-update-and-rendering-3036
 
     // 1. Update all particles (physics, life, visual properties).
     this.updateParticles(actualDeltaTime);
@@ -252,6 +253,8 @@ export default class ParticleManager {
 
     // 4. Monitor frame performance and auto-tune system if necessary.
     this.monitorPerformance(now);
+
+
   }
 
   updateParticles(deltaTime) {
