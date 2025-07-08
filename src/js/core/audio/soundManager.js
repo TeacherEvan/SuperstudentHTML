@@ -3,7 +3,15 @@ import { getAudioConfig } from './audioConfig.js';
 export default class SoundManager {
   constructor() {
     const audioConfig = getAudioConfig();
-    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // Initialize audio context with proper error handling
+    try {
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    } catch (error) {
+      console.error('Failed to create AudioContext:', error);
+      this.audioContext = null;
+      return;
+    }
     
     // Master gain
     this.masterGain = this.audioContext.createGain();
@@ -32,7 +40,6 @@ export default class SoundManager {
     this.sounds = {}; // For preloaded audio compatibility
 
     // Enhanced features
-    this.sounds = {}; // Direct sound access for ResourceManager
     this.phonicsCache = new Map(); // Cache for phonics sounds
     this.soundQueue = []; // Queue for sequenced sounds
     this.isProcessingQueue = false;
@@ -40,6 +47,7 @@ export default class SoundManager {
     // Performance optimization
     this.maxConcurrentSounds = 8;
     this.activeSoundsCount = 0;
+    this.activeSoundsList = new Set(); // Track active sources for cleanup
     
     // Initialize default sounds
     this.initializeDefaultSounds();
@@ -113,6 +121,19 @@ export default class SoundManager {
   }
 
   playSound(name, volume = 1.0, pitch = 1.0) {
+    // Check if audio context is available
+    if (!this.audioContext) {
+      console.warn('AudioContext not available, cannot play sound');
+      return null;
+    }
+    
+    // Resume audio context if suspended
+    if (this.audioContext.state === 'suspended') {
+      this.audioContext.resume().catch(err => {
+        console.warn('Failed to resume audio context:', err);
+      });
+    }
+    
     if (this.activeSoundsCount >= this.maxConcurrentSounds) {
       return null; // Skip if too many sounds playing
     }
@@ -128,19 +149,29 @@ export default class SoundManager {
     
     // Add volume control
     const gainNode = this.audioContext.createGain();
-    gainNode.gain.value = volume;
+    gainNode.gain.value = Math.max(0, Math.min(1, volume)); // Clamp volume
     source.connect(gainNode);
     gainNode.connect(this.gains[entry.type] || this.gains.sfx);
     
-    // Add pitch control
-    source.playbackRate.value = pitch;
+    // Add pitch control with bounds checking
+    source.playbackRate.value = Math.max(0.1, Math.min(4.0, pitch));
     
-    source.start(0);
-    this.activeSoundsCount++;
+    // Track this source for cleanup
+    this.activeSoundsList.add(source);
     
     source.onended = () => {
       this.activeSoundsCount--;
+      this.activeSoundsList.delete(source);
     };
+    
+    try {
+      source.start(0);
+      this.activeSoundsCount++;
+    } catch (error) {
+      console.warn('Failed to start audio source:', error);
+      this.activeSoundsList.delete(source);
+      return null;
+    }
     
     return source;
   }
@@ -300,12 +331,31 @@ export default class SoundManager {
   }
 
   stopAll() {
+    // Stop all named sources
     Object.values(this.activeSources).forEach(source => {
       if (source && typeof source.stop === 'function') {
-        source.stop();
+        try {
+          source.stop();
+        } catch (error) {
+          console.warn('Error stopping audio source:', error);
+        }
       }
     });
     this.activeSources = {};
+    
+    // Stop all tracked active sounds
+    this.activeSoundsList.forEach(source => {
+      if (source && typeof source.stop === 'function') {
+        try {
+          source.stop();
+        } catch (error) {
+          console.warn('Error stopping active sound:', error);
+        }
+      }
+    });
+    this.activeSoundsList.clear();
+    
+    // Reset counter
     this.activeSoundsCount = 0;
   }
 
