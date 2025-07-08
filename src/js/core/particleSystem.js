@@ -234,20 +234,24 @@ export default class ParticleManager {
   }
 
   updateAndDraw(ctx, deltaTime) {
-    // Use provided deltaTime, or calculate it if not provided (for backwards compatibility)
+    // Calculate delta time (ms). If caller provides deltaTime use it, else compute internally for backwards-compatibility.
     const actualDeltaTime = deltaTime !== undefined ? deltaTime : this._calculateDeltaTime();
-    
-    this.particles = this.particles.filter(p => p.age < p.duration);
-    this.particles.forEach(p => {
-      p.x += p.dx * (actualDeltaTime / 16); // Normalize to 16ms baseline for consistent speed
-      p.y += p.dy * (actualDeltaTime / 16);
-      p.age += actualDeltaTime;
-      ctx.fillStyle = p.color;
-      ctx.fillRect(p.x, p.y, p.size, p.size);
-    });
-    
-    // Performance monitoring
-    this.monitorPerformance(performance.now());
+
+    // 1. Update all particles (physics, life, visual properties).
+    this.updateParticles(actualDeltaTime);
+
+    // 2. Periodically clean up inactive / expired particles to avoid memory leaks.
+    const now = performance.now();
+    if (now - this.lastCleanupTime >= this.cleanupInterval) {
+      this.cleanupInactiveParticles();
+      this.lastCleanupTime = now;
+    }
+
+    // 3. Draw active particles using their respective specialised renderers.
+    this.drawParticles(ctx);
+
+    // 4. Monitor frame performance and auto-tune system if necessary.
+    this.monitorPerformance(now);
   }
 
   updateParticles(deltaTime) {
