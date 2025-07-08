@@ -6,7 +6,7 @@
    - **Linux/Mac:** `./play.sh`
    - **Windows:** Double-click `play.bat`
 
-2. **Wait for automatic browser opening** to `http://localhost:5173`
+2. **Wait for automatic browser opening** to `http://localhost:3000`
 
 3. **Start playing immediately!**
 
@@ -37,7 +37,7 @@
 ### 🚀 For Live Demos
 1. **Pre-launch:** Run the launcher 1-2 minutes before presenting
 2. **Fullscreen:** Use F11 for maximum impact
-3. **Network Access:** Share `http://[YOUR-IP]:5173` with audience
+3. **Network Access:** Share `http://[YOUR-IP]:3000` with audience
 4. **Backup:** Keep the browser tab open during presentation
 
 ### 🎯 Key Talking Points
@@ -58,11 +58,11 @@
 1. Check Node.js version: `node --version` (need 16+)
 2. Run `npm install` manually
 3. Try `npm run dev` directly
-4. Check port 5173 isn't blocked
+4. Check port 3000 isn't blocked
 
 ### If browser doesn't open automatically:
-- Manually navigate to `http://localhost:5173`
-- For network demos, use `http://[YOUR-IP]:5173`
+- Manually navigate to `http://localhost:3000`
+- For network demos, use `http://[YOUR-IP]:3000`
 
 ### Performance Issues:
 - Close other browser tabs
@@ -96,7 +96,7 @@
 For classroom/group demos:
 1. Run `./play.sh` on your machine
 2. Share your IP address with participants
-3. They can access via `http://[YOUR-IP]:5173`
+3. They can access via `http://[YOUR-IP]:3000`
 4. Multiple people can play simultaneously
 
 ## Stop the Game
