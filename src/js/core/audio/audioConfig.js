@@ -1,4 +1,4 @@
-import { GAME_CONFIG } from './constants.js';
+import { GAME_CONFIG } from '../../config/constants.js';
 
 /**
  * Returns audio configuration settings.

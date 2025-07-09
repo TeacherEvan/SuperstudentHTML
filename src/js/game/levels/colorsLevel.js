@@ -1,6 +1,6 @@
 import { BaseLevel } from './baseLevel.js';
-import { GAME_CONFIG } from '../config/constants.js';
-import { LevelSettings } from '../config/gameSettings.js';
+import { GAME_CONFIG } from '../../config/constants.js';
+import { LevelSettings } from '../../config/gameSettings.js';
 
 export default class ColorsLevel extends BaseLevel {
   constructor(canvas, ctx, managers, helpers) {
@@ -15,6 +15,9 @@ export default class ColorsLevel extends BaseLevel {
     this.correctStreak = 0;
     this.lastCorrectTime = 0;
     this.levelStartTime = 0;
+    
+    // Timer tracking for memory leak prevention
+    this.activeTimers = [];
   }
 
   async init() {
@@ -42,7 +45,8 @@ export default class ColorsLevel extends BaseLevel {
     this.canvas.addEventListener('pointerdown', this.onPointerDown);
     this.levelStartTime = performance.now();
     
-    setTimeout(() => this.disperse(), this.memoryTime);
+    const disperseTimer = setTimeout(() => this.disperse(), this.memoryTime);
+    this.activeTimers.push(disperseTimer);
   }
 
   disperse() {
@@ -257,9 +261,10 @@ export default class ColorsLevel extends BaseLevel {
       this.managers.sound.playSuccess();
       
       // Additional pop sound
-      setTimeout(() => {
+      const soundTimer = setTimeout(() => {
         this.managers.sound.playPop(1.2);
       }, 100);
+      this.activeTimers.push(soundTimer);
     }
     
     // Score calculation with streak bonus
@@ -317,7 +322,7 @@ export default class ColorsLevel extends BaseLevel {
     const centerY = this.canvas.height / 2;
     
     for (let i = 0; i < 3; i++) {
-      setTimeout(() => {
+      const fireworkTimer = setTimeout(() => {
         this.managers.particleManager.createExplosion(
           centerX + (Math.random() - 0.5) * 200,
           centerY + (Math.random() - 0.5) * 200,
@@ -326,6 +331,7 @@ export default class ColorsLevel extends BaseLevel {
           30
         );
       }, i * 500);
+      this.activeTimers.push(fireworkTimer);
     }
     
     // Calculate bonus score
@@ -335,12 +341,17 @@ export default class ColorsLevel extends BaseLevel {
     this.updateScore(Math.floor(timeBonus + accuracyBonus));
     
     // End level after celebration
-    setTimeout(() => {
+    const endTimer = setTimeout(() => {
       this.end();
     }, 3000);
+    this.activeTimers.push(endTimer);
   }
 
   cleanup() {
+    // Clear all active timers to prevent memory leaks
+    this.activeTimers.forEach(timer => clearTimeout(timer));
+    this.activeTimers = [];
+    
     this.canvas.removeEventListener('pointerdown', this.onPointerDown);
     this.dots = [];
   }

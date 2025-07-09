@@ -1,40 +1,51 @@
-import { getAudioConfig } from '../config/audioConfig.js';
+import { getAudioConfig } from './audioConfig.js';
 
 export default class SoundManager {
   constructor() {
     const audioConfig = getAudioConfig();
-    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    // Store current volume for reference
-    this.volume = audioConfig.masterVolume;
     
-    // Master gain
-    this.masterGain = this.audioContext.createGain();
-    this.masterGain.gain.value = this.volume;
-    this.masterGain.connect(this.audioContext.destination);
-    
-    // Category gains
-    this.gains = {
-      sfx: this.audioContext.createGain(),
-      music: this.audioContext.createGain(),
-      ambient: this.audioContext.createGain(),
-      phonics: this.audioContext.createGain() // Added for phonics sounds
-    };
-    
-    this.gains.sfx.gain.value = audioConfig.sfxVolume;
-    this.gains.music.gain.value = audioConfig.musicVolume;
-    this.gains.ambient.gain.value = audioConfig.musicVolume;
-    this.gains.phonics.gain.value = audioConfig.sfxVolume;
-    
-    // Connect all gains to master
-    Object.values(this.gains).forEach(gain => gain.connect(this.masterGain));
+    // Initialize audio context with proper error handling
+    try {
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    } catch (error) {
+      console.error('Failed to create AudioContext:', error);
+      this.audioContext = null; // Gracefully handle missing WebAudio support
+    }
+
+    if (this.audioContext) {
+      // Master gain
+      this.masterGain = this.audioContext.createGain();
+      this.masterGain.gain.value = audioConfig.masterVolume;
+      this.masterGain.connect(this.audioContext.destination);
+
+      // Category gains
+      this.gains = {
+        sfx: this.audioContext.createGain(),
+        music: this.audioContext.createGain(),
+        ambient: this.audioContext.createGain(),
+        phonics: this.audioContext.createGain() // Added for phonics sounds
+      };
+
+      this.gains.sfx.gain.value = audioConfig.sfxVolume;
+      this.gains.music.gain.value = audioConfig.musicVolume;
+      this.gains.ambient.gain.value = audioConfig.musicVolume;
+      this.gains.phonics.gain.value = audioConfig.sfxVolume;
+
+      // Connect all gains to master
+      Object.values(this.gains).forEach(gain => gain.connect(this.masterGain));
+    } else {
+      // Fallback stubs so the rest of the app can continue to run without audio
+      const stubGain = { gain: { value: audioConfig.masterVolume } };
+      this.masterGain = stubGain;
+      this.gains = { sfx: stubGain, music: stubGain, ambient: stubGain, phonics: stubGain };
+    }
     
     // Buffers storage
     this.buffers = {}; // { name: { buffer, type } }
     this.activeSources = {};
-    this.sounds = {}; // For preloaded audio compatibility
+    this.sounds = {}; // For ResourceManager compatibility
 
     // Enhanced features
-    this.sounds = {}; // Direct sound access for ResourceManager
     this.phonicsCache = new Map(); // Cache for phonics sounds
     this.soundQueue = []; // Queue for sequenced sounds
     this.isProcessingQueue = false;
@@ -42,9 +53,12 @@ export default class SoundManager {
     // Performance optimization
     this.maxConcurrentSounds = 8;
     this.activeSoundsCount = 0;
+    this.activeSoundsList = new Set(); // Track active sources for cleanup
     
-    // Initialize default sounds
-    this.initializeDefaultSounds();
+    // Initialize default sounds only if the AudioContext was created successfully
+    if (this.audioContext) {
+      this.initializeDefaultSounds();
+    }
   }
 
   initializeDefaultSounds() {
@@ -115,6 +129,19 @@ export default class SoundManager {
   }
 
   playSound(name, volume = 1.0, pitch = 1.0) {
+    // Check if audio context is available
+    if (!this.audioContext) {
+      console.warn('AudioContext not available, cannot play sound');
+      return null;
+    }
+    
+    // Resume audio context if suspended
+    if (this.audioContext.state === 'suspended') {
+      this.audioContext.resume().catch(err => {
+        console.warn('Failed to resume audio context:', err);
+      });
+    }
+    
     if (this.activeSoundsCount >= this.maxConcurrentSounds) {
       return null; // Skip if too many sounds playing
     }
@@ -130,19 +157,29 @@ export default class SoundManager {
     
     // Add volume control
     const gainNode = this.audioContext.createGain();
-    gainNode.gain.value = volume;
+    gainNode.gain.value = Math.max(0, Math.min(1, volume)); // Clamp volume
     source.connect(gainNode);
     gainNode.connect(this.gains[entry.type] || this.gains.sfx);
     
-    // Add pitch control
-    source.playbackRate.value = pitch;
+    // Add pitch control with bounds checking
+    source.playbackRate.value = Math.max(0.1, Math.min(4.0, pitch));
     
-    source.start(0);
-    this.activeSoundsCount++;
+    // Track this source for cleanup
+    this.activeSoundsList.add(source);
     
     source.onended = () => {
       this.activeSoundsCount--;
+      this.activeSoundsList.delete(source);
     };
+    
+    try {
+      source.start(0);
+      this.activeSoundsCount++;
+    } catch (error) {
+      console.warn('Failed to start audio source:', error);
+      this.activeSoundsList.delete(source);
+      return null;
+    }
     
     return source;
   }
@@ -161,6 +198,11 @@ export default class SoundManager {
   }
 
   generateSyntheticPhonicsSound(letter, volume = 1.0) {
+    // Bail out if audio is not available
+    if (!this.audioContext) {
+      return null;
+    }
+
     // Create a simple synthetic phonics sound
     const sampleRate = this.audioContext.sampleRate;
     const duration = 0.5;
@@ -264,33 +306,50 @@ export default class SoundManager {
   playSequence(sounds, delay = 200) {
     this.soundQueue.push({ sounds, delay });
     if (!this.isProcessingQueue) {
-      this.processQueue();
+      this.processQueue().catch(error => {
+        console.warn('Error processing sound queue:', error);
+        this.isProcessingQueue = false;
+      });
     }
   }
 
   async processQueue() {
-    this.isProcessingQueue = true;
-    
-    while (this.soundQueue.length > 0) {
-      const { sounds, delay } = this.soundQueue.shift();
-      
-      for (let i = 0; i < sounds.length; i++) {
-        const sound = sounds[i];
-        if (typeof sound === 'string') {
-          this.playSound(sound);
-        } else if (sound.type === 'phonics') {
-          this.playPhonicsSound(sound.letter, sound.volume);
-        } else if (sound.type === 'sound') {
-          this.playSound(sound.name, sound.volume, sound.pitch);
-        }
-        
-        if (i < sounds.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, delay));
-        }
-      }
+    // Double-check to prevent race conditions
+    if (this.isProcessingQueue) {
+      return;
     }
     
-    this.isProcessingQueue = false;
+    this.isProcessingQueue = true;
+    
+    try {
+      while (this.soundQueue.length > 0) {
+        const { sounds, delay } = this.soundQueue.shift();
+        
+        for (let i = 0; i < sounds.length; i++) {
+          const sound = sounds[i];
+          
+          try {
+            if (typeof sound === 'string') {
+              this.playSound(sound);
+            } else if (sound.type === 'phonics') {
+              this.playPhonicsSound(sound.letter, sound.volume || 1.0);
+            } else if (sound.type === 'sound') {
+              this.playSound(sound.name, sound.volume || 1.0, sound.pitch || 1.0);
+            }
+          } catch (error) {
+            console.warn('Error playing sound in sequence:', error);
+          }
+          
+          if (i < sounds.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error in sound queue processing:', error);
+    } finally {
+      this.isProcessingQueue = false;
+    }
   }
 
   stop(name) {
@@ -302,18 +361,38 @@ export default class SoundManager {
   }
 
   stopAll() {
+    // Stop all named sources
     Object.values(this.activeSources).forEach(source => {
       if (source && typeof source.stop === 'function') {
-        source.stop();
+        try {
+          source.stop();
+        } catch (error) {
+          console.warn('Error stopping audio source:', error);
+        }
       }
     });
     this.activeSources = {};
+    
+    // Stop all tracked active sounds
+    this.activeSoundsList.forEach(source => {
+      if (source && typeof source.stop === 'function') {
+        try {
+          source.stop();
+        } catch (error) {
+          console.warn('Error stopping active sound:', error);
+        }
+      }
+    });
+    this.activeSoundsList.clear();
+    
+    // Reset counter
     this.activeSoundsCount = 0;
   }
 
   setMasterVolume(value) {
-    this.volume = value; // Keep volume property in sync
-    this.masterGain.gain.value = value;
+    // Clamp value between 0 and 1
+    const clampedValue = Math.max(0, Math.min(1, value));
+    this.masterGain.gain.value = clampedValue;
   }
 
   setGlobalVolume(value) {
@@ -327,16 +406,6 @@ export default class SoundManager {
   }
 
   // BEGIN LEGACY COMPATIBILITY HELPERS ---------------------------------
-  /**
-   * Legacy alias: maintain backward-compatibility with older game code
-   * that still calls soundManager.setGlobalVolume(value).
-   * Internally forwards to setMasterVolume.
-   * @param {number} value
-   */
-  setGlobalVolume(value) {
-    this.setMasterVolume(value);
-  }
-
   /**
    * Getter/Setter pair for direct volume access (0-1). Allows existing
    * code that references soundManager.volume to continue to work while

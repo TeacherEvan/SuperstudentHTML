@@ -1,11 +1,11 @@
 import { BaseLevel } from './baseLevel.js';
-import { GAME_CONFIG } from '../config/constants.js';
-import { LevelSettings } from '../config/gameSettings.js';
+import { GAME_CONFIG } from '../../config/constants.js';
+import { LevelSettings } from '../../config/gameSettings.js';
 
-export default class AlphabetLevel extends BaseLevel {
+export default class NumbersLevel extends BaseLevel {
   constructor(canvas, ctx, managers, helpers) {
     super(canvas, ctx, managers, helpers);
-    this.sequence = GAME_CONFIG.SEQUENCES.alphabet;
+    this.sequence = GAME_CONFIG.SEQUENCES.numbers;
     this.objects = [];
     this.currentIndex = 0;
     this.groupCount = 0;
@@ -30,13 +30,11 @@ export default class AlphabetLevel extends BaseLevel {
       this.spawnTimer = 0;
       this.spawnObject();
     }
-    // Move objects
     const dt = deltaTime / 16;
     this.objects.forEach(obj => {
       obj.x += obj.dx * dt;
       obj.y += obj.dy * dt;
     });
-    // Remove off-screen
     this.objects = this.objects.filter(obj => obj.x > -50 && obj.x < this.canvas.width + 50 && obj.y > -50 && obj.y < this.canvas.height + 50);
   }
 
@@ -48,6 +46,7 @@ export default class AlphabetLevel extends BaseLevel {
     this.ctx.font = `${LevelSettings.text.centerFontSize}px Arial`;
     this.ctx.fillText(this.currentTarget, this.canvas.width / 2, this.canvas.height / 2);
     this.ctx.restore();
+
     // Draw falling objects
     this.objects.forEach(obj => {
       this.ctx.save();
@@ -64,6 +63,7 @@ export default class AlphabetLevel extends BaseLevel {
     const side = Math.floor(Math.random() * 4);
     let x, y, dx, dy;
     const speed = Math.random() * 2 + 1;
+    
     switch (side) {
       case 0: // top
         x = Math.random() * this.canvas.width;
@@ -90,9 +90,14 @@ export default class AlphabetLevel extends BaseLevel {
         dy = (Math.random() - 0.5) * 2;
         break;
     }
+
+    // Randomly choose what number to spawn
+    const chars = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
+    const char = chars[Math.floor(Math.random() * chars.length)];
     const colorArr = GAME_CONFIG.COLORS.COLORS_LIST[Math.floor(Math.random() * GAME_CONFIG.COLORS.COLORS_LIST.length)];
     const color = `rgb(${colorArr.join(',')})`;
-    this.objects.push({ char: this.currentTarget, x, y, dx, dy, color });
+    
+    this.objects.push({ char, x, y, dx, dy, color });
   }
 
   onPointerDown(event) {
@@ -100,10 +105,12 @@ export default class AlphabetLevel extends BaseLevel {
     const rect = this.canvas.getBoundingClientRect();
     const x = (event.clientX - rect.left) * (this.canvas.width / rect.width);
     const y = (event.clientY - rect.top) * (this.canvas.height / rect.height);
+    
     let hit = false;
     this.objects = this.objects.filter(obj => {
       const width = LevelSettings.text.fallingFontSize;
       const height = LevelSettings.text.fallingFontSize;
+      
       if (x > obj.x - width / 2 && x < obj.x + width / 2 && y > obj.y - height && y < obj.y) {
         if (obj.char === this.currentTarget) {
           this.helpers.createExplosion(obj.x, obj.y, obj.color, 1);
@@ -118,7 +125,8 @@ export default class AlphabetLevel extends BaseLevel {
       }
       return true;
     });
-    // Advance or complete
+
+    // Advance to next number or complete level
     if (hit && this.groupCount >= LevelSettings.text.advanceCount) {
       this.currentIndex++;
       if (this.currentIndex >= this.sequence.length) {
