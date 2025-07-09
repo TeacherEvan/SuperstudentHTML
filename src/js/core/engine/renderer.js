@@ -25,6 +25,11 @@ export class Renderer {
     this.canvas.style.width = minWidth + 'px';
     this.canvas.style.height = minHeight + 'px';
     
+    // Reset any existing transforms to avoid cumulative scaling when "setupCanvas" is
+    // invoked multiple times (e.g., on window resize). Without this, each call would
+    // multiply the previous scale, causing the game to appear increasingly zoomed.
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+
     // Scale the context to match device pixel ratio
     this.ctx.scale(devicePixelRatio, devicePixelRatio);
   }
