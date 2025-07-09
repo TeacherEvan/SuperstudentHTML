@@ -1,4 +1,4 @@
-import { ProgressManager } from '../managers/progressManager.js';
+import { ProgressManager } from '../../game/managers/progressManager.js';
 
 // Level selection menu UI
 export class LevelMenu {
