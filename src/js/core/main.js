@@ -46,8 +46,6 @@ let isInitialized = false;
 
 
 /* --- Retry guard to prevent infinite error loops between showLevelMenu and startLevel --- */
-const MAX_MENU_START_RETRIES = 3;
-let menuStartRetryCount = 0;
 const MAX_RETRY_ATTEMPTS = 3;
 const retryAttempts = { showLevelMenu: 0, startLevel: 0, initializeWelcomeScreen: 0 };
 
@@ -235,16 +233,22 @@ function startLevel(levelName) {
     currentLevel.start();
 
     console.log('✅ Level started successfully');
-    menuStartRetryCount = 0;
+    retryAttempts.startLevel = 0;
   } catch (error) {
     console.error('❌ Error starting level:', error);
-    menuStartRetryCount += 1;
-    if (menuStartRetryCount >= MAX_MENU_START_RETRIES) {
+    retryAttempts.startLevel += 1;
+    if (retryAttempts.startLevel >= MAX_RETRY_ATTEMPTS) {
       showFatalErrorScreen('Unable to start the level after multiple attempts.', error);
       return;
     }
     gameState = 'menu';
-    showLevelMenu();
+    
+    // Only call showLevelMenu if it hasn't already exceeded its retry limit
+    if (retryAttempts.showLevelMenu < MAX_RETRY_ATTEMPTS) {
+      showLevelMenu();
+    } else {
+      handleCriticalFailure('Unable to display the level menu after multiple attempts.');
+    }
   }
 }
 
