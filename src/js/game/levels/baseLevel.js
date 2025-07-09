@@ -52,10 +52,13 @@ export class BaseLevel {
 
   // Reset the level state
   reset() {
+    // Clean up any existing entities or listeners
     this.cleanup();
+    // Reset score and flags. Do NOT call init() here because restartGame()
+    // will subsequently invoke start(), which already performs the
+    // asynchronous init(). Calling init() twice caused duplicate listeners
+    // and state corruption.
     this.score = 0;
-    // Re-initialize level
-    this.init();
   }
 
   // Update score

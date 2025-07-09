@@ -9,35 +9,41 @@ export default class SoundManager {
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
     } catch (error) {
       console.error('Failed to create AudioContext:', error);
-      this.audioContext = null;
-      return;
+      this.audioContext = null; // Gracefully handle missing WebAudio support
     }
-    
-    // Master gain
-    this.masterGain = this.audioContext.createGain();
-    this.masterGain.gain.value = audioConfig.masterVolume;
-    this.masterGain.connect(this.audioContext.destination);
-    
-    // Category gains
-    this.gains = {
-      sfx: this.audioContext.createGain(),
-      music: this.audioContext.createGain(),
-      ambient: this.audioContext.createGain(),
-      phonics: this.audioContext.createGain() // Added for phonics sounds
-    };
-    
-    this.gains.sfx.gain.value = audioConfig.sfxVolume;
-    this.gains.music.gain.value = audioConfig.musicVolume;
-    this.gains.ambient.gain.value = audioConfig.musicVolume;
-    this.gains.phonics.gain.value = audioConfig.sfxVolume;
-    
-    // Connect all gains to master
-    Object.values(this.gains).forEach(gain => gain.connect(this.masterGain));
+
+    if (this.audioContext) {
+      // Master gain
+      this.masterGain = this.audioContext.createGain();
+      this.masterGain.gain.value = audioConfig.masterVolume;
+      this.masterGain.connect(this.audioContext.destination);
+
+      // Category gains
+      this.gains = {
+        sfx: this.audioContext.createGain(),
+        music: this.audioContext.createGain(),
+        ambient: this.audioContext.createGain(),
+        phonics: this.audioContext.createGain() // Added for phonics sounds
+      };
+
+      this.gains.sfx.gain.value = audioConfig.sfxVolume;
+      this.gains.music.gain.value = audioConfig.musicVolume;
+      this.gains.ambient.gain.value = audioConfig.musicVolume;
+      this.gains.phonics.gain.value = audioConfig.sfxVolume;
+
+      // Connect all gains to master
+      Object.values(this.gains).forEach(gain => gain.connect(this.masterGain));
+    } else {
+      // Fallback stubs so the rest of the app can continue to run without audio
+      const stubGain = { gain: { value: audioConfig.masterVolume } };
+      this.masterGain = stubGain;
+      this.gains = { sfx: stubGain, music: stubGain, ambient: stubGain, phonics: stubGain };
+    }
     
     // Buffers storage
     this.buffers = {}; // { name: { buffer, type } }
     this.activeSources = {};
-    this.sounds = {}; // For preloaded audio compatibility
+    this.sounds = {}; // For ResourceManager compatibility
 
     // Enhanced features
     this.phonicsCache = new Map(); // Cache for phonics sounds
@@ -49,8 +55,10 @@ export default class SoundManager {
     this.activeSoundsCount = 0;
     this.activeSoundsList = new Set(); // Track active sources for cleanup
     
-    // Initialize default sounds
-    this.initializeDefaultSounds();
+    // Initialize default sounds only if the AudioContext was created successfully
+    if (this.audioContext) {
+      this.initializeDefaultSounds();
+    }
   }
 
   initializeDefaultSounds() {
@@ -190,6 +198,11 @@ export default class SoundManager {
   }
 
   generateSyntheticPhonicsSound(letter, volume = 1.0) {
+    // Bail out if audio is not available
+    if (!this.audioContext) {
+      return null;
+    }
+
     // Create a simple synthetic phonics sound
     const sampleRate = this.audioContext.sampleRate;
     const duration = 0.5;
