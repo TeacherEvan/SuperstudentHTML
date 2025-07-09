@@ -1,3 +1,4 @@
+ cursor/analyze-and-fix-project-errors-f27f
 # Dependencies
 node_modules/
 
@@ -9,3 +10,4 @@ dist/
 
 # Exclude Vite optimized dependencies metadata
 node_modules/.vite/deps/
+main

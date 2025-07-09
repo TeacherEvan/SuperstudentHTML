@@ -78,7 +78,7 @@ wait_for_server() {
 cleanup() {
     print_status "Cleaning up..."
     pkill -f "vite" >/dev/null 2>&1 || true
-    pkill -f "node.*5173" >/dev/null 2>&1 || true
+    pkill -f "node.*3000" >/dev/null 2>&1 || true
     exit 0
 }
 
@@ -117,7 +117,7 @@ main() {
     # Clean up any existing processes
     print_status "Cleaning up any existing game processes..."
     pkill -f "vite" >/dev/null 2>&1 || true
-    pkill -f "node.*5173" >/dev/null 2>&1 || true
+    pkill -f "node.*3000" >/dev/null 2>&1 || true
     
     # Install dependencies
     print_status "Installing dependencies..."

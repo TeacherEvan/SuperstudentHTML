@@ -141,22 +141,22 @@ export default class ResourceManager {
     } catch (e) {
       console.warn('Could not load placeholder image');
     }
-    
-    try {
-      await this.loadAudio('laser', 'assets/sounds/laser.mp3');
-    } catch (e) {
-      console.warn('Could not load laser sound');
-    }
-    try {
-      await this.loadAudio('completion', 'assets/sounds/completion.mp3');
-    } catch (e) {
-      console.warn('Could not load completion sound');
-    }
-    try {
-      await this.loadAudio('ambient_space', 'assets/sounds/ambient_space.mp3');
-    } catch (e) {
-      console.warn('Could not load ambient space sound');
-    }
+    // Deactivate external audio asset loading to avoid missing file errors
+    // try {
+    //   await this.loadAudio('laser', 'assets/sounds/laser.mp3');
+    // } catch (e) {
+    //   console.warn('Could not load laser sound');
+    // }
+    // try {
+    //   await this.loadAudio('completion', 'assets/sounds/completion.mp3');
+    // } catch (e) {
+    //   console.warn('Could not load completion sound');
+    // }
+    // try {
+    //   await this.loadAudio('ambient_space', 'assets/sounds/ambient_space.mp3');
+    // } catch (e) {
+    //   console.warn('Could not load ambient space sound');
+    // }
     
     return { fonts: this.fonts, images: this.images, audio: this.audio };
   }
