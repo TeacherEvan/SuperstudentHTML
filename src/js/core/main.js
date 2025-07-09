@@ -44,15 +44,33 @@ let welcomeScreen;
 let levelCompletionTimer = null; // Track level completion timer
 let isInitialized = false;
 
-// Circuit breaker to prevent infinite loops
-let retryAttempts = {
-  showLevelMenu: 0,
-  startLevel: 0,
-  initializeWelcomeScreen: 0
-};
-const MAX_RETRY_ATTEMPTS = 3;
 
-function resizeCanvas() {
+/* --- Retry guard to prevent infinite error loops between showLevelMenu and startLevel --- */
+const MAX_MENU_START_RETRIES = 3;
+let menuStartRetryCount = 0;
+
+/**
+ * Display a critical error screen and halt further automatic retries.
+ * @param {string} userMessage - Human-readable explanation of the failure.
+ * @param {Error} [err] - Optional original error object for logging.
+ */
+function showFatalErrorScreen(userMessage, err) {
+  if (err) {
+    console.error('🛑 Fatal error encountered:', err);
+  }
+  try {
+    document.body.innerHTML = `
+      <div style="color: white; background: #222; padding: 20px; font-family: Arial; text-align: center;">
+        <h1>Critical Error</h1>
+        <p>${userMessage}</p>
+        <p>Please refresh the page to try again.</p>
+        <button onclick="location.reload()">Refresh Page</button>
+      </div>
+    `;
+  } catch (uiErr) {
+    console.error('❌ Failed to display fatal error screen:', uiErr);
+  }
+}unction resizeCanvas() {
   if (!renderer) {
     console.warn('Renderer not available for resize');
     return;
@@ -113,65 +131,6 @@ function showLevelMenu() {
  cursor/fix-infinite-loop-in-level-menu-34d4
   try {
     console.log('🎮 Showing level menu...');
-    
-=======
-  main
-    // Hide the welcome screen first
-    if (welcomeScreen) {
-      welcomeScreen.hide();
-    }
-    
-    // Create a temporary container for level menu
-    const menuContainer = document.createElement('div');
-    menuContainer.id = 'level-menu-container';
-    menuContainer.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.9);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      color: white;
-    `;
-    document.body.appendChild(menuContainer);
-    
-    const menu = new LevelMenu('level-menu-container', startLevel);
-    menu.show();
-    gameState = 'menu';
-<
-    
-    // Reset retry counter on success
-    retryAttempts.showLevelMenu = 0;
-  } catch (error) {
-    console.error('❌ Error showing level menu:', error);
-    retryAttempts.showLevelMenu++;
-    
-    if (retryAttempts.showLevelMenu < MAX_RETRY_ATTEMPTS) {
-      console.log(`🔄 Retrying level menu display (attempt ${retryAttempts.showLevelMenu}/${MAX_RETRY_ATTEMPTS})`);
-      setTimeout(() => showLevelMenu(), 1000);
-    } else {
-      console.error('💥 Max retry attempts reached for level menu. Attempting fallback to colors level.');
-      // Only call startLevel if we haven't exceeded its retry attempts
-      if (retryAttempts.startLevel < MAX_RETRY_ATTEMPTS) {
-        startLevel('colors');
-      } else {
-        handleCriticalFailure('Unable to show level menu or start fallback level');
-      }
-    }
- main
-  }
-}
-
-// Start the selected level
-function startLevel(levelName) {
- cursor/fix-infinite-loop-in-level-menu-34d4
-  try {
-    console.log(`🎯 Starting level: ${levelName}`);
     
 =======
   main
@@ -243,32 +202,19 @@ main
     
     currentLevel.start();
     
-    // Reset retry counter on success
-    retryAttempts.startLevel = 0;
-    console.log(`✅ Level ${levelName} started successfully`);
+    console.log('✅ Level started successfully');
+    menuStartRetryCount = 0; // Reset retry counter on success
     // GameLoop is already running, no need to call loop()
   } catch (error) {
-    console.error(`❌ Error starting level ${levelName}:`, error);
-    retryAttempts.startLevel++;
-    
-    if (retryAttempts.startLevel < MAX_RETRY_ATTEMPTS) {
-      console.log(`🔄 Retrying level start (attempt ${retryAttempts.startLevel}/${MAX_RETRY_ATTEMPTS})`);
-      // Reset game state before retry
-      gameState = 'menu';
-      setTimeout(() => startLevel(levelName), 1000);
-    } else {
-      console.error('💥 Max retry attempts reached for starting level. Reverting to menu.');
-      gameState = 'menu';
-      // Only call showLevelMenu if we haven't exceeded its retry attempts
-      if (retryAttempts.showLevelMenu < MAX_RETRY_ATTEMPTS) {
-        showLevelMenu();
-      } else {
-        handleCriticalFailure(`Unable to start level ${levelName} or return to menu`);
-      }
+    console.error('❌ Error starting level:', error);
+    menuStartRetryCount++;
+    if (menuStartRetryCount >= MAX_MENU_START_RETRIES) {
+      showFatalErrorScreen('Unable to start the level after multiple attempts.', error);
+      return;
     }
-=======
-     
- main
+    gameState = 'menu';
+    showLevelMenu();
+main
   }
 }
 
@@ -559,7 +505,7 @@ function render() {
 
 // Enhanced canvas setup with better error handling
 function setupCanvas() {
-  console.log('� Setting up canvas...');
+  console.log('🔧 Setting up canvas...');
   
   // Get canvas element
   canvas = document.getElementById('game-canvas');
