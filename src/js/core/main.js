@@ -44,6 +44,33 @@ let welcomeScreen;
 let levelCompletionTimer = null; // Track level completion timer
 let isInitialized = false;
 
+/* --- Retry guard to prevent infinite error loops between showLevelMenu and startLevel --- */
+const MAX_MENU_START_RETRIES = 3;
+let menuStartRetryCount = 0;
+
+/**
+ * Display a critical error screen and halt further automatic retries.
+ * @param {string} userMessage - Human-readable explanation of the failure.
+ * @param {Error} [err] - Optional original error object for logging.
+ */
+function showFatalErrorScreen(userMessage, err) {
+  if (err) {
+    console.error('🛑 Fatal error encountered:', err);
+  }
+  try {
+    document.body.innerHTML = `
+      <div style="color: white; background: #222; padding: 20px; font-family: Arial; text-align: center;">
+        <h1>Critical Error</h1>
+        <p>${userMessage}</p>
+        <p>Please refresh the page to try again.</p>
+        <button onclick="location.reload()">Refresh Page</button>
+      </div>
+    `;
+  } catch (uiErr) {
+    console.error('❌ Failed to display fatal error screen:', uiErr);
+  }
+}
+
 function resizeCanvas() {
   if (!renderer) {
     console.warn('Renderer not available for resize');
@@ -121,8 +148,14 @@ function showLevelMenu() {
     const menu = new LevelMenu('level-menu-container', startLevel);
     menu.show();
     gameState = 'menu';
+    menuStartRetryCount = 0; // Reset retry counter on success
   } catch (error) {
     console.error('❌ Error showing level menu:', error);
+    menuStartRetryCount++;
+    if (menuStartRetryCount >= MAX_MENU_START_RETRIES) {
+      showFatalErrorScreen('Unable to display the level menu after multiple attempts.', error);
+      return;
+    }
     // Fallback: start colors level directly
     startLevel('colors');
   }
@@ -207,9 +240,15 @@ function startLevel(levelName) {
     }
     
     console.log('✅ Level started successfully');
+    menuStartRetryCount = 0; // Reset retry counter on success
     // GameLoop is already running, no need to call loop()
   } catch (error) {
     console.error('❌ Error starting level:', error);
+    menuStartRetryCount++;
+    if (menuStartRetryCount >= MAX_MENU_START_RETRIES) {
+      showFatalErrorScreen('Unable to start the level after multiple attempts.', error);
+      return;
+    }
     gameState = 'menu';
     showLevelMenu();
   }
