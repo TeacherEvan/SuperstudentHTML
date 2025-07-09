@@ -1,0 +1,13 @@
+ cursor/analyze-and-fix-project-errors-f27f
+# Dependencies
+node_modules/
+
+# Vite build cache and optimized modules
+node_modules/.vite/
+
+# Production build output
+dist/
+
+# Exclude Vite optimized dependencies metadata
+node_modules/.vite/deps/
+main
