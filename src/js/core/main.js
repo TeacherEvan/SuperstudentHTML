@@ -70,7 +70,9 @@ function showFatalErrorScreen(userMessage, err) {
   } catch (uiErr) {
     console.error('❌ Failed to display fatal error screen:', uiErr);
   }
-}unction resizeCanvas() {
+}
+
+function resizeCanvas() {
   if (!renderer) {
     console.warn('Renderer not available for resize');
     return;
@@ -121,19 +123,73 @@ function initializeWelcomeScreen() {
         handleCriticalFailure('Unable to initialize welcome screen or level menu');
       }
     }
-
-main
   }
 }
 
 // Show level selection menu
 function showLevelMenu() {
- cursor/fix-infinite-loop-in-level-menu-34d4
   try {
     console.log('🎮 Showing level menu...');
+    // Clear any pending level completion timer
+    if (levelCompletionTimer) {
+      clearTimeout(levelCompletionTimer);
+      levelCompletionTimer = null;
+    }
     
-=======
-  main
+    // Remove level menu container
+    const menuContainer = document.getElementById('level-menu-container');
+    if (menuContainer) {
+      menuContainer.remove();
+    }
+    
+    gameState = 'menu';
+    
+    // Create level menu UI
+    const levelMenuContainer = document.createElement('div');
+    levelMenuContainer.id = 'level-menu-container';
+    levelMenuContainer.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    `;
+    
+    levelMenuContainer.innerHTML = `
+      <h1>Select Level</h1>
+      <div class="level-buttons">
+        <button onclick="startLevel('colors')">Colors</button>
+        <button onclick="startLevel('shapes')">Shapes</button>
+        <button onclick="startLevel('alphabet')">Alphabet</button>
+        <button onclick="startLevel('numbers')">Numbers</button>
+        <button onclick="startLevel('clcase')">Letter Case</button>
+        <button onclick="startLevel('phonics')">Phonics</button>
+      </div>
+    `;
+    
+    document.body.appendChild(levelMenuContainer);
+    
+    console.log('✅ Level menu displayed');
+  } catch (error) {
+    console.error('❌ Error showing level menu:', error);
+    gameState = 'error';
+  }
+}
+
+// Start a specific level
+function startLevel(levelName) {
+  try {
+    console.log(`🎮 Starting level: ${levelName}`);
+    
     // Clear any pending level completion timer
     if (levelCompletionTimer) {
       clearTimeout(levelCompletionTimer);
@@ -153,7 +209,6 @@ function showLevelMenu() {
     // Define common helpers for levels
     const helpers = {
       createExplosion: (x, y, color, intensity) => {
-main
         const count = Math.floor(20 * intensity);
         for (let i = 0; i < count; i++) {
           const angle = Math.random() * Math.PI * 2;
@@ -166,7 +221,6 @@ main
         }
       },
       applyExplosionEffect: (x, y, radius, force) => {
-
         managers.glassShatter.triggerShatter(x, y, force * 0.5);
       },
       onLevelComplete: (score) => {
@@ -214,7 +268,6 @@ main
     }
     gameState = 'menu';
     showLevelMenu();
-main
   }
 }
 
@@ -426,27 +479,17 @@ function handleCriticalFailure(message) {
 }
 
 function handleLevelComplete(levelName, score) {
-
-  progressManager.completeLevel(levelName, score);
-  gameState = 'completed';
-  
-  // Reset retry counters on successful level completion
-  resetRetryCounters();
-  
-  // Clear any existing completion timer
-  if (levelCompletionTimer) {
-    clearTimeout(levelCompletionTimer);
-    levelCompletionTimer = null;
-  }
-  
-  // Show completion celebration
-  managers.checkpoint.showCheckpoint(`Level Complete!<br>Score: ${score}<br>Next level unlocked!`);
-  
-  levelCompletionTimer = setTimeout(() => {
-    // Only show menu if still in completed state
-    if (gameState === 'completed') {
-      showLevelMenu();
-main
+  try {
+    progressManager.completeLevel(levelName, score);
+    gameState = 'completed';
+    
+    // Reset retry counters on successful level completion
+    resetRetryCounters();
+    
+    // Clear any existing completion timer
+    if (levelCompletionTimer) {
+      clearTimeout(levelCompletionTimer);
+      levelCompletionTimer = null;
     }
     
     // Show completion celebration
@@ -630,3 +673,6 @@ window.onload = async () => {
 
 // Export initialization status for debugging
 window.gameInitialized = () => isInitialized;
+
+// Export startLevel function for global access
+window.startLevel = startLevel;
