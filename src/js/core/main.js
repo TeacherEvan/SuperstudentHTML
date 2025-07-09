@@ -41,6 +41,7 @@ let gameState = 'menu'; // menu, playing, paused, gameOver
 let lastTime = 0;
 let gameLoop;
 let welcomeScreen;
+let levelCompletionTimer = null; // Track level completion timer
 
 function resizeCanvas() {
   renderer.setupCanvas();
@@ -100,6 +101,12 @@ function showLevelMenu() {
 // Start the selected level
 function startLevel(levelName) {
   console.log(`🎯 Starting level: ${levelName}`);
+  
+  // Clear any pending level completion timer
+  if (levelCompletionTimer) {
+    clearTimeout(levelCompletionTimer);
+    levelCompletionTimer = null;
+  }
   
   // Remove level menu container
   const menuContainer = document.getElementById('level-menu-container');
@@ -291,11 +298,21 @@ function handleLevelComplete(levelName, score) {
   progressManager.completeLevel(levelName, score);
   gameState = 'completed';
   
+  // Clear any existing completion timer
+  if (levelCompletionTimer) {
+    clearTimeout(levelCompletionTimer);
+    levelCompletionTimer = null;
+  }
+  
   // Show completion celebration
   managers.checkpoint.showCheckpoint(`Level Complete!<br>Score: ${score}<br>Next level unlocked!`);
   
-  setTimeout(() => {
-    showLevelMenu();
+  levelCompletionTimer = setTimeout(() => {
+    // Only show menu if still in completed state
+    if (gameState === 'completed') {
+      showLevelMenu();
+    }
+    levelCompletionTimer = null;
   }, 3000);
 }
 

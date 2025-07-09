@@ -293,33 +293,50 @@ export default class SoundManager {
   playSequence(sounds, delay = 200) {
     this.soundQueue.push({ sounds, delay });
     if (!this.isProcessingQueue) {
-      this.processQueue();
+      this.processQueue().catch(error => {
+        console.warn('Error processing sound queue:', error);
+        this.isProcessingQueue = false;
+      });
     }
   }
 
   async processQueue() {
-    this.isProcessingQueue = true;
-    
-    while (this.soundQueue.length > 0) {
-      const { sounds, delay } = this.soundQueue.shift();
-      
-      for (let i = 0; i < sounds.length; i++) {
-        const sound = sounds[i];
-        if (typeof sound === 'string') {
-          this.playSound(sound);
-        } else if (sound.type === 'phonics') {
-          this.playPhonicsSound(sound.letter, sound.volume);
-        } else if (sound.type === 'sound') {
-          this.playSound(sound.name, sound.volume, sound.pitch);
-        }
-        
-        if (i < sounds.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, delay));
-        }
-      }
+    // Double-check to prevent race conditions
+    if (this.isProcessingQueue) {
+      return;
     }
     
-    this.isProcessingQueue = false;
+    this.isProcessingQueue = true;
+    
+    try {
+      while (this.soundQueue.length > 0) {
+        const { sounds, delay } = this.soundQueue.shift();
+        
+        for (let i = 0; i < sounds.length; i++) {
+          const sound = sounds[i];
+          
+          try {
+            if (typeof sound === 'string') {
+              this.playSound(sound);
+            } else if (sound.type === 'phonics') {
+              this.playPhonicsSound(sound.letter, sound.volume || 1.0);
+            } else if (sound.type === 'sound') {
+              this.playSound(sound.name, sound.volume || 1.0, sound.pitch || 1.0);
+            }
+          } catch (error) {
+            console.warn('Error playing sound in sequence:', error);
+          }
+          
+          if (i < sounds.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error in sound queue processing:', error);
+    } finally {
+      this.isProcessingQueue = false;
+    }
   }
 
   stop(name) {
