@@ -1,0 +1,8 @@
+# Dependencies
+node_modules/
+
+# Vite build cache and optimized modules
+node_modules/.vite/
+
+# Production build output
+dist/
