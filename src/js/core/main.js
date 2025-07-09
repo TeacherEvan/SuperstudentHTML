@@ -420,7 +420,7 @@ function render() {
 
 // Enhanced canvas setup with better error handling
 function setupCanvas() {
-  console.log('� Setting up canvas...');
+  console.log('🔧 Setting up canvas...');
   
   // Get canvas element
   canvas = document.getElementById('game-canvas');
