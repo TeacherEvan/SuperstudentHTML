@@ -6,3 +6,6 @@ node_modules/.vite/
 
 # Production build output
 dist/
+
+# Exclude Vite optimized dependencies metadata
+node_modules/.vite/deps/
