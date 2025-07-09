@@ -51,9 +51,15 @@ export class InputHandler {
       return { x: 0, y: 0 };
     }
     
+    // Use the rendered (CSS) size of the canvas when available; fall back to
+    // the intrinsic width/height attributes. This prevents extreme scaling
+    // when the author relies solely on CSS for sizing.
+    const canvasWidth = this.canvas.offsetWidth || this.canvas.width;
+    const canvasHeight = this.canvas.offsetHeight || this.canvas.height;
+
     // Prevent division by zero
-    const scaleX = rect.width > 0 ? this.canvas.width / rect.width : 1;
-    const scaleY = rect.height > 0 ? this.canvas.height / rect.height : 1;
+    const scaleX = rect.width > 0 ? canvasWidth / rect.width : 1;
+    const scaleY = rect.height > 0 ? canvasHeight / rect.height : 1;
     
     return {
       x: (event.clientX - rect.left) * scaleX,
