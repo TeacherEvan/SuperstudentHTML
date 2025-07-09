@@ -18,6 +18,24 @@ export default class ColorsLevel extends BaseLevel {
     
     // Timer tracking for memory leak prevention
     this.activeTimers = [];
+    
+    // Bind cleanup method to prevent context loss
+    this.cleanup = this.cleanup.bind(this);
+  }
+
+  // Helper method to safely create and track timers
+  createTimer(callback, delay) {
+    const timerId = setTimeout(() => {
+      // Remove timer from tracking array when it executes
+      const index = this.activeTimers.indexOf(timerId);
+      if (index > -1) {
+        this.activeTimers.splice(index, 1);
+      }
+      callback();
+    }, delay);
+    
+    this.activeTimers.push(timerId);
+    return timerId;
   }
 
   async init() {
@@ -45,8 +63,8 @@ export default class ColorsLevel extends BaseLevel {
     this.canvas.addEventListener('pointerdown', this.onPointerDown);
     this.levelStartTime = performance.now();
     
-    const disperseTimer = setTimeout(() => this.disperse(), this.memoryTime);
-    this.activeTimers.push(disperseTimer);
+    // Use safe timer creation
+    this.createTimer(() => this.disperse(), this.memoryTime);
   }
 
   disperse() {
@@ -261,10 +279,9 @@ export default class ColorsLevel extends BaseLevel {
       this.managers.sound.playSuccess();
       
       // Additional pop sound
-      const soundTimer = setTimeout(() => {
+      this.createTimer(() => {
         this.managers.sound.playPop(1.2);
       }, 100);
-      this.activeTimers.push(soundTimer);
     }
     
     // Score calculation with streak bonus
@@ -322,7 +339,7 @@ export default class ColorsLevel extends BaseLevel {
     const centerY = this.canvas.height / 2;
     
     for (let i = 0; i < 3; i++) {
-      const fireworkTimer = setTimeout(() => {
+      this.createTimer(() => {
         this.managers.particleManager.createExplosion(
           centerX + (Math.random() - 0.5) * 200,
           centerY + (Math.random() - 0.5) * 200,
@@ -331,7 +348,6 @@ export default class ColorsLevel extends BaseLevel {
           30
         );
       }, i * 500);
-      this.activeTimers.push(fireworkTimer);
     }
     
     // Calculate bonus score
@@ -341,18 +357,31 @@ export default class ColorsLevel extends BaseLevel {
     this.updateScore(Math.floor(timeBonus + accuracyBonus));
     
     // End level after celebration
-    const endTimer = setTimeout(() => {
+    this.createTimer(() => {
       this.end();
     }, 3000);
-    this.activeTimers.push(endTimer);
   }
 
   cleanup() {
     // Clear all active timers to prevent memory leaks
-    this.activeTimers.forEach(timer => clearTimeout(timer));
+    this.activeTimers.forEach(timer => {
+      try {
+        clearTimeout(timer);
+      } catch (error) {
+        console.warn('Error clearing timer:', error);
+      }
+    });
     this.activeTimers = [];
     
-    this.canvas.removeEventListener('pointerdown', this.onPointerDown);
+    // Safely remove event listener
+    try {
+      this.canvas.removeEventListener('pointerdown', this.onPointerDown);
+    } catch (error) {
+      console.warn('Error removing event listener:', error);
+    }
+    
     this.dots = [];
+    
+    console.log('🧹 ColorsLevel cleanup completed');
   }
 }
