@@ -423,9 +423,7 @@ function handleCriticalFailure(message) {
   console.error('💥 CRITICAL FAILURE:', message);
   
   // Reset all retry counters
-  retryAttempts.showLevelMenu = 0;
-  retryAttempts.startLevel = 0;
-  retryAttempts.initializeWelcomeScreen = 0;
+  resetRetryCounters();
   
   // Set game to a safe error state
   gameState = 'error';
