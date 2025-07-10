@@ -45,9 +45,15 @@ let levelCompletionTimer = null; // Track level completion timer
 let isInitialized = false;
 
 
-/* --- Retry guard to prevent infinite error loops between showLevelMenu and startLevel --- */
-const MAX_MENU_START_RETRIES = 3;
-let menuStartRetryCount = 0;
+/* --- Retry guard to prevent infinite error loops between functions --- */
+const MAX_RETRY_ATTEMPTS = 3;
+
+// Centralized retry tracking system
+const retryAttempts = {
+  showLevelMenu: 0,
+  startLevel: 0,
+  initializeWelcomeScreen: 0
+};
 
 /**
  * Display a critical error screen and halt further automatic retries.
@@ -178,10 +184,20 @@ function showLevelMenu() {
     
     document.body.appendChild(levelMenuContainer);
     
+    retryAttempts.showLevelMenu = 0; // Reset retry counter on success
     console.log('✅ Level menu displayed');
   } catch (error) {
     console.error('❌ Error showing level menu:', error);
-    gameState = 'error';
+    retryAttempts.showLevelMenu++;
+    
+    if (retryAttempts.showLevelMenu >= MAX_RETRY_ATTEMPTS) {
+      handleCriticalFailure('Unable to display level menu after multiple attempts');
+      return;
+    }
+    
+    // Retry showing the level menu
+    console.log(`🔄 Retrying level menu display (attempt ${retryAttempts.showLevelMenu}/${MAX_RETRY_ATTEMPTS})`);
+    setTimeout(() => showLevelMenu(), 1000);
   }
 }
 
@@ -257,17 +273,23 @@ function startLevel(levelName) {
     currentLevel.start();
     
     console.log('✅ Level started successfully');
-    menuStartRetryCount = 0; // Reset retry counter on success
+    retryAttempts.startLevel = 0; // Reset retry counter on success
     // GameLoop is already running, no need to call loop()
   } catch (error) {
     console.error('❌ Error starting level:', error);
-    menuStartRetryCount++;
-    if (menuStartRetryCount >= MAX_MENU_START_RETRIES) {
+    retryAttempts.startLevel++;
+    if (retryAttempts.startLevel >= MAX_RETRY_ATTEMPTS) {
       showFatalErrorScreen('Unable to start the level after multiple attempts.', error);
       return;
     }
     gameState = 'menu';
-    showLevelMenu();
+    
+    // Check if showLevelMenu can still retry before calling it
+    if (retryAttempts.showLevelMenu < MAX_RETRY_ATTEMPTS) {
+      showLevelMenu();
+    } else {
+      handleCriticalFailure('Unable to start level or show level menu after multiple attempts');
+    }
   }
 }
 
