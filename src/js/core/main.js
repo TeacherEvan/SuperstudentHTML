@@ -45,15 +45,9 @@ let levelCompletionTimer = null; // Track level completion timer
 let isInitialized = false;
 
 
-cursor/fix-merge-conflict-markers-in-functions-fd0b
-/* --- Retry guard to prevent infinite error loops between showLevelMenu and startLevel --- */
-const MAX_RETRY_ATTEMPTS = 3;
-const retryAttempts = { showLevelMenu: 0, startLevel: 0, initializeWelcomeScreen: 0 };
-=======
 /* --- Retry guard to prevent infinite error loops between functions --- */
 const MAX_RETRY_ATTEMPTS = 3;
-
- main
+const retryAttempts = { showLevelMenu: 0, startLevel: 0, initializeWelcomeScreen: 0 };
 
 /**
  * Display a critical error screen and halt further automatic retries.
@@ -136,8 +130,7 @@ function initializeWelcomeScreen() {
 function showLevelMenu() {
   try {
     console.log('🎮 Showing level menu...');
-
-=======
+    
     // Clear any pending level completion timer
     if (levelCompletionTimer) {
       clearTimeout(levelCompletionTimer);
@@ -275,28 +268,23 @@ function startLevel(levelName) {
     currentLevel.start();
 
     console.log('✅ Level started successfully');
-;
-=======
     retryAttempts.startLevel = 0; // Reset retry counter on success
     // GameLoop is already running, no need to call loop()
   } catch (error) {
     console.error('❌ Error starting level:', error);
     retryAttempts.startLevel++;
- main
+    
     if (retryAttempts.startLevel >= MAX_RETRY_ATTEMPTS) {
       showFatalErrorScreen('Unable to start the level after multiple attempts.', error);
       return;
     }
     gameState = 'menu';
     
-
-=======
     // Check if showLevelMenu can still retry before calling it
     if (retryAttempts.showLevelMenu < MAX_RETRY_ATTEMPTS) {
       showLevelMenu();
     } else {
       handleCriticalFailure('Unable to start level or show level menu after multiple attempts');
-main
     }
   }
 }
@@ -512,13 +500,10 @@ function handleLevelComplete(levelName, score) {
   try {
     progressManager.completeLevel(levelName, score);
     gameState = 'completed';
-
-=======
     
     // Reset retry counters on successful level completion
     resetRetryCounters();
     
- main
     // Clear any existing completion timer
     if (levelCompletionTimer) {
       clearTimeout(levelCompletionTimer);
