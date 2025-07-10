@@ -45,15 +45,15 @@ let levelCompletionTimer = null; // Track level completion timer
 let isInitialized = false;
 
 
+cursor/fix-merge-conflict-markers-in-functions-fd0b
+/* --- Retry guard to prevent infinite error loops between showLevelMenu and startLevel --- */
+const MAX_RETRY_ATTEMPTS = 3;
+const retryAttempts = { showLevelMenu: 0, startLevel: 0, initializeWelcomeScreen: 0 };
+=======
 /* --- Retry guard to prevent infinite error loops between functions --- */
 const MAX_RETRY_ATTEMPTS = 3;
 
-// Centralized retry tracking system
-const retryAttempts = {
-  showLevelMenu: 0,
-  startLevel: 0,
-  initializeWelcomeScreen: 0
-};
+ main
 
 /**
  * Display a critical error screen and halt further automatic retries.
@@ -136,6 +136,8 @@ function initializeWelcomeScreen() {
 function showLevelMenu() {
   try {
     console.log('🎮 Showing level menu...');
+
+=======
     // Clear any pending level completion timer
     if (levelCompletionTimer) {
       clearTimeout(levelCompletionTimer);
@@ -207,22 +209,22 @@ function startLevel(levelName) {
     console.log(`🎮 Starting level: ${levelName}`);
     
     // Clear any pending level completion timer
+ main
     if (levelCompletionTimer) {
       clearTimeout(levelCompletionTimer);
       levelCompletionTimer = null;
     }
-    
-    // Remove level menu container
+
+    // Remove the menu UI
     const menuContainer = document.getElementById('level-menu-container');
     if (menuContainer) {
       menuContainer.remove();
     }
-    
+
     gameState = 'playing';
     currentLevelName = levelName;
     initializeManagers();
-    
-    // Define common helpers for levels
+
     const helpers = {
       createExplosion: (x, y, color, intensity) => {
         const count = Math.floor(20 * intensity);
@@ -243,10 +245,10 @@ function startLevel(levelName) {
         handleLevelComplete(levelName, score);
       }
     };
-    
+
     lastTime = performance.now();
-    
-    // Choose level class based on name
+
+    // Instantiate the chosen level
     switch (levelName) {
       case 'colors':
         currentLevel = new ColorsLevel(canvas, ctx, managers, helpers);
@@ -269,26 +271,32 @@ function startLevel(levelName) {
       default:
         currentLevel = new ColorsLevel(canvas, ctx, managers, helpers);
     }
-    
+
     currentLevel.start();
-    
+
     console.log('✅ Level started successfully');
+;
+=======
     retryAttempts.startLevel = 0; // Reset retry counter on success
     // GameLoop is already running, no need to call loop()
   } catch (error) {
     console.error('❌ Error starting level:', error);
     retryAttempts.startLevel++;
+ main
     if (retryAttempts.startLevel >= MAX_RETRY_ATTEMPTS) {
       showFatalErrorScreen('Unable to start the level after multiple attempts.', error);
       return;
     }
     gameState = 'menu';
     
+
+=======
     // Check if showLevelMenu can still retry before calling it
     if (retryAttempts.showLevelMenu < MAX_RETRY_ATTEMPTS) {
       showLevelMenu();
     } else {
       handleCriticalFailure('Unable to start level or show level menu after multiple attempts');
+main
     }
   }
 }
@@ -504,19 +512,22 @@ function handleLevelComplete(levelName, score) {
   try {
     progressManager.completeLevel(levelName, score);
     gameState = 'completed';
+
+=======
     
     // Reset retry counters on successful level completion
     resetRetryCounters();
     
+ main
     // Clear any existing completion timer
     if (levelCompletionTimer) {
       clearTimeout(levelCompletionTimer);
       levelCompletionTimer = null;
     }
-    
+  
     // Show completion celebration
     managers.checkpoint.showCheckpoint(`Level Complete!<br>Score: ${score}<br>Next level unlocked!`);
-    
+  
     levelCompletionTimer = setTimeout(() => {
       // Only show menu if still in completed state
       if (gameState === 'completed') {
