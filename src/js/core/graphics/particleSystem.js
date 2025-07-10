@@ -60,6 +60,7 @@ export default class ParticleManager {
       type: 'circle',
       trail: false,
       trailPositions: [],
+      inActiveArray: false, // Track if particle is in active particles array
       physics: {
         gravity: true,
         bounce: false,
@@ -129,9 +130,10 @@ export default class ParticleManager {
     particle.physics.bounce = options.bounce || false;
     particle.physics.friction = options.friction || 0.99;
     
-    // Only add to particles array if not already there
-    if (!this.particles.includes(particle)) {
+    // Use a more efficient approach - track if particle is in array
+    if (!particle.inActiveArray) {
       this.particles.push(particle);
+      particle.inActiveArray = true;
     }
     this.activeParticles++;
     
@@ -237,6 +239,7 @@ export default class ParticleManager {
   deactivateParticle(particle) {
     particle.active = false;
     particle.trailPositions = [];
+    particle.inActiveArray = false; // Reset flag when deactivating
     this.activeParticles--;
   }
 
