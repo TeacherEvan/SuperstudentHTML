@@ -295,11 +295,23 @@ export default class SoundManager {
   }
 
   playSuccess() {
+    return this.playSound('success', 0.8);
+  }
+
+  playError() {
+    return this.playSound('wrong', 0.6);
+  }
+
+  playAdvance() {
+    return this.playSound('success', 0.5);
+  }
+
+  playCompletion() {
     return this.playSound('success', 1.0);
   }
 
   playWrong() {
-    return this.playSound('wrong', 1.0);
+    return this.playSound('wrong', 0.6);
   }
 
   // Sound sequencing for educational feedback

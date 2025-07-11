@@ -17,6 +17,7 @@ import NumbersLevel from '../game/levels/numbersLevel.js';
 import ClCaseLevel from '../game/levels/clCaseLevel.js';
 import { PhonicsLevel } from '../game/levels/phonics/PhonicsLevel.js';
 import { LevelMenu } from '../ui/components/levelMenu.js';
+import { LevelCompletionScreen } from '../ui/components/levelCompletionScreen.js';
 import { InputHandler } from '../inputHandler.js';
 import { getDisplaySettings } from '../config/displayModes.js';
 import { getAudioConfig } from './audio/audioConfig.js';
@@ -41,6 +42,7 @@ let gameState = 'menu'; // menu, playing, paused, gameOver
 let lastTime = 0;
 let gameLoop;
 let welcomeScreen;
+let levelCompletionScreen;
 let levelCompletionTimer = null; // Track level completion timer
 let isInitialized = false;
 
@@ -513,28 +515,35 @@ function handleLevelComplete(levelName, score) {
     progressManager.completeLevel(levelName, score);
     gameState = 'completed';
 
-=======
-    
     // Reset retry counters on successful level completion
     resetRetryCounters();
     
- main
     // Clear any existing completion timer
     if (levelCompletionTimer) {
       clearTimeout(levelCompletionTimer);
       levelCompletionTimer = null;
     }
-  
-    // Show completion celebration
-    managers.checkpoint.showCheckpoint(`Level Complete!<br>Score: ${score}<br>Next level unlocked!`);
-  
-    levelCompletionTimer = setTimeout(() => {
-      // Only show menu if still in completed state
-      if (gameState === 'completed') {
-        showLevelMenu();
-      }
-      levelCompletionTimer = null;
-    }, 3000);
+
+    // Calculate total possible score for this level
+    let totalPossible = 1000; // Default
+    if (levelName === 'colors') {
+      totalPossible = 1700; // 17 targets * 100 points each
+    } else if (['alphabet', 'numbers', 'clcase', 'shapes'].includes(levelName)) {
+      totalPossible = 2600; // 26 letters/numbers * 100 points each
+    }
+
+    // Show completion screen
+    if (!levelCompletionScreen) {
+      levelCompletionScreen = new LevelCompletionScreen();
+      levelCompletionScreen.setCallbacks(
+        () => startLevel(levelName), // Restart current level
+        () => showLevelMenu(), // Go to level menu
+        () => showLevelMenu() // Back to menu
+      );
+    }
+    
+    levelCompletionScreen.show(levelName, score, totalPossible);
+    
   } catch (error) {
     console.error('❌ Error handling level completion:', error);
     showLevelMenu();
