@@ -55,7 +55,7 @@ export default defineConfig({
   
   // Development server configuration
   server: {
-    port: 3005,
+    port: 3000,
     open: true,
     host: 'localhost',
     

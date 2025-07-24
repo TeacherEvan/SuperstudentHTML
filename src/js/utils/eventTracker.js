@@ -123,9 +123,66 @@ export class EventTracker {
     }
   }
 
+  // Update visual overlay for errors and warnings
+  updateOverlay(message, type = "info") {
+    if (!this.options.overlay) return;
+
+    if (!this.overlayEl) {
+      this.createOverlay();
+    }
+
+    const div = document.createElement("div");
+    div.className = `overlay-${type}`;
+    div.textContent = message;
+
+    // Add styling based on type
+    const colors = {
+      error: "rgba(255, 0, 0, 0.9)",
+      warning: "rgba(255, 165, 0, 0.9)",
+      info: "rgba(0, 100, 200, 0.9)",
+    };
+
+    div.style.background = colors[type] || colors.info;
+    div.style.color = "#fff";
+    div.style.padding = "2px 4px";
+    div.style.marginBottom = "1px";
+
+    this.overlayEl.appendChild(div);
+
+    // Auto-remove info messages after 3 seconds
+    if (type === "info") {
+      setTimeout(() => {
+        if (div.parentNode) {
+          div.parentNode.removeChild(div);
+        }
+      }, 3000);
+    }
+  }
+
+  // Create the overlay element
+  createOverlay() {
+    this.overlayEl = document.createElement("div");
+    this.overlayEl.id = "event-tracker-overlay";
+    this.overlayEl.style.cssText = `
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 99999;
+      max-width: 400px;
+      max-height: 300px;
+      overflow-y: auto;
+      font: 12px/1.4 monospace;
+      pointer-events: none;
+      border-radius: 4px;
+    `;
+    document.body.appendChild(this.overlayEl);
+  }
+
+  // Set up global error handlers
   setupGlobalErrorHandlers() {
     window.addEventListener("error", (e) => {
       this.trackError(e.error || new Error(e.message), {
+        source: "global",
         filename: e.filename,
         lineno: e.lineno,
         colno: e.colno,
@@ -133,84 +190,94 @@ export class EventTracker {
     });
 
     window.addEventListener("unhandledrejection", (e) => {
-      this.trackError(
-        e.reason instanceof Error ? e.reason : new Error(e.reason),
-        {}
-      );
+      this.trackError(e.reason || new Error("Unhandled Promise Rejection"), {
+        source: "promise",
+        type: "unhandled_rejection",
+      });
     });
   }
 
-  // Update overlay display (optional visual feedback)
-  updateOverlay(message, type = "info") {
-    if (!this.options.overlay) return;
-
-    // Create overlay if it doesn't exist
-    if (!this.overlayEl) {
-      this.overlayEl = document.createElement("div");
-      this.overlayEl.id = "event-tracker-overlay";
-      this.overlayEl.style.cssText = `
-        position: fixed;
-        top: 10px;
-        right: 10px;
-        background: rgba(0,0,0,0.8);
-        color: white;
-        padding: 10px;
-        border-radius: 5px;
-        font-family: monospace;
-        font-size: 12px;
-        z-index: 10000;
-        max-width: 300px;
-        word-wrap: break-word;
-        pointer-events: none;
-      `;
-      document.body.appendChild(this.overlayEl);
-    }
-
-    // Update overlay content
-    const time = new Date().toLocaleTimeString();
-    this.overlayEl.innerHTML = `[${time}] ${message}`;
-
-    // Apply type-specific styling
-    if (type === "error") {
-      this.overlayEl.style.background = "rgba(255,0,0,0.8)";
-    } else if (type === "warning") {
-      this.overlayEl.style.background = "rgba(255,165,0,0.8)";
-    } else {
-      this.overlayEl.style.background = "rgba(0,0,0,0.8)";
-    }
-
-    // Auto-hide overlay after 3 seconds
-    setTimeout(() => {
-      if (this.overlayEl) {
-        this.overlayEl.style.opacity = "0.5";
-      }
-    }, 3000);
-  }
-
-  // Get filtered event log
-  getEventLog(filter = {}) {
-    let filteredLog = this.eventLog;
+  // Get filtered log entries
+  getEvents(filter = {}) {
+    let events = this.eventLog.slice();
 
     if (filter.type) {
-      filteredLog = filteredLog.filter((entry) => entry.type === filter.type);
+      events = events.filter((e) => e.type === filter.type);
     }
 
     if (filter.category) {
-      filteredLog = filteredLog.filter(
-        (entry) => entry.category === filter.category
-      );
+      events = events.filter((e) => e.category === filter.category);
     }
 
     if (filter.level) {
-      filteredLog = filteredLog.filter((entry) => entry.level === filter.level);
+      events = events.filter((e) => e.level === filter.level);
     }
 
-    return filteredLog;
+    if (filter.since) {
+      events = events.filter((e) => e.timestamp >= filter.since);
+    }
+
+    return events;
   }
 
-  // Clear event log
-  clearLog() {
-    this.eventLog = [];
-    this.trackEvent("system", "log_cleared", { timestamp: Date.now() });
+  // Clear log entries
+  clear(type = null) {
+    if (type) {
+      this.eventLog = this.eventLog.filter((e) => e.type !== type);
+    } else {
+      this.eventLog = [];
+    }
+
+    if (this.overlayEl) {
+      this.overlayEl.innerHTML = "";
+    }
   }
+
+  // Export log as JSON for analysis
+  exportLog() {
+    return JSON.stringify(this.eventLog, null, 2);
+  }
+
+  // Get summary statistics
+  getSummary() {
+    const summary = {
+      total: this.eventLog.length,
+      byType: {},
+      byLevel: {},
+      timeRange: null,
+    };
+
+    this.eventLog.forEach((entry) => {
+      // Count by type
+      summary.byType[entry.type] = (summary.byType[entry.type] || 0) + 1;
+
+      // Count by level
+      summary.byLevel[entry.level] = (summary.byLevel[entry.level] || 0) + 1;
+    });
+
+    // Calculate time range
+    if (this.eventLog.length > 0) {
+      const timestamps = this.eventLog.map((e) => e.timestamp);
+      summary.timeRange = {
+        start: Math.min(...timestamps),
+        end: Math.max(...timestamps),
+        duration: Math.max(...timestamps) - Math.min(...timestamps),
+      };
+    }
+
+    return summary;
+  }
+}
+
+// Create a singleton instance for global use
+export const eventTracker = new EventTracker();
+
+// Legacy compatibility function
+export function initializeErrorTracker(options = {}) {
+  eventTracker.options = { ...eventTracker.options, ...options };
+  eventTracker.initialize();
+  return {
+    getErrors: () => eventTracker.getEvents({ type: "error" }),
+    clear: () => eventTracker.clear("error"),
+  };
 }

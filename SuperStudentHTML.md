@@ -2,8 +2,6 @@
 
 This prompt outlines how to reimplement the **Super Student** game using **HTML**, **CSS**, and **JavaScript**. The goal is to replicate the same full-screen interactive layout, level logic, particle effects, and resource management in a browser environment. To keep the code organized, maintainable, and performant, split functionality across multiple files and directories.
 
-> **Current Development Status (July 1 2025):** The core engine initializes, renders the welcome screen, and the Colors level is playable with basic scoring and effects. Other levels are present as skeletons but lack complete gameplay logic. Progression, HUD, and several manager systems compile but still need integration tests, polish, and asset replacement. Refer to `job_card.md` for the active task list.
-
 ---
 
 ## Game Overview & Core Mechanics

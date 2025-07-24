@@ -1,0 +1,108 @@
+  Audit Summary
+
+  Your project appears to be a modern HTML5/JavaScript educational game using Vite as a build tool. The
+  codebase is structured into modules for different game functionalities like rendering, input handling,
+  state management, and various game levels.
+
+  Key Observations:
+
+   1. Code Duplication/Organization: There is significant structural duplication. For example, you have
+      src/js/levels and src/game/levels, as well as src/js/managers and src/game/managers. This suggests a
+      potential consolidation issue where code might be hard to find, maintain, and reason about. The primary
+      source code seems to be migrating towards the src/ directory, but legacy structures might still exist.
+   2. Modularity: The project is well-modularized into distinct systems (e.g., particleSystem, resourceManager,
+       soundManager), which is excellent for maintainability and targeted optimization.
+   3. Error Handling: The presence of src/utils/errorTracker.js is a great starting point. It indicates that a
+      mechanism for error handling exists, which we can expand into a comprehensive event tracking system for
+      debugging.
+   4. Potential for Optimization: As with any game, there are likely significant opportunities to optimize
+      performance in rendering, asset loading, and memory management, especially in the core game loop and
+      particle systems.
+
+  ---
+
+  Detailed Multi-Phase Plan
+
+  This plan is designed to be executed sequentially. Each phase builds upon the last, starting with
+  foundational cleanup and moving towards fine-grained performance tuning.
+
+  Phase 1: Foundational Cleanup & Diagnostic Tooling
+
+  This phase focuses on cleaning up the codebase and implementing the requested event tracking system. A
+  clean, observable foundation is crucial before starting any optimization.
+
+  1. Code Consolidation and Refactoring:
+   * Goal: Create a single source of truth for all game logic.
+   * Action:
+       * Analyze the contents of the duplicate directories (src/js vs. src/game, etc.).
+       * Merge the logic into a single, coherent structure. The recommended structure would be to place all
+         core game logic under src/game/.
+       * Safely remove the old directories after ensuring all imports and references are updated.
+       * Review index.html and vite.config.js to ensure they point to the correct entry script (e.g.,
+         src/js/main.js or a new consolidated entry point).
+
+  2. Implement the Event & Debugging Tracker:
+   * Goal: Enhance the existing errorTracker.js to create a centralized event bus for tracking key game
+     events, errors, and state changes. This will be invaluable for debugging integration issues.
+   * Action:
+       * Modify `src/utils/errorTracker.js`:
+           * Rename it to eventTracker.js to reflect its new role.
+           * Create a class EventTracker with methods like:
+               * trackEvent(category, action, data = {}): For general event logging.
+               * trackError(error, context = {}): For logging caught exceptions.
+               * trackState(stateName, value): For tracking changes in game state.
+           * Implement a simple logging mechanism that outputs formatted messages to the browser's console
+             (e.g., console.log, console.error).
+       * Integrate the Tracker:
+           * Import and instantiate the EventTracker in your main game file.
+           * Track Game State: In gameState.js, call eventTracker.trackState() whenever the score, level, or
+             lives change.
+           * Track Resource Loading: In resourceManager.js, call eventTracker.trackEvent('resource',
+             'load_start'), trackEvent('resource', 'load_success', { asset }), and trackError on failure.
+           * Track User Input: In inputHandler.js, call eventTracker.trackEvent('input', 'click', { x, y })
+             for mouse/touch events.
+           * Track Level Progression: In your level management logic, call eventTracker.trackEvent('level',
+             'start', { levelId }) and eventTracker.trackEvent('level', 'end', { levelId, score }).
+           * Wrap Critical Systems: Wrap the update and draw methods of major systems (like particleSystem.js)
+              in try...catch blocks that report to eventTracker.trackError.
+
+  Phase 2: Performance Optimization
+
+  With a clean codebase and diagnostic tools in place, we can now focus on performance.
+
+  1. Rendering Performance:
+   * Goal: Ensure a smooth frame rate by optimizing the rendering pipeline.
+   * Action:
+       * Analyze `renderer.js` and `gameLoop.js`: Use the browser's Performance profiler to identify
+         bottlenecks in the rendering cycle.
+       * Implement Object Pooling: For systems that create and destroy many objects (e.g., particleSystem.js,
+         BubbleSystem.js), implement an object pool to reuse objects instead of creating new ones, reducing
+         garbage collection pauses.
+       * Canvas Layering: If not already done, consider using multiple stacked canvas layers. One for the
+         static background, one for the main gameplay, and one for the HUD. This prevents re-drawing the
+         entire scene every frame.
+
+  2. Asset and Memory Optimization:
+   * Goal: Reduce initial load times and prevent memory leaks.
+   * Action:
+       * Asset Compression: Compress all images (assets/images/) and sounds (assets/sounds/) using appropriate
+          tools and formats (e.g., WEBP for images, OGG/MP3 for audio).
+       * Lazy Loading: Modify resourceManager.js and level files to load assets on-demand for each level,
+         rather than loading everything at the start.
+       * Memory Leak Analysis: Use the browser's Memory profiler. Play through several levels and return to
+         the menu. Check for detached DOM elements or objects that have not been garbage collected. Ensure
+         event listeners are properly removed when objects are destroyed.
+
+  Phase 3: Build and Deployment
+
+  1. Vite Build Optimization:
+   * Goal: Ensure the production build is as small and efficient as possible.
+   * Action:
+       * Review `vite.config.js`: Ensure that settings for build.minify, build.cssCodeSplit, and
+         build.sourcemap are correctly configured for production.
+       * Bundle Analysis: Add the rollup-plugin-visualizer to your Vite config to generate a visual map of
+         your final bundle. This will help identify large or unnecessary dependencies that can be removed or
+         code-split.
+
+  I will wait for your signal to begin implementing this plan, starting with Phase 1. Please let me know how
+   you'd like to proceed.

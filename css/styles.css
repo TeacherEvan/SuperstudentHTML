@@ -30,161 +30,43 @@ html, body {
   justify-content: center;
   color: #fff;
   text-align: center;
-  padding: 20px;
-  box-sizing: border-box;
 }
 
 #welcome-screen h1 {
   font-size: 72px;
-  margin: 10px 0 20px 0;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-}
-
-.game-description {
-  font-size: 20px;
   margin: 10px 0;
-  max-width: 600px;
-  line-height: 1.4;
-  color: #4ECDC4;
-  font-weight: 500;
 }
 
-.instruction-text {
-  font-size: 16px;
-  margin: 15px 0 25px 0;
-  color: #ccc;
-}
-
-/* Display Mode Selection Interface */
-.display-mode-selection {
-  margin: 20px 0;
-  padding: 15px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  backdrop-filter: blur(5px);
-}
-
-.display-mode-selection label {
-  display: block;
-  font-size: 14px;
-  margin-bottom: 8px;
-  color: #fff;
-  font-weight: bold;
-}
-
-#display-mode-welcome {
-  padding: 8px 12px;
-  font-size: 14px;
-  border: none;
-  border-radius: 4px;
-  background: #2C2C54;
-  color: #fff;
-  min-width: 250px;
-  cursor: pointer;
-}
-
-#display-mode-welcome:focus {
-  outline: 2px solid #4ECDC4;
-  outline-offset: 2px;
-}
-
-/* Button Group */
-.button-group {
-  margin: 25px 0;
-  display: flex;
-  gap: 15px;
+#welcome-screen p {
+  font-size: 24px;
+  margin: 5px 0;
 }
 
 .welcome-button {
   padding: 15px 30px;
+  margin: 10px;
   font-size: 18px;
   color: #fff;
   background: #007ACC;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-weight: bold;
+  transition: background 0.3s;
 }
 
 .welcome-button:hover {
   background: #005A9E;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 122, 204, 0.3);
 }
 
 .welcome-button:active {
   background: #003F6B;
-  transform: translateY(0);
 }
 
-/* Credits and Collaboration Text */
-.credits {
+/* Footer credit */
+#welcome-screen footer {
   position: absolute;
   bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  text-align: center;
-  width: 90%;
-  max-width: 800px;
-}
-
-.collaboration-text {
-  margin-bottom: 10px;
-}
-
-.collaboration-text p {
   font-size: 12px;
-  margin: 4px 0;
-  color: #aaa;
-  line-height: 1.3;
-}
-
-.version-info {
-  font-size: 11px;
-  color: #666;
-  font-style: italic;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  #welcome-screen h1 {
-    font-size: 48px;
-  }
-  
-  .game-description {
-    font-size: 16px;
-    max-width: 90%;
-  }
-  
-  .button-group {
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .welcome-button {
-    width: 200px;
-  }
-  
-  #display-mode-welcome {
-    min-width: 200px;
-  }
-}
-
-@media (max-width: 480px) {
-  #welcome-screen h1 {
-    font-size: 36px;
-  }
-  
-  .game-description {
-    font-size: 14px;
-  }
-  
-  .collaboration-text p {
-    font-size: 10px;
-  }
 }
 
 /* Settings modal overlay */
