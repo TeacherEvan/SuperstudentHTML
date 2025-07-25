@@ -22,10 +22,14 @@ import { GameLoop } from "./engine/gameLoop.js";
 import { Renderer } from "./engine/renderer.js";
 import ParticleManager from "./graphics/particleSystem.js";
 import ResourceManager from "./resources/resourceManager.js";
+import { LevelCompletionScreen } from '../ui/components/levelCompletionScreen.js';
+import { GAME_CONFIG } from '../config/constants.js';
+import { WelcomeScreen } from '../ui/components/welcomeScreen.js';
+import { initializeErrorTracker } from '../utils/errorTracker.js';
 
-const canvas = document.getElementById("game-canvas");
-const renderer = new Renderer(canvas);
-const ctx = renderer.ctx;
+let canvas = document.getElementById("game-canvas");
+let renderer = new Renderer(canvas);
+let ctx = renderer.ctx;
 
 // Current display-specific settings
 let displaySettings;
@@ -39,6 +43,38 @@ let currentLevelName = "";
 let gameState = "menu"; // menu, playing, paused, gameOver
 let lastTime = 0;
 let gameLoop;
+let welcomeScreen;
+let levelCompletionScreen;
+let levelCompletionTimer = null; // Track level completion timer
+let isInitialized = false;
+
+
+/* --- Retry guard to prevent infinite error loops between functions --- */
+const MAX_RETRY_ATTEMPTS = 3;
+const retryAttempts = { showLevelMenu: 0, startLevel: 0, initializeWelcomeScreen: 0 };
+
+/**
+ * Display a critical error screen and halt further automatic retries.
+ * @param {string} userMessage - Human-readable explanation of the failure.
+ * @param {Error} [err] - Optional original error object for logging.
+ */
+function showFatalErrorScreen(userMessage, err) {
+  if (err) {
+    console.error('🛑 Fatal error encountered:', err);
+  }
+  try {
+    document.body.innerHTML = `
+      <div style="color: white; background: #222; padding: 20px; font-family: Arial; text-align: center;">
+        <h1>Critical Error</h1>
+        <p>${userMessage}</p>
+        <p>Please refresh the page to try again.</p>
+        <button onclick="location.reload()">Refresh Page</button>
+      </div>
+    `;
+  } catch (uiErr) {
+    console.error('❌ Failed to display fatal error screen:', uiErr);
+  }
+}
 
 function resizeCanvas() {
   renderer.setupCanvas();
@@ -50,63 +86,112 @@ function resizeCanvas() {
   }
 }
 
-// Show welcome screen with start and options
-function showWelcomeScreen() {
-  console.log("🏠 showWelcomeScreen() called");
-  const welcome = document.getElementById("welcome-screen");
-  console.log("🏠 Welcome element found:", welcome);
+// Initialize and show welcome screen with animated background
+function initializeWelcomeScreen() {
 
-  if (!welcome) {
-    console.error("❌ CRITICAL: welcome-screen element not found in DOM!");
-    return;
+  try {
+    console.log('🏠 Initializing WelcomeScreen class with animated background...');
+    
+    // Create WelcomeScreen instance as specified in SuperStudentHTML.md
+    welcomeScreen = new WelcomeScreen(canvas, ctx, resourceManager);
+    welcomeScreen.setCallbacks(showLevelMenu, showOptions);
+    welcomeScreen.show();
+    
+    // Reset retry counter on success
+    retryAttempts.initializeWelcomeScreen = 0;
+    console.log('✅ WelcomeScreen initialized with animated background!');
+  } catch (error) {
+    console.error('❌ Error initializing welcome screen:', error);
+    retryAttempts.initializeWelcomeScreen++;
+    
+    if (retryAttempts.initializeWelcomeScreen < MAX_RETRY_ATTEMPTS) {
+      console.log(`🔄 Retrying welcome screen initialization (attempt ${retryAttempts.initializeWelcomeScreen}/${MAX_RETRY_ATTEMPTS})`);
+      setTimeout(() => initializeWelcomeScreen(), 1000);
+    } else {
+      console.error('💥 Max retry attempts reached for welcome screen. Falling back to level menu.');
+      // Only call showLevelMenu if we haven't exceeded its retry attempts
+      if (retryAttempts.showLevelMenu < MAX_RETRY_ATTEMPTS) {
+        showLevelMenu();
+      } else {
+        handleCriticalFailure('Unable to initialize welcome screen or level menu');
+      }
+    }
   }
-
-  console.log("🏠 Setting welcome screen HTML...");
-  welcome.innerHTML = `
-    <h1>Super Student</h1>
-    <p>Train your brain with fun puzzles</p>
-    <p>Click 'Start Game' to begin</p>
-    <button class="welcome-button" id="start-button">Start Game</button>
-    <button class="welcome-button" id="options-button">Options</button>
-    <footer>v1.0 — Developed by YourName</footer>
-  `;
-
-  // Make sure it's visible
-  welcome.style.display = "flex";
-  console.log("🏠 Welcome screen display set to flex");
-
-  const startBtn = document.getElementById("start-button");
-  const optionsBtn = document.getElementById("options-button");
-
-  console.log("🏠 Start button found:", startBtn);
-  console.log("🏠 Options button found:", optionsBtn);
-
-  if (startBtn) {
-    startBtn.addEventListener("click", showLevelMenu);
-    console.log("🏠 Start button event listener added");
-  }
-
-  if (optionsBtn) {
-    optionsBtn.addEventListener("click", showOptions);
-    console.log("🏠 Options button event listener added");
-  }
-
-  console.log("🏠 Welcome screen setup complete!");
 }
 
 // Show level selection menu
 function showLevelMenu() {
-  const welcome = document.getElementById("welcome-screen");
-  welcome.innerHTML = "";
-  welcome.style.display = "flex";
-  const menu = new LevelMenu("welcome-screen", startLevel);
-  menu.show();
+  try {
+    console.log('🎮 Showing level menu...');
+    
+    // Clear any pending level completion timer
+    if (levelCompletionTimer) {
+      clearTimeout(levelCompletionTimer);
+      levelCompletionTimer = null;
+    }
+    
+    // Remove level menu container
+    const menuContainer = document.getElementById('level-menu-container');
+    if (menuContainer) {
+      menuContainer.remove();
+    }
+    
+    gameState = 'menu';
+    
+    // Create level menu UI
+    const levelMenuContainer = document.createElement('div');
+    levelMenuContainer.id = 'level-menu-container';
+    levelMenuContainer.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    `;
+    
+    levelMenuContainer.innerHTML = `
+      <h1>Select Level</h1>
+      <div class="level-buttons">
+        <button onclick="startLevel('colors')">Colors</button>
+        <button onclick="startLevel('shapes')">Shapes</button>
+        <button onclick="startLevel('alphabet')">Alphabet</button>
+        <button onclick="startLevel('numbers')">Numbers</button>
+        <button onclick="startLevel('clcase')">Letter Case</button>
+        <button onclick="startLevel('phonics')">Phonics</button>
+      </div>
+    `;
+    
+    document.body.appendChild(levelMenuContainer);
+    
+    retryAttempts.showLevelMenu = 0; // Reset retry counter on success
+    console.log('✅ Level menu displayed');
+  } catch (error) {
+    console.error('❌ Error showing level menu:', error);
+    retryAttempts.showLevelMenu++;
+    
+    if (retryAttempts.showLevelMenu >= MAX_RETRY_ATTEMPTS) {
+      handleCriticalFailure('Unable to display level menu after multiple attempts');
+      return;
+    }
+    
+    // Retry showing the level menu
+    console.log(`🔄 Retrying level menu display (attempt ${retryAttempts.showLevelMenu}/${MAX_RETRY_ATTEMPTS})`);
+    setTimeout(() => showLevelMenu(), 1000);
+  }
 }
 
-// Start the selected level
+// Start a specific level
 function startLevel(levelName) {
   eventTracker.trackEvent("level", "start_attempt", { levelName });
-
   if (!progressManager.isLevelUnlocked(levelName)) {
     eventTracker.trackEvent("level", "start_blocked", {
       levelName,
@@ -116,66 +201,97 @@ function startLevel(levelName) {
     return;
   }
 
-  document.getElementById("welcome-screen").style.display = "none";
-  const previousState = gameState;
-  gameState = "playing";
-  eventTracker.trackState("gameState", gameState, previousState);
+  try {
+    console.log(`🎮 Starting level: ${levelName}`);
+    
+    // Clear any pending level completion timer
+    if (levelCompletionTimer) {
+      clearTimeout(levelCompletionTimer);
+      levelCompletionTimer = null;
+    }
 
-  currentLevelName = levelName;
-  eventTracker.trackState("currentLevel", levelName);
+    // Remove the menu UI
+    const menuContainer = document.getElementById('level-menu-container');
+    if (menuContainer) {
+      menuContainer.remove();
+    }
 
-  initializeManagers();
+    const previousState = gameState;
+    gameState = 'playing';
+    eventTracker.trackState("gameState", gameState, previousState);
+    currentLevelName = levelName;
+    eventTracker.trackState("currentLevel", levelName);
+    initializeManagers();
 
-  // Define common helpers for levels
-  const helpers = {
-    createExplosion: (x, y, color, intensity) => {
-      const count = Math.floor(20 * intensity);
-      for (let i = 0; i < count; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 2 + Math.random() * 4;
-        const dx = Math.cos(angle) * speed;
-        const dy = Math.sin(angle) * speed;
-        const size = 2 + Math.random() * 3;
-        const duration = 500 + Math.random() * 1000;
-        particleManager.createParticle(x, y, color, size, dx, dy, duration);
+    const helpers = {
+      createExplosion: (x, y, color, intensity) => {
+        const count = Math.floor(20 * intensity);
+        for (let i = 0; i < count; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = 2 + Math.random() * 4;
+          const dx = Math.cos(angle) * speed;
+          const dy = Math.sin(angle) * speed;
+          const size = 2 + Math.random() * 3;
+          const duration = 500 + Math.random() * 1000;
+          particleManager.createParticle(x, y, color, size, dx, dy, duration);
+        }
+      },
+      applyExplosionEffect: (x, y, radius, force) => {
+        managers.glassShatter.triggerShatter(x, y, force * 0.5);
+      },
+      onLevelComplete: (score) => {
+        handleLevelComplete(levelName, score);
       }
-    },
-    applyExplosionEffect: (x, y, radius, force) => {
-      managers.glassShatter.triggerShatter(x, y, force * 0.5);
-    },
-    onLevelComplete: (score) => {
-      handleLevelComplete(levelName, score);
-    },
-  };
+    };
 
-  lastTime = performance.now();
+    lastTime = performance.now();
 
-  // Choose level class based on name
-  switch (levelName) {
-    case "colors":
-      currentLevel = new ColorsLevel(canvas, ctx, managers, helpers);
-      break;
-    case "shapes":
-      currentLevel = new ShapesLevel(canvas, ctx, managers, helpers);
-      break;
-    case "alphabet":
-      currentLevel = new AlphabetLevel(canvas, ctx, managers, helpers);
-      break;
-    case "numbers":
-      currentLevel = new NumbersLevel(canvas, ctx, managers, helpers);
-      break;
-    case "clcase":
-      currentLevel = new ClCaseLevel(canvas, ctx, managers, helpers);
-      break;
-    case "phonics":
-      currentLevel = new PhonicsLevel(canvas, ctx, managers, helpers);
-      break;
-    default:
-      currentLevel = new ColorsLevel(canvas, ctx, managers, helpers);
+    // Instantiate the chosen level
+    switch (levelName) {
+      case 'colors':
+        currentLevel = new ColorsLevel(canvas, ctx, managers, helpers);
+        break;
+      case 'shapes':
+        currentLevel = new ShapesLevel(canvas, ctx, managers, helpers);
+        break;
+      case 'alphabet':
+        currentLevel = new AlphabetLevel(canvas, ctx, managers, helpers);
+        break;
+      case 'numbers':
+        currentLevel = new NumbersLevel(canvas, ctx, managers, helpers);
+        break;
+      case 'clcase':
+        currentLevel = new ClCaseLevel(canvas, ctx, managers, helpers);
+        break;
+      case 'phonics':
+        currentLevel = new PhonicsLevel(canvas, ctx, managers, helpers);
+        break;
+      default:
+        currentLevel = new ColorsLevel(canvas, ctx, managers, helpers);
+    }
+
+    currentLevel.start();
+
+    console.log('✅ Level started successfully');
+    retryAttempts.startLevel = 0; // Reset retry counter on success
+    // GameLoop is already running, no need to call loop()
+  } catch (error) {
+    console.error('❌ Error starting level:', error);
+    retryAttempts.startLevel++;
+    
+    if (retryAttempts.startLevel >= MAX_RETRY_ATTEMPTS) {
+      showFatalErrorScreen('Unable to start the level after multiple attempts.', error);
+      return;
+    }
+    gameState = 'menu';
+    
+    // Check if showLevelMenu can still retry before calling it
+    if (retryAttempts.showLevelMenu < MAX_RETRY_ATTEMPTS) {
+      showLevelMenu();
+    } else {
+      handleCriticalFailure('Unable to start level or show level menu after multiple attempts');
+    }
   }
-
-  currentLevel.start();
-  // GameLoop is already running, no need to call loop()
 }
 
 // Show options menu
@@ -307,18 +423,118 @@ function cleanupGame() {
   }
 }
 
+// Reset all retry counters (useful for manual resets or successful state transitions)
+function resetRetryCounters() {
+  retryAttempts.showLevelMenu = 0;
+  retryAttempts.startLevel = 0;
+  retryAttempts.initializeWelcomeScreen = 0;
+  console.log('🔄 All retry counters reset');
+}
+
+// Handle critical failures when all retry attempts are exhausted
+function handleCriticalFailure(message) {
+  console.error('💥 CRITICAL FAILURE:', message);
+  
+  // Reset all retry counters
+  resetRetryCounters();
+  
+  // Set game to a safe error state
+  gameState = 'error';
+  
+  // Clean up any existing UI elements
+  const menuContainer = document.getElementById('level-menu-container');
+  if (menuContainer) {
+    menuContainer.remove();
+  }
+  
+  // Display error message to user
+  const errorContainer = document.createElement('div');
+  errorContainer.id = 'error-container';
+  errorContainer.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(139, 0, 0, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    padding: 20px;
+  `;
+  
+  errorContainer.innerHTML = `
+    <h1>⚠️ Game Error</h1>
+    <p style="font-size: 18px; margin: 20px 0;">${message}</p>
+    <p style="font-size: 14px; margin: 20px 0;">Please refresh the page to restart the game.</p>
+    <button onclick="window.location.reload()" style="
+      padding: 15px 30px;
+      font-size: 16px;
+      background: #ff4444;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 20px;
+    ">Reload Game</button>
+  `;
+  
+  document.body.appendChild(errorContainer);
+  
+  // Stop the game loop to prevent further issues
+  if (gameLoop) {
+    gameLoop.stop();
+  }
+}
+
 function handleLevelComplete(levelName, score) {
-  progressManager.completeLevel(levelName, score);
-  gameState = "completed";
+  try {
+    progressManager.completeLevel(levelName, score);
+    gameState = 'completed';
+    eventTracker.trackEvent("level", "completed", { levelName, score });
+    // Reset retry counters on successful level completion
+    resetRetryCounters();
+    
+    // Clear any existing completion timer
+    if (levelCompletionTimer) {
+      clearTimeout(levelCompletionTimer);
+      levelCompletionTimer = null;
+    }
 
-  // Show completion celebration
-  managers.checkpoint.showCheckpoint(
-    `Level Complete!<br>Score: ${score}<br>Next level unlocked!`
-  );
+    // Calculate total possible score for this level
+    let totalPossible = 1000; // Default
+    if (levelName === 'colors') {
+      totalPossible = 1700; // 17 targets * 100 points each
+    } else if (['alphabet', 'numbers', 'clcase', 'shapes'].includes(levelName)) {
+      totalPossible = 2600; // 26 letters/numbers * 100 points each
+    }
 
-  setTimeout(() => {
+    // Show completion screen
+    if (!levelCompletionScreen) {
+      levelCompletionScreen = new LevelCompletionScreen();
+      levelCompletionScreen.setCallbacks(
+        () => startLevel(levelName), // Restart current level
+        () => showLevelMenu(), // Go to level menu
+        () => showLevelMenu() // Back to menu
+      );
+    }
+    
+    levelCompletionScreen.show(levelName, score, totalPossible);
+    
+  } catch (error) {
+    console.error('❌ Error handling level completion:', error);
+    eventTracker.trackError(error, {
+        context: "handleLevelComplete",
+        levelName,
+        score,
+    });
     showLevelMenu();
-  }, 3000);
+  }
 }
 
 window.addEventListener("resize", resizeCanvas);
@@ -384,6 +600,34 @@ function render() {
 
   // Complete performance monitoring for this frame
   performanceMonitor.frameEnd(frameStartTime);
+}
+
+// Enhanced canvas setup with better error handling
+function setupCanvas() {
+  console.log('🔧 Setting up canvas...');
+  
+  // Get canvas element
+  canvas = document.getElementById('game-canvas');
+  if (!canvas) {
+    throw new Error('Canvas element with id "game-canvas" not found!');
+  }
+  
+  // Ensure canvas has proper dimensions
+  if (!canvas.style.width && !canvas.style.height) {
+    canvas.style.width = '100vw';
+    canvas.style.height = '100vh';
+  }
+  
+  // Initialize renderer
+  renderer = new Renderer(canvas);
+  ctx = renderer.ctx;
+  
+  if (!ctx) {
+    throw new Error('Could not get 2D rendering context from canvas!');
+  }
+  
+  console.log('✅ Canvas setup complete:', canvas.width, 'x', canvas.height);
+  return true;
 }
 
 window.onload = async () => {
@@ -470,7 +714,7 @@ window.onload = async () => {
     console.log("✅ Game loop started");
 
     console.log("🎯 Showing welcome screen...");
-    showWelcomeScreen();
+    initializeWelcomeScreen();
     setupGlobalEventListeners();
     console.log("✅ Welcome screen should be visible now!");
   } catch (error) {
@@ -478,3 +722,9 @@ window.onload = async () => {
     console.error("Stack trace:", error.stack);
   }
 };
+
+// Export initialization status for debugging
+window.gameInitialized = () => isInitialized;
+
+// Export startLevel function for global access
+window.startLevel = startLevel;

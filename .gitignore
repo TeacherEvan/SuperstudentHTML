@@ -42,3 +42,9 @@ coverage/
 .cache/
 .parcel-cache/
 .vite/
+
+# Incoming changes
+cursor/analyze-and-fix-project-errors-f27f
+node_modules/.vite/
+node_modules/.vite/deps/
+main

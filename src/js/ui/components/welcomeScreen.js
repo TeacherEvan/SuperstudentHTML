@@ -170,18 +170,32 @@ export class WelcomeScreen {
   }
   
   startAnimation() {
-    if (this.animationId) return;
+    // Prevent multiple animation loops
+    if (this.animationId) {
+      console.warn('Animation already running');
+      return;
+    }
     
     const animate = () => {
-      if (!this.isVisible) return;
+      // Check visibility state at the beginning of each frame
+      if (!this.isVisible) {
+        this.animationId = null;
+        return;
+      }
       
       this.updateAnimatedBackground();
       this.renderAnimatedBackground();
       
-      this.animationId = requestAnimationFrame(animate);
+      // Only schedule next frame if still visible
+      if (this.isVisible) {
+        this.animationId = requestAnimationFrame(animate);
+      } else {
+        this.animationId = null;
+      }
     };
     
-    animate();
+    // Start the animation loop
+    this.animationId = requestAnimationFrame(animate);
   }
   
   stopAnimation() {
