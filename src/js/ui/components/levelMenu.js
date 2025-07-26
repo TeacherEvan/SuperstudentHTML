@@ -1,8 +1,11 @@
 // Level selection menu UI
+import { ProgressManager } from "../../game/managers/progressManager.js";
+
 export class LevelMenu {
   constructor(containerId, onSelect) {
     this.container = document.getElementById(containerId);
     this.onSelect = onSelect;
+    this.progressManager = new ProgressManager();
 
     // Define available levels with descriptions
     this.levels = [

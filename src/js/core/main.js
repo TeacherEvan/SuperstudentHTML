@@ -13,6 +13,7 @@ import HudManager from "../game/managers/hudManager.js";
 import MultiTouchManager from "../game/managers/multiTouchManager.js";
 import { InputHandler } from "../inputHandler.js";
 import { LevelMenu } from "../ui/components/levelMenu.js";
+import { WelcomeScreen } from "../ui/components/welcomeScreen.js";
 import { initializeErrorTracker } from "../utils/errorTracker.js";
 import { getAudioConfig } from "./audio/audioConfig.js";
 import SoundManager from "./audio/soundManager.js";
@@ -72,16 +73,30 @@ function resizeCanvas() {
 // Initialize and show welcome screen with animated background
 function initializeWelcomeScreen() {
   try {
-    console.log(
-      "🏠 Skipping welcome screen for debugging - going straight to level menu"
-    );
+    console.log("🏠 Initializing welcome screen...");
 
-    // Directly show level menu for debugging
-    showLevelMenu();
+    // Create welcome screen instance
+    welcomeScreen = new WelcomeScreen(canvas, ctx, resourceManager);
+
+    // Set up callbacks
+    welcomeScreen.onStartGame = () => {
+      console.log("🎮 Start game requested from welcome screen");
+      showLevelMenu();
+    };
+
+    welcomeScreen.onShowOptions = () => {
+      console.log("⚙️ Options requested from welcome screen");
+      // TODO: Implement options screen
+      showLevelMenu(); // For now, just go to level menu
+    };
+
+    // Show the welcome screen
+    welcomeScreen.show();
+    gameState = "menu";
 
     // Reset retry counter on success
     retryAttempts.initializeWelcomeScreen = 0;
-    console.log("✅ Debugging: Level menu shown directly");
+    console.log("✅ Welcome screen initialized and shown");
   } catch (error) {
     console.error("❌ Error initializing welcome screen:", error);
     retryAttempts.initializeWelcomeScreen++;
