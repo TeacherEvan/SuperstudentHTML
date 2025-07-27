@@ -5,19 +5,12 @@ import { LevelSettings } from '../../config/gameSettings.js';
 export default class ColorsLevel extends BaseLevel {
   constructor(canvas, ctx, managers, helpers) {
     super(canvas, ctx, managers, helpers);
-    this.memoryTime = LevelSettings.colors.memoryTime;
+    this.memoryTime = GAME_CONFIG.COLORS_LEVEL_CONFIG.MEMORY_DISPLAY_TIME;
     this.dots = [];
     this.state = 'memory';
     this.targetDotsRemaining = 0;
     this.onPointerDown = this.onPointerDown.bind(this);
-    
-    // Enhanced features
-    this.correctStreak = 0;
-    this.lastCorrectTime = 0;
-    this.levelStartTime = 0;
-    
-    // Timer tracking for memory leak prevention
-    this.activeTimers = [];
+    this.lastCollisionTime = 0;
   }
 
   async init() {
@@ -27,34 +20,25 @@ export default class ColorsLevel extends BaseLevel {
     const rgb = this.targetColor.join(',');
     this.mother = {
       x: this.canvas.width / 2,
+  async init() {
+    // Choose first color in sequence  
+    const colorsList = GAME_CONFIG.COLORS.COLORS_LIST;
+    this.targetColor = colorsList[0];
+    const rgb = this.targetColor.join(',');
+    
+    // Mother Dot Phase: A large colored dot (radius 90-120px) appears at screen center
+    this.mother = {
+      x: this.canvas.width / 2,
       y: this.canvas.height / 2,
-      radius: this.managers?.displaySettings?.motherRadius || GAME_CONFIG.DOT_RADIUS,
+      radius: GAME_CONFIG.MOTHER_RADIUS[GAME_CONFIG.DEFAULT_MODE] || GAME_CONFIG.DOT_RADIUS,
       color: `rgb(${rgb})`
     };
     
-    // Enhanced sound feedback
-    if (this.managers.sound) {
-      // Play level start sound
-      this.managers.sound.playSuccess();
-      
-      // Resume audio context
-      await this.managers.sound.resumeContext();
-    }
-    
-    // Show memory dot then disperse
     this.canvas.addEventListener('pointerdown', this.onPointerDown);
-    this.levelStartTime = performance.now();
     
-    const disperseTimer = setTimeout(() => this.disperse(), this.memoryTime);
-    this.activeTimers.push(disperseTimer);
-  }
-
-  disperse() {
-    this.state = 'playing';
-    const cfg = LevelSettings.colors;
-    const total = cfg.totalDots;
-    const targetCount = cfg.targetDots;
-    this.targetDotsRemaining = targetCount;
+    // Memory Phase: Player clicks to remember the target color, shown for ~2 seconds
+    setTimeout(() => this.disperse(), this.memoryTime);
+  } this.targetDotsRemaining = targetCount;
     const others = GAME_CONFIG.COLORS.COLORS_LIST.filter(c => c !== this.targetColor);
     
     // Generate target dots
@@ -65,53 +49,46 @@ export default class ColorsLevel extends BaseLevel {
     // Generate distractor dots
     for (let i = 0; i < total - targetCount; i++) {
       const color = others[Math.floor(Math.random() * others.length)];
-      this.addDot(color, false);
+  disperse() {
+    // Dispersion Phase: Mother dot explodes into 85 total dots
+    this.state = 'playing';
+    const totalDots = GAME_CONFIG.COLORS_LEVEL_CONFIG.TOTAL_DOTS;
+    const targetDots = GAME_CONFIG.COLORS_LEVEL_CONFIG.TARGET_DOTS;
+    this.targetDotsRemaining = targetDots;
+    const distractorColors = GAME_CONFIG.COLORS.COLORS_LIST.filter(c => c !== this.targetColor);
+    
+    // 17 target color dots (correct targets)
+    for (let i = 0; i < targetDots; i++) {
+      this.addDot(this.targetColor, true);
     }
     
-    // Play dispersion sound effect
-    if (this.managers.sound) {
-      this.managers.sound.playPop(0.8);
+    // 68 distractor dots (4 other colors, ~17 each)
+    for (let i = 0; i < totalDots - targetDots; i++) {
+      const color = distractorColors[Math.floor(Math.random() * distractorColors.length)];
+      this.addDot(color, false);
     }
-  }
-
-  addDot(colArray, isTarget) {
-    const angle = Math.random() * Math.PI * 2;
-    const speed = Math.random() * (GAME_CONFIG.DOT_SPEED_RANGE[1] - GAME_CONFIG.DOT_SPEED_RANGE[0]) + GAME_CONFIG.DOT_SPEED_RANGE[0];
-    const dot = {
-      x: this.mother.x,
-      y: this.mother.y,
-      radius: GAME_CONFIG.DOT_RADIUS,
-      color: `rgb(${colArray.join(',')})`,
-      dx: Math.cos(angle) * speed,
-      dy: Math.sin(angle) * speed,
-      isTarget: isTarget,
-      shimmer: Math.random() * Math.PI * 2,
-      pulsePhase: Math.random() * Math.PI * 2,
-      trail: []
-    };
+  } };
     this.dots.push(dot);
   }
 
   update(deltaTime) {
     if (this.state !== 'playing') return;
     
-    const dt = deltaTime / 16;
-    this.dots.forEach(dot => {
-      // Update position
-      dot.x += dot.dx * dt;
-      dot.y += dot.dy * dt;
-      
-      // Update visual effects
-      dot.shimmer += 0.1 * dt;
-      dot.pulsePhase += 0.05 * dt;
-      
-      // Add trail effect for target dots
-      if (dot.isTarget) {
-        dot.trail.push({ x: dot.x, y: dot.y, alpha: 1.0 });
-        if (dot.trail.length > 10) {
-          dot.trail.shift();
-        }
-        
+  addDot(colArray, isTarget) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = Math.random() * (GAME_CONFIG.DOT_SPEED_RANGE[1] - GAME_CONFIG.DOT_SPEED_RANGE[0]) + GAME_CONFIG.DOT_SPEED_RANGE[0];
+    const dot = {
+      x: this.mother.x,
+      y: this.mother.y,
+      radius: GAME_CONFIG.DOT_RADIUS, // 48px radius
+      color: `rgb(${colArray.join(',')})`,
+      dx: Math.cos(angle) * speed,
+      dy: Math.sin(angle) * speed,
+      isTarget: isTarget,
+      shimmer: Math.random() * Math.PI * 2
+    };
+    this.dots.push(dot);
+  }     
         // Fade trail
         dot.trail.forEach((point, index) => {
           point.alpha = (index + 1) / dot.trail.length * 0.5;

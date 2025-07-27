@@ -1,6 +1,5 @@
-import { BaseLevel } from './baseLevel.js';
-import { GAME_CONFIG } from '../../config/constants.js';
-import { LevelSettings } from '../../config/gameSettings.js';
+import { GAME_CONFIG } from "../../config/constants.js";
+import { BaseLevel } from "./baseLevel.js";
 
 export default class ShapesLevel extends BaseLevel {
   constructor(canvas, ctx, managers, helpers) {
@@ -19,7 +18,7 @@ export default class ShapesLevel extends BaseLevel {
     this.objects = [];
     this.groupCount = 0;
     this.spawnTimer = 0;
-    this.canvas.addEventListener('pointerdown', this.onPointerDown);
+    this.canvas.addEventListener("pointerdown", this.onPointerDown);
     this.running = true;
   }
 
@@ -31,37 +30,48 @@ export default class ShapesLevel extends BaseLevel {
       this.spawnObject();
     }
     const dt = deltaTime / 16;
-    this.objects.forEach(obj => {
+    this.objects.forEach((obj) => {
       obj.x += obj.dx * dt;
       obj.y += obj.dy * dt;
     });
-    this.objects = this.objects.filter(obj => obj.x > -50 && obj.x < this.canvas.width + 50 && obj.y > -50 && obj.y < this.canvas.height + 50);
+    this.objects = this.objects.filter(
+      (obj) =>
+        obj.x > -50 &&
+        obj.x < this.canvas.width + 50 &&
+        obj.y > -50 &&
+        obj.y < this.canvas.height + 50
+    );
   }
 
   render() {
-    // Draw center target shape
-    const size = LevelSettings.text.centerFontSize;
+    // Draw center target shape - Sequential shape targeting through Circle→Square→Triangle→Rectangle→Pentagon
+    const size = GAME_CONFIG.TEXT_LEVEL_CONFIG.CENTER_FONT_SIZE;
     this.ctx.save();
     this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
-    this.ctx.fillStyle = '#FFFFFF';
+    this.ctx.fillStyle = "#FFFFFF";
     this.drawShape(this.currentTarget, size);
     this.ctx.restore();
-    // Draw falling shapes
-    this.objects.forEach(obj => {
+
+    // Draw falling shapes - Shape rendering with geometric drawing
+    this.objects.forEach((obj) => {
       this.ctx.save();
       this.ctx.translate(obj.x, obj.y);
       this.ctx.fillStyle = obj.color;
-      this.drawShape(obj.shape, LevelSettings.text.fallingFontSize);
+      this.drawShape(
+        obj.shape,
+        GAME_CONFIG.TEXT_LEVEL_CONFIG.FALLING_FONT_SIZE
+      );
       this.ctx.restore();
     });
   }
 
   spawnObject() {
-    const buffer = LevelSettings.text.spawnEdgeBuffer;
+    // Objects spawn from screen edges with random trajectories
+    const buffer = GAME_CONFIG.TEXT_LEVEL_CONFIG.SPAWN_EDGE_BUFFER;
     const side = Math.floor(Math.random() * 4);
     let x, y, dx, dy;
     const speed = Math.random() * 2 + 1;
-    
+
     switch (side) {
       case 0: // top
         x = Math.random() * this.canvas.width;
@@ -88,71 +98,88 @@ export default class ShapesLevel extends BaseLevel {
         dy = (Math.random() - 0.5) * 2;
     }
 
-    // Randomly choose what shape to spawn
-    const shapes = ['Circle', 'Square', 'Triangle', 'Rectangle', 'Pentagon'];
-    const shape = shapes[Math.floor(Math.random() * shapes.length)];
-    const colorArr = GAME_CONFIG.COLORS.COLORS_LIST[Math.floor(Math.random() * GAME_CONFIG.COLORS.COLORS_LIST.length)];
-    const color = `rgb(${colorArr.join(',')})`;
-    
+    // Spawn random shapes from sequence
+    const shape =
+      this.sequence[Math.floor(Math.random() * this.sequence.length)];
+    const colorArr =
+      GAME_CONFIG.COLORS.COLORS_LIST[
+        Math.floor(Math.random() * GAME_CONFIG.COLORS.COLORS_LIST.length)
+      ];
+    const color = `rgb(${colorArr.join(",")})`;
+
     this.objects.push({ shape, x, y, dx, dy, color });
   }
 
   onPointerDown(event) {
     if (!this.running) return;
+
     const rect = this.canvas.getBoundingClientRect();
     const x = (event.clientX - rect.left) * (this.canvas.width / rect.width);
     const y = (event.clientY - rect.top) * (this.canvas.height / rect.height);
-    let hit = false;
-    this.objects = this.objects.filter(obj => {
-      const size = LevelSettings.text.fallingFontSize;
+
+    // Check for collisions with falling shapes
+    this.objects = this.objects.filter((obj) => {
+      const size = GAME_CONFIG.TEXT_LEVEL_CONFIG.FALLING_FONT_SIZE;
       const dx = x - obj.x;
       const dy = y - obj.y;
       const radius = size / 2;
       if (dx * dx + dy * dy <= radius * radius) {
         if (obj.shape === this.currentTarget) {
+          // Correct target hit - Enhanced visual effects for shape destruction
           this.helpers.createExplosion(obj.x, obj.y, obj.color, 1);
-          this.managers.hud.updateScore(10);
+          this.updateScore(100);
           this.groupCount++;
-          hit = true;
+
+          // After destroying 5 targets, advance to next shape
+          if (this.groupCount >= GAME_CONFIG.GROUP_SIZE) {
+            this.advanceToNextTarget();
+          }
         } else {
-          this.helpers.applyExplosionEffect(obj.x, obj.y, radius, 1);
-          this.managers.hud.updateScore(-5);
+          // Wrong target - screen shake + glass shatter effect
+          if (this.managers.glassShatter) {
+            this.managers.glassShatter.triggerShatter(obj.x, obj.y, 0.5);
+          }
+          this.helpers.applyScreenShake(10, 1);
+          this.updateScore(-25);
         }
-        return false;
+        return false; // Remove the hit object
       }
-      return true;
+      return true; // Keep the object
     });
-    if (hit && this.groupCount >= LevelSettings.text.advanceCount) {
-      this.currentIndex++;
-      if (this.currentIndex >= this.sequence.length) {
-        this.end();
-      } else {
-        this.currentTarget = this.sequence[this.currentIndex];
-        this.groupCount = 0;
-      }
+  }
+
+  advanceToNextTarget() {
+    this.currentIndex++;
+
+    if (this.currentIndex >= this.sequence.length) {
+      this.end();
+      return;
     }
+
+    this.currentTarget = this.sequence[this.currentIndex];
+    this.groupCount = 0;
   }
 
   drawShape(shape, size) {
     const half = size / 2;
     this.ctx.beginPath();
     switch (shape) {
-      case 'Circle':
+      case "Circle":
         this.ctx.arc(0, 0, half, 0, Math.PI * 2);
         break;
-      case 'Square':
+      case "Square":
         this.ctx.rect(-half, -half, size, size);
         break;
-      case 'Triangle':
+      case "Triangle":
         this.ctx.moveTo(0, -half);
         this.ctx.lineTo(half, half);
         this.ctx.lineTo(-half, half);
         this.ctx.closePath();
         break;
-      case 'Rectangle':
+      case "Rectangle":
         this.ctx.rect(-half, -half * 0.6, size, size * 0.6);
         break;
-      case 'Pentagon':
+      case "Pentagon":
         for (let i = 0; i < 5; i++) {
           const angle = ((Math.PI * 2) / 5) * i - Math.PI / 2;
           const px = Math.cos(angle) * half;
@@ -169,7 +196,7 @@ export default class ShapesLevel extends BaseLevel {
   }
 
   cleanup() {
-    this.canvas.removeEventListener('pointerdown', this.onPointerDown);
+    this.canvas.removeEventListener("pointerdown", this.onPointerDown);
     this.objects = [];
   }
 }
