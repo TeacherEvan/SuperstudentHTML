@@ -59,6 +59,7 @@ export default class AlphabetLevel extends BaseLevel {
 
   render() {
     // Draw center target
+    // Draw center target - Large text (900px font) shows current target at screen center
     this.ctx.save();
     this.ctx.fillStyle = '#FFFFFF';
     this.ctx.textAlign = 'center';
