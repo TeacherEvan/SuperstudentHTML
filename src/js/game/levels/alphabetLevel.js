@@ -1,6 +1,3 @@
-import { BaseLevel } from './baseLevel.js';
-import { GAME_CONFIG } from '../../config/constants.js';
-import { LevelSettings } from '../../config/gameSettings.js';
 import { GAME_CONFIG } from "../../config/constants.js";
 import { BaseLevel } from "./baseLevel.js";
 
@@ -21,7 +18,6 @@ export default class AlphabetLevel extends BaseLevel {
     this.objects = [];
     this.groupCount = 0;
     this.spawnTimer = 0;
-    this.canvas.addEventListener('pointerdown', this.onPointerDown);
     this.canvas.addEventListener("pointerdown", this.onPointerDown);
     this.running = true;
   }
@@ -35,17 +31,13 @@ export default class AlphabetLevel extends BaseLevel {
       this.spawnTimer = 0;
       this.spawnObject();
     }
-    // Move objects
 
     // Move objects with physics
     const dt = deltaTime / 16;
-    this.objects.forEach(obj => {
     this.objects.forEach((obj) => {
       obj.x += obj.dx * dt;
       obj.y += obj.dy * dt;
     });
-    // Remove off-screen
-    this.objects = this.objects.filter(obj => obj.x > -50 && obj.x < this.canvas.width + 50 && obj.y > -50 && obj.y < this.canvas.height + 50);
 
     // Remove off-screen objects (basic culling)
     this.objects = this.objects.filter(
@@ -58,13 +50,8 @@ export default class AlphabetLevel extends BaseLevel {
   }
 
   render() {
-    // Draw center target
     // Draw center target - Large text (900px font) shows current target at screen center
     this.ctx.save();
-    this.ctx.fillStyle = '#FFFFFF';
-    this.ctx.textAlign = 'center';
-    this.ctx.font = `${LevelSettings.text.centerFontSize}px Arial`;
-    this.ctx.fillText(this.currentTarget, this.canvas.width / 2, this.canvas.height / 2);
     this.ctx.fillStyle = "#FFFFFF";
     this.ctx.textAlign = "center";
     this.ctx.textBaseline = "middle";
@@ -75,15 +62,11 @@ export default class AlphabetLevel extends BaseLevel {
       this.canvas.height / 2
     );
     this.ctx.restore();
-    // Draw falling objects
-    this.objects.forEach(obj => {
 
     // Draw falling objects - 240px font size, random colors, physics movement
     this.objects.forEach((obj) => {
       this.ctx.save();
       this.ctx.fillStyle = obj.color;
-      this.ctx.textAlign = 'center';
-      this.ctx.font = `${LevelSettings.text.fallingFontSize}px Arial`;
       this.ctx.textAlign = "center";
       this.ctx.textBaseline = "middle";
       this.ctx.font = `${GAME_CONFIG.TEXT_LEVEL_CONFIG.FALLING_FONT_SIZE}px Arial`;
@@ -93,7 +76,6 @@ export default class AlphabetLevel extends BaseLevel {
   }
 
   spawnObject() {
-    const buffer = LevelSettings.text.spawnEdgeBuffer;
     // Objects spawn from screen edges with random trajectories
     const buffer = GAME_CONFIG.TEXT_LEVEL_CONFIG.SPAWN_EDGE_BUFFER;
     const side = Math.floor(Math.random() * 4);
@@ -126,9 +108,6 @@ export default class AlphabetLevel extends BaseLevel {
         dy = (Math.random() - 0.5) * 2;
         break;
     }
-    const colorArr = GAME_CONFIG.COLORS.COLORS_LIST[Math.floor(Math.random() * GAME_CONFIG.COLORS.COLORS_LIST.length)];
-    const color = `rgb(${colorArr.join(',')})`;
-    this.objects.push({ char: this.currentTarget, x, y, dx, dy, color });
 
     // Spawn random letters from alphabet sequence
     const char =
@@ -148,11 +127,6 @@ export default class AlphabetLevel extends BaseLevel {
     const rect = this.canvas.getBoundingClientRect();
     const x = (event.clientX - rect.left) * (this.canvas.width / rect.width);
     const y = (event.clientY - rect.top) * (this.canvas.height / rect.height);
-    let hit = false;
-    this.objects = this.objects.filter(obj => {
-      const width = LevelSettings.text.fallingFontSize;
-      const height = LevelSettings.text.fallingFontSize;
-      if (x > obj.x - width / 2 && x < obj.x + width / 2 && y > obj.y - height && y < obj.y) {
 
     // Check for collisions with falling objects
     this.objects = this.objects.filter((obj) => {
@@ -169,14 +143,12 @@ export default class AlphabetLevel extends BaseLevel {
           this.helpers.createExplosion(obj.x, obj.y, obj.color, 1);
           this.updateScore(100);
           this.groupCount++;
-          hit = true;
 
           // After destroying 5 targets, advance to next character
           if (this.groupCount >= GAME_CONFIG.GROUP_SIZE) {
             this.advanceToNextTarget();
           }
         } else {
-          this.helpers.applyExplosionEffect(obj.x, obj.y, 20, 1);
           // Wrong target - screen shake + glass shatter effect
           if (this.managers.glassShatter) {
             this.managers.glassShatter.triggerShatter(obj.x, obj.y, 0.5);
@@ -184,20 +156,10 @@ export default class AlphabetLevel extends BaseLevel {
           this.helpers.applyScreenShake(10, 1);
           this.updateScore(-25);
         }
-        return false;
         return false; // Remove the hit object
       }
-      return true;
       return true; // Keep the object
     });
-    // Advance or complete
-    if (hit && this.groupCount >= LevelSettings.text.advanceCount) {
-      this.currentIndex++;
-      if (this.currentIndex >= this.sequence.length) {
-        this.end();
-      } else {
-        this.currentTarget = this.sequence[this.currentIndex];
-        this.groupCount = 0;
   }
 
   advanceToNextTarget() {
@@ -213,7 +175,6 @@ export default class AlphabetLevel extends BaseLevel {
   }
 
   cleanup() {
-    this.canvas.removeEventListener('pointerdown', this.onPointerDown);
     this.canvas.removeEventListener("pointerdown", this.onPointerDown);
     this.objects = [];
   }
