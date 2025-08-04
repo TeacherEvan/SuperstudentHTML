@@ -12,9 +12,10 @@ import GlassShatterManager from "../game/managers/glassShatterManager.js";
 import HudManager from "../game/managers/hudManager.js";
 import MultiTouchManager from "../game/managers/multiTouchManager.js";
 import { InputHandler } from "../inputHandler.js";
-import { LevelMenu } from "../ui/components/levelMenu.js";
+import { LevelMenu } from "../ui/levelMenu.js";
 import { WelcomeScreen } from "../ui/components/welcomeScreen.js";
-import { initializeErrorTracker } from "../utils/errorTracker.js";
+import { eventTracker } from "../utils/eventTracker.js";
+import { performanceMonitor } from "../utils/performanceMonitor.js";
 import { getAudioConfig } from "./audio/audioConfig.js";
 import SoundManager from "./audio/soundManager.js";
 import { GameLoop } from "./engine/gameLoop.js";
@@ -22,23 +23,30 @@ import { Renderer } from "./engine/renderer.js";
 import ParticleManager from "./graphics/particleSystem.js";
 import ResourceManager from "./resources/resourceManager.js";
 
+// Core rendering components
 let canvas;
 let renderer;
 let ctx;
 
-// Current display-specific settings
+// System managers
 let displaySettings;
 let resourceManager;
 let particleManager;
 let soundManager;
 let managers = {};
+
+// Game state
 let currentLevel = null;
 let currentLevelName = "";
 let gameState = "menu"; // menu, playing, paused, gameOver
-let lastTime = 0;
 let gameLoop;
+
+// UI components
 let welcomeScreen;
-let levelCompletionTimer = null; // Track level completion timer
+
+// Timing and lifecycle
+let lastTime = 0;
+let levelCompletionTimer = null;
 let isInitialized = false;
 
 // Circuit breaker to prevent infinite loops
@@ -57,7 +65,10 @@ function resizeCanvas() {
 
   try {
     renderer.setupCanvas();
-    console.log("✅ Canvas resized to:", canvas.width, "x", canvas.height);
+    eventTracker.trackEvent("system", "canvas_resized", { 
+      width: canvas.width, 
+      height: canvas.height 
+    });
 
     // Update managers and level with new canvas size
     if (managers.hud) managers.hud.resize(renderer.canvas);
@@ -66,26 +77,26 @@ function resizeCanvas() {
       currentLevel.resize(renderer.canvas);
     }
   } catch (error) {
-    console.error("❌ Error resizing canvas:", error);
+    eventTracker.trackError(error, { context: "canvas_resize" });
   }
 }
 
 // Initialize and show welcome screen with animated background
 function initializeWelcomeScreen() {
   try {
-    console.log("🏠 Initializing welcome screen...");
+    eventTracker.trackEvent("ui", "welcome_screen_init_start");
 
     // Create welcome screen instance
     welcomeScreen = new WelcomeScreen(canvas, ctx, resourceManager);
 
     // Set up callbacks
     welcomeScreen.onStartGame = () => {
-      console.log("🎮 Start game requested from welcome screen");
+      eventTracker.trackEvent("ui", "start_game_clicked");
       showLevelMenu();
     };
 
     welcomeScreen.onShowOptions = () => {
-      console.log("⚙️ Options requested from welcome screen");
+      eventTracker.trackEvent("ui", "options_clicked");
       // TODO: Implement options screen
       showLevelMenu(); // For now, just go to level menu
     };
@@ -96,9 +107,9 @@ function initializeWelcomeScreen() {
 
     // Reset retry counter on success
     retryAttempts.initializeWelcomeScreen = 0;
-    console.log("✅ Welcome screen initialized and shown");
+    eventTracker.trackEvent("ui", "welcome_screen_init_success");
   } catch (error) {
-    console.error("❌ Error initializing welcome screen:", error);
+    eventTracker.trackError(error, { context: "welcome_screen_init" });
     retryAttempts.initializeWelcomeScreen++;
 
     if (retryAttempts.initializeWelcomeScreen < MAX_RETRY_ATTEMPTS) {
@@ -445,7 +456,7 @@ function resetRetryCounters() {
   retryAttempts.showLevelMenu = 0;
   retryAttempts.startLevel = 0;
   retryAttempts.initializeWelcomeScreen = 0;
-  console.log("🔄 All retry counters reset");
+  eventTracker.trackEvent("system", "retry_counters_reset");
 }
 
 // Handle critical failures when all retry attempts are exhausted
@@ -532,7 +543,7 @@ function handleLevelComplete(levelName, score) {
       levelCompletionTimer = null;
     }, 3000);
   } catch (error) {
-    console.error("❌ Error handling level completion:", error);
+    eventTracker.trackError(error, { context: "level_completion" });
     showLevelMenu();
   }
 }
@@ -550,12 +561,26 @@ function update(deltaTime) {
     if (managers.glassShatter) managers.glassShatter.update(deltaTime);
     if (managers.hud) managers.hud.update(deltaTime);
     if (managers.checkpoint) managers.checkpoint.update(deltaTime);
+
+    // Update particle count for performance monitoring
+    if (managers.particleManager) {
+      performanceMonitor.updateParticleCount(
+        managers.particleManager.activeParticles || 0
+      );
+    }
   } catch (error) {
-    console.error("❌ Error in update loop:", error);
+    eventTracker.trackError(error, {
+      context: "update_loop",
+      gameState,
+      currentLevel: currentLevelName,
+      deltaTime,
+    });
   }
 }
 
 function render() {
+  const frameStartTime = performanceMonitor.frameStart();
+
   try {
     renderer.clear();
 
@@ -575,8 +600,15 @@ function render() {
     if (managers.hud) managers.hud.draw(ctx);
     if (managers.checkpoint) managers.checkpoint.draw(ctx);
   } catch (error) {
-    console.error("❌ Error in render loop:", error);
+    eventTracker.trackError(error, {
+      context: "render_loop",
+      gameState,
+      currentLevel: currentLevelName,
+    });
   }
+
+  // Complete performance monitoring for this frame
+  performanceMonitor.frameEnd(frameStartTime);
 }
 
 // Enhanced canvas setup with better error handling
@@ -613,8 +645,9 @@ window.onload = async () => {
   console.log("🎮 Super Student: Starting initialization...");
 
   try {
-    // Initialize global error tracker first
-    initializeErrorTracker();
+    // Initialize event tracker first for comprehensive monitoring
+    eventTracker.initialize();
+    eventTracker.trackEvent("system", "game_initialization_start");
 
     // Setup canvas and renderer first
     setupCanvas();
@@ -632,6 +665,10 @@ window.onload = async () => {
     particleManager = new ParticleManager(displaySettings.maxParticles);
     soundManager = new SoundManager();
     console.log("✅ Core managers initialized");
+
+    // Link particle manager to performance monitor for pool verification
+    performanceMonitor.setParticleManager(particleManager);
+    console.log("✅ Particle pool verification linked");
 
     // Setup input handler
     managers.input = new InputHandler(canvas);
@@ -667,6 +704,32 @@ window.onload = async () => {
 
     // Add display settings to managers
     managers.displaySettings = displaySettings;
+
+    // Setup performance monitoring integration
+    window.addEventListener("PerformanceLevelChanged", (event) => {
+      const { level, settings } = event.detail;
+      eventTracker.trackEvent("performance", "adaptive_adjustment", {
+        level,
+        settings,
+      });
+
+      // Adjust particle system
+      if (
+        particleManager &&
+        typeof particleManager.setPerformanceMode === "function"
+      ) {
+        particleManager.setPerformanceMode(level);
+      }
+
+      // Adjust other systems as needed
+      if (
+        managers.particleManager &&
+        typeof managers.particleManager.setPerformanceMode === "function"
+      ) {
+        managers.particleManager.setPerformanceMode(level);
+      }
+    });
+    console.log("✅ Performance monitoring integrated");
 
     // Initialize and start game loop
     console.log("🔄 Starting game loop...");
