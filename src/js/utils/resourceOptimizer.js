@@ -2,7 +2,7 @@
  * Resource Optimizer - Phase 2 Asset & Memory Management
  * Handles lazy loading, asset compression detection, and memory cleanup
  */
-import { eventTracker } from "./eventTracker.js";
+import { eventTracker } from './eventTracker.js';
 
 export class ResourceOptimizer {
   constructor() {
@@ -30,23 +30,23 @@ export class ResourceOptimizer {
     }, this.cleanupInterval);
 
     // Listen for performance level changes
-    window.addEventListener("PerformanceLevelChanged", (event) => {
+    window.addEventListener('PerformanceLevelChanged', (event) => {
       const { level } = event.detail;
       this.adjustCacheSettings(level);
     });
   }
 
   // Lazy load assets only when needed
-  async loadAssetLazy(url, type, priority = "normal") {
+  async loadAssetLazy(url, type, priority = 'normal') {
     const cacheKey = `${type}:${url}`;
 
     // Return cached asset if available
     if (this.assetCache.has(cacheKey)) {
-      eventTracker.trackEvent("resource", "cache_hit", { url, type });
+      eventTracker.trackEvent('resource', 'cache_hit', { url, type });
       return this.assetCache.get(cacheKey);
     }
 
-    eventTracker.trackEvent("resource", "lazy_load_start", {
+    eventTracker.trackEvent('resource', 'lazy_load_start', {
       url,
       type,
       priority,
@@ -63,7 +63,7 @@ export class ResourceOptimizer {
         size: this.estimateAssetSize(asset, type),
       });
 
-      eventTracker.trackEvent("resource", "lazy_load_success", {
+      eventTracker.trackEvent('resource', 'lazy_load_success', {
         url,
         type,
         cacheSize: this.assetCache.size,
@@ -72,7 +72,7 @@ export class ResourceOptimizer {
       return asset;
     } catch (error) {
       eventTracker.trackError(error, {
-        context: "lazy_loading",
+        context: 'lazy_loading',
         url,
         type,
       });
@@ -82,14 +82,14 @@ export class ResourceOptimizer {
 
   async loadAsset(url, type) {
     switch (type) {
-      case "image":
-        return this.loadImage(url);
-      case "audio":
-        return this.loadAudio(url);
-      case "json":
-        return this.loadJSON(url);
-      default:
-        throw new Error(`Unsupported asset type: ${type}`);
+    case 'image':
+      return this.loadImage(url);
+    case 'audio':
+      return this.loadAudio(url);
+    case 'json':
+      return this.loadJSON(url);
+    default:
+      throw new Error(`Unsupported asset type: ${type}`);
     }
   }
 
@@ -121,29 +121,29 @@ export class ResourceOptimizer {
 
   estimateAssetSize(asset, type) {
     switch (type) {
-      case "image":
-        // Rough estimate: width * height * 4 bytes per pixel
-        return asset.width * asset.height * 4;
-      case "audio":
-        // Rough estimate: duration * bitrate / 8
-        return ((asset.duration || 10) * 128000) / 8; // Assume 128kbps
-      case "json":
-        return JSON.stringify(asset).length * 2; // UTF-16 encoding
-      default:
-        return 1024; // Default 1KB estimate
+    case 'image':
+      // Rough estimate: width * height * 4 bytes per pixel
+      return asset.width * asset.height * 4;
+    case 'audio':
+      // Rough estimate: duration * bitrate / 8
+      return ((asset.duration || 10) * 128000) / 8; // Assume 128kbps
+    case 'json':
+      return JSON.stringify(asset).length * 2; // UTF-16 encoding
+    default:
+      return 1024; // Default 1KB estimate
     }
   }
 
   checkMemoryUsage() {
-    if (!("memory" in performance)) return;
+    if (!('memory' in performance)) return;
 
     const memoryUsage = performance.memory.usedJSHeapSize;
     const totalCacheSize = this.calculateTotalCacheSize();
 
     eventTracker.trackPerformance(
-      "cache_size",
+      'cache_size',
       totalCacheSize / 1024 / 1024,
-      "MB"
+      'MB'
     );
 
     if (
@@ -168,7 +168,7 @@ export class ResourceOptimizer {
     let removedCount = 0;
     let removedSize = 0;
 
-    eventTracker.trackEvent("resource", "cleanup_start", {
+    eventTracker.trackEvent('resource', 'cleanup_start', {
       cacheSize: this.assetCache.size,
     });
 
@@ -198,7 +198,7 @@ export class ResourceOptimizer {
       }
     }
 
-    eventTracker.trackEvent("resource", "cleanup_complete", {
+    eventTracker.trackEvent('resource', 'cleanup_complete', {
       removedCount,
       removedSize: removedSize / 1024 / 1024, // MB
       remainingSize: this.assetCache.size,
@@ -209,21 +209,21 @@ export class ResourceOptimizer {
 
   adjustCacheSettings(performanceLevel) {
     switch (performanceLevel) {
-      case "low":
-        this.memoryThreshold = 25 * 1024 * 1024; // 25MB
-        this.cleanupInterval = 15000; // 15 seconds
-        break;
-      case "medium":
-        this.memoryThreshold = 40 * 1024 * 1024; // 40MB
-        this.cleanupInterval = 20000; // 20 seconds
-        break;
-      case "high":
-        this.memoryThreshold = 75 * 1024 * 1024; // 75MB
-        this.cleanupInterval = 30000; // 30 seconds
-        break;
+    case 'low':
+      this.memoryThreshold = 25 * 1024 * 1024; // 25MB
+      this.cleanupInterval = 15000; // 15 seconds
+      break;
+    case 'medium':
+      this.memoryThreshold = 40 * 1024 * 1024; // 40MB
+      this.cleanupInterval = 20000; // 20 seconds
+      break;
+    case 'high':
+      this.memoryThreshold = 75 * 1024 * 1024; // 75MB
+      this.cleanupInterval = 30000; // 30 seconds
+      break;
     }
 
-    eventTracker.trackEvent("resource", "cache_settings_adjusted", {
+    eventTracker.trackEvent('resource', 'cache_settings_adjusted', {
       level: performanceLevel,
       memoryThreshold: this.memoryThreshold / 1024 / 1024, // MB
       cleanupInterval: this.cleanupInterval,
@@ -232,13 +232,13 @@ export class ResourceOptimizer {
 
   // Preload critical assets
   async preloadCriticalAssets(assetList) {
-    eventTracker.trackEvent("resource", "preload_start", {
+    eventTracker.trackEvent('resource', 'preload_start', {
       count: assetList.length,
     });
 
     const promises = assetList.map(({ url, type }) =>
-      this.loadAssetLazy(url, type, "high").catch((error) => {
-        eventTracker.trackError(error, { context: "preload", url, type });
+      this.loadAssetLazy(url, type, 'high').catch((error) => {
+        eventTracker.trackError(error, { context: 'preload', url, type });
         return null; // Don't fail the entire preload for one asset
       })
     );
@@ -246,7 +246,7 @@ export class ResourceOptimizer {
     const results = await Promise.all(promises);
     const successCount = results.filter((r) => r !== null).length;
 
-    eventTracker.trackEvent("resource", "preload_complete", {
+    eventTracker.trackEvent('resource', 'preload_complete', {
       total: assetList.length,
       success: successCount,
       failed: assetList.length - successCount,
@@ -282,7 +282,7 @@ export class ResourceOptimizer {
     // Count by type
     const typeStats = {};
     for (const [key, cached] of this.assetCache.entries()) {
-      const type = key.split(":")[0];
+      const type = key.split(':')[0];
       if (!typeStats[type]) {
         typeStats[type] = { count: 0, size: 0 };
       }
@@ -299,7 +299,7 @@ export class ResourceOptimizer {
     const clearedCount = this.assetCache.size;
     this.assetCache.clear();
 
-    eventTracker.trackEvent("resource", "cache_cleared", { clearedCount });
+    eventTracker.trackEvent('resource', 'cache_cleared', { clearedCount });
     return clearedCount;
   }
 }

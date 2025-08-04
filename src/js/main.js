@@ -3,6 +3,9 @@ import { ResourceManager } from './core/resourceManager.js';
 import { InputHandler } from './inputHandler.js';
 import { WelcomeScreen } from './ui/welcomeScreen.js';
 
+// Import CSS for webpack to process
+import '../css/main.css';
+
 class SuperStudentGame {
   constructor() {
     this.canvas = document.getElementById('game-canvas');

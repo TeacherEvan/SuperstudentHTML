@@ -2,9 +2,9 @@
  * Performance Dashboard - Development Tool
  * Visual dashboard for monitoring performance metrics, event tracking, and resource usage
  */
-import { eventTracker } from "./eventTracker.js";
-import { performanceMonitor } from "./performanceMonitor.js";
-import { resourceOptimizer } from "./resourceOptimizer.js";
+import { eventTracker } from './eventTracker.js';
+import { performanceMonitor } from './performanceMonitor.js';
+import { resourceOptimizer } from './resourceOptimizer.js';
 
 export class PerformanceDashboard {
   constructor() {
@@ -19,8 +19,8 @@ export class PerformanceDashboard {
   }
 
   createDashboard() {
-    this.dashboardElement = document.createElement("div");
-    this.dashboardElement.id = "performance-dashboard";
+    this.dashboardElement = document.createElement('div');
+    this.dashboardElement.id = 'performance-dashboard';
     this.dashboardElement.style.cssText = `
       position: fixed;
       top: 10px;
@@ -45,29 +45,29 @@ export class PerformanceDashboard {
   }
 
   setupKeyboardShortcuts() {
-    document.addEventListener("keydown", (e) => {
+    document.addEventListener('keydown', (e) => {
       // Press 'P' to toggle performance dashboard
-      if (e.code === "KeyP" && e.ctrlKey && e.shiftKey) {
+      if (e.code === 'KeyP' && e.ctrlKey && e.shiftKey) {
         e.preventDefault();
         this.toggle();
       }
 
       // Press 'C' to clear event log
-      if (e.code === "KeyC" && e.ctrlKey && e.shiftKey && this.isVisible) {
+      if (e.code === 'KeyC' && e.ctrlKey && e.shiftKey && this.isVisible) {
         e.preventDefault();
         eventTracker.clear();
         this.updateDashboard();
       }
 
       // Press 'R' to force cleanup resources
-      if (e.code === "KeyR" && e.ctrlKey && e.shiftKey && this.isVisible) {
+      if (e.code === 'KeyR' && e.ctrlKey && e.shiftKey && this.isVisible) {
         e.preventDefault();
         resourceOptimizer.clearCache();
         this.updateDashboard();
       }
 
       // Press 'D' to run full diagnostics including particle pool verification
-      if (e.code === "KeyD" && e.ctrlKey && e.shiftKey && this.isVisible) {
+      if (e.code === 'KeyD' && e.ctrlKey && e.shiftKey && this.isVisible) {
         e.preventDefault();
         performanceMonitor.runDiagnostics();
         this.updateDashboard();
@@ -77,15 +77,15 @@ export class PerformanceDashboard {
 
   toggle() {
     this.isVisible = !this.isVisible;
-    this.dashboardElement.style.display = this.isVisible ? "block" : "none";
+    this.dashboardElement.style.display = this.isVisible ? 'block' : 'none';
 
     if (this.isVisible) {
       this.startAutoRefresh();
       this.updateDashboard();
-      eventTracker.trackEvent("debug", "dashboard_opened");
+      eventTracker.trackEvent('debug', 'dashboard_opened');
     } else {
       this.stopAutoRefresh();
-      eventTracker.trackEvent("debug", "dashboard_closed");
+      eventTracker.trackEvent('debug', 'dashboard_closed');
     }
   }
 
@@ -124,28 +124,28 @@ export class PerformanceDashboard {
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 10px;">
           <div>
             <strong>Frame Rate:</strong> ${perfSummary.metrics.frameRate.toFixed(
-              1
-            )} fps<br>
+    1
+  )} fps<br>
             <strong>Frame Time:</strong> ${perfSummary.metrics.averageFrameTime.toFixed(
-              2
-            )} ms<br>
+    2
+  )} ms<br>
             <strong>Render Time:</strong> ${perfSummary.metrics.renderTime.toFixed(
-              2
-            )} ms
+    2
+  )} ms
           </div>
           <div>
             <strong>Performance Level:</strong> 
             <span style="color: ${this.getPerformanceColor(
-              perfSummary.level
-            )}">${perfSummary.level.toUpperCase()}</span><br>
+    perfSummary.level
+  )}">${perfSummary.level.toUpperCase()}</span><br>
             <strong>Particles:</strong> ${perfSummary.metrics.particleCount}<br>
             ${
-              perfSummary.isMemorySupported
-                ? `<strong>Memory:</strong> ${perfSummary.metrics.memoryUsage.toFixed(
-                    1
-                  )} MB`
-                : '<span style="color: #888;">Memory: Not Available</span>'
-            }
+  perfSummary.isMemorySupported
+    ? `<strong>Memory:</strong> ${perfSummary.metrics.memoryUsage.toFixed(
+      1
+    )} MB`
+    : '<span style="color: #888;">Memory: Not Available</span>'
+}
           </div>
         </div>
       </div>
@@ -156,11 +156,11 @@ export class PerformanceDashboard {
           <strong>Total Assets:</strong> ${resourceStats.totalAssets} 
           (${resourceStats.totalSize.toFixed(2)} MB)<br>
           <strong>Threshold:</strong> ${resourceStats.memoryThreshold.toFixed(
-            1
-          )} MB<br>
+    1
+  )} MB<br>
           <strong>Last Cleanup:</strong> ${new Date(
-            resourceStats.lastCleanup
-          ).toLocaleTimeString()}<br>
+    resourceStats.lastCleanup
+  ).toLocaleTimeString()}<br>
           ${this.formatResourceTypes(resourceStats.byType)}
         </div>
       </div>
@@ -172,12 +172,12 @@ export class PerformanceDashboard {
         <div style="font-size: 10px;">
           <strong>Total Events:</strong> ${eventSummary.total}<br>
           ${
-            eventSummary.timeRange
-              ? `<strong>Duration:</strong> ${(
-                  eventSummary.timeRange.duration / 1000
-                ).toFixed(1)}s<br>`
-              : ""
-          }
+  eventSummary.timeRange
+    ? `<strong>Duration:</strong> ${(
+      eventSummary.timeRange.duration / 1000
+    ).toFixed(1)}s<br>`
+    : ''
+}
           <div style="margin-top: 5px;">
             ${this.formatEventTypes(eventSummary.byType)}
           </div>
@@ -211,14 +211,14 @@ export class PerformanceDashboard {
 
   getPerformanceColor(level) {
     switch (level) {
-      case "high":
-        return "#4CAF50";
-      case "medium":
-        return "#FF9800";
-      case "low":
-        return "#F44336";
-      default:
-        return "#888";
+    case 'high':
+      return '#4CAF50';
+    case 'medium':
+      return '#FF9800';
+    case 'low':
+      return '#F44336';
+    default:
+      return '#888';
     }
   }
 
@@ -236,7 +236,7 @@ export class PerformanceDashboard {
             1024
           ).toFixed(2)} MB)`
       )
-      .join("<br>");
+      .join('<br>');
   }
 
   formatEventTypes(byType) {
@@ -246,7 +246,7 @@ export class PerformanceDashboard {
 
     return Object.entries(byType)
       .map(([type, count]) => `<strong>${type}:</strong> ${count}`)
-      .join(" | ");
+      .join(' | ');
   }
 
   formatRecentEvents() {
@@ -262,14 +262,14 @@ export class PerformanceDashboard {
         const icon = this.getEventIcon(event.type);
         const color = this.getEventColor(event.level);
 
-        let description = "";
-        if (event.type === "event") {
+        let description = '';
+        if (event.type === 'event') {
           description = `${event.category}:${event.action}`;
-        } else if (event.type === "error") {
+        } else if (event.type === 'error') {
           description = event.message;
-        } else if (event.type === "state") {
+        } else if (event.type === 'state') {
           description = `${event.stateName} = ${event.value}`;
-        } else if (event.type === "performance") {
+        } else if (event.type === 'performance') {
           description = `${event.metric}: ${event.value}${event.unit}`;
         }
 
@@ -277,7 +277,7 @@ export class PerformanceDashboard {
           ${icon} [${time}] ${description}
         </div>`;
       })
-      .join("");
+      .join('');
   }
 
   formatParticlePoolSection(perfSummary) {
@@ -293,8 +293,8 @@ export class PerformanceDashboard {
     }
 
     const { stats, health } = perfSummary.particlePool;
-    const healthColor = health.isHealthy ? "#4CAF50" : "#F44336";
-    const healthIcon = health.isHealthy ? "✅" : "❌";
+    const healthColor = health.isHealthy ? '#4CAF50' : '#F44336';
+    const healthIcon = health.isHealthy ? '✅' : '❌';
 
     return `
       <div style="margin-bottom: 15px;">
@@ -304,26 +304,26 @@ export class PerformanceDashboard {
             <div>
               <strong>Pool Health:</strong> 
               <span style="color: ${healthColor}">${healthIcon} ${
-      health.isHealthy ? "Healthy" : "Issues"
-    }</span><br>
+  health.isHealthy ? 'Healthy' : 'Issues'
+}</span><br>
               <strong>Active:</strong> ${stats.activeParticles} / ${
-      stats.totalPoolSize
-    }<br>
+  stats.totalPoolSize
+}<br>
               <strong>Utilization:</strong> ${stats.poolUtilization}%
             </div>
             <div>
               <strong>Memory:</strong> ${stats.memoryFootprint.megabytes} MB<br>
               <strong>Efficiency:</strong> ${stats.poolEfficiency}%<br>
               ${
-                health.issueCount > 0
-                  ? `<span style="color: #F44336;">Issues: ${health.issueCount}</span><br>`
-                  : ""
-              }
+  health.issueCount > 0
+    ? `<span style="color: #F44336;">Issues: ${health.issueCount}</span><br>`
+    : ''
+}
               ${
-                health.warningCount > 0
-                  ? `<span style="color: #FF9800;">Warnings: ${health.warningCount}</span>`
-                  : ""
-              }
+  health.warningCount > 0
+    ? `<span style="color: #FF9800;">Warnings: ${health.warningCount}</span>`
+    : ''
+}
             </div>
           </div>
         </div>
@@ -333,29 +333,29 @@ export class PerformanceDashboard {
 
   getEventIcon(type) {
     switch (type) {
-      case "event":
-        return "🎯";
-      case "error":
-        return "❌";
-      case "state":
-        return "🔄";
-      case "performance":
-        return "⏱️";
-      default:
-        return "📝";
+    case 'event':
+      return '🎯';
+    case 'error':
+      return '❌';
+    case 'state':
+      return '🔄';
+    case 'performance':
+      return '⏱️';
+    default:
+      return '📝';
     }
   }
 
   getEventColor(level) {
     switch (level) {
-      case "error":
-        return "#F44336";
-      case "warning":
-        return "#FF9800";
-      case "info":
-        return "#2196F3";
-      default:
-        return "#ffffff";
+    case 'error':
+      return '#F44336';
+    case 'warning':
+      return '#FF9800';
+    case 'info':
+      return '#2196F3';
+    default:
+      return '#ffffff';
     }
   }
 
@@ -368,10 +368,10 @@ export class PerformanceDashboard {
     };
 
     const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
+      type: 'application/json',
     });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = url;
     a.download = `performance-report-${Date.now()}.json`;
     document.body.appendChild(a);
@@ -379,19 +379,19 @@ export class PerformanceDashboard {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    eventTracker.trackEvent("debug", "data_exported", {
+    eventTracker.trackEvent('debug', 'data_exported', {
       eventCount: eventTracker.getEvents().length,
     });
   }
 
   clearAll() {
-    if (confirm("Clear all performance data? This cannot be undone.")) {
+    if (confirm('Clear all performance data? This cannot be undone.')) {
       eventTracker.clear();
       resourceOptimizer.clearCache();
       performanceMonitor.reset();
       this.updateDashboard();
 
-      eventTracker.trackEvent("debug", "all_data_cleared");
+      eventTracker.trackEvent('debug', 'all_data_cleared');
     }
   }
 }

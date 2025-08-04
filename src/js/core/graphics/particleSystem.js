@@ -25,7 +25,7 @@ export default class ParticleManager {
     };
 
     // Performance monitoring
-    this.performanceMode = "high"; // high, medium, low
+    this.performanceMode = 'high'; // high, medium, low
     this.frameTimeHistory = [];
     this.avgFrameTime = 16; // Target 60fps
 
@@ -47,7 +47,7 @@ export default class ParticleManager {
       vx: 0,
       vy: 0,
       size: 1,
-      color: "#ffffff",
+      color: '#ffffff',
       opacity: 1,
       life: 1,
       maxLife: 1000,
@@ -57,7 +57,7 @@ export default class ParticleManager {
       scale: 1,
       scaleVelocity: 0,
       active: false,
-      type: "circle",
+      type: 'circle',
       trail: false,
       trailPositions: [],
       inActiveArray: false, // Track if particle is in active particles array
@@ -74,17 +74,17 @@ export default class ParticleManager {
 
     // Adjust settings based on performance
     switch (mode) {
-      case "low":
-        this.maxParticles = Math.min(100, this.maxParticles);
-        this.cleanupInterval = 200;
-        break;
-      case "medium":
-        this.maxParticles = Math.min(250, this.maxParticles);
-        this.cleanupInterval = 150;
-        break;
-      case "high":
-        // Use defaults
-        break;
+    case 'low':
+      this.maxParticles = Math.min(100, this.maxParticles);
+      this.cleanupInterval = 200;
+      break;
+    case 'medium':
+      this.maxParticles = Math.min(250, this.maxParticles);
+      this.cleanupInterval = 150;
+      break;
+    case 'high':
+      // Use defaults
+      break;
     }
   }
 
@@ -121,7 +121,7 @@ export default class ParticleManager {
     particle.scale = options.scale || 1;
     particle.scaleVelocity = options.scaleVelocity || 0;
     particle.active = true;
-    particle.type = options.type || "circle";
+    particle.type = options.type || 'circle';
     particle.trail = options.trail || false;
     particle.trailPositions = [];
 
@@ -130,7 +130,7 @@ export default class ParticleManager {
       options.gravity !== undefined ? options.gravity : true;
     particle.physics.bounce = options.bounce || false;
     particle.physics.friction = options.friction || 0.99;
-    
+
     // Use a more efficient approach - track if particle is in array
     if (!particle.inActiveArray) {
       this.particles.push(particle);
@@ -192,7 +192,7 @@ export default class ParticleManager {
         Math.sin(angle) * speed,
         duration,
         {
-          type: "star",
+          type: 'star',
           rotationSpeed: (Math.random() - 0.5) * 0.3,
           scaleVelocity: -0.003,
           gravity: false,
@@ -217,7 +217,7 @@ export default class ParticleManager {
         Math.sin(angle) * speed - 1, // Float upward
         duration,
         {
-          type: "bubble",
+          type: 'bubble',
           gravity: false,
           friction: 0.98,
           scaleVelocity: 0.001, // Grow slightly
@@ -445,9 +445,9 @@ export default class ParticleManager {
         0,
         particle.size
       );
-      gradient.addColorStop(0, "rgba(255, 255, 255, 0.8)");
+      gradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
       gradient.addColorStop(0.7, particle.color);
-      gradient.addColorStop(1, "rgba(255, 255, 255, 0.2)");
+      gradient.addColorStop(1, 'rgba(255, 255, 255, 0.2)');
 
       ctx.fillStyle = gradient;
       ctx.beginPath();
@@ -455,7 +455,7 @@ export default class ParticleManager {
       ctx.fill();
 
       // Add bubble highlight
-      ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
       ctx.beginPath();
       ctx.arc(
         -particle.size * 0.3,
@@ -478,8 +478,8 @@ export default class ParticleManager {
       ctx.globalAlpha = particle.opacity * 0.5;
       ctx.strokeStyle = particle.color;
       ctx.lineWidth = particle.size;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
 
       ctx.beginPath();
       ctx.moveTo(particle.trailPositions[0].x, particle.trailPositions[0].y);
@@ -521,18 +521,18 @@ export default class ParticleManager {
       this.avgFrameTime = sum / this.frameTimeHistory.length;
 
       // Adjust performance if needed
-      if (this.avgFrameTime > 20 && this.performanceMode === "high") {
+      if (this.avgFrameTime > 20 && this.performanceMode === 'high') {
         // Below 50fps
-        this.setPerformanceMode("medium");
-        console.log("🐌 Reduced to medium performance mode");
-      } else if (this.avgFrameTime > 25 && this.performanceMode === "medium") {
+        this.setPerformanceMode('medium');
+        console.log('🐌 Reduced to medium performance mode');
+      } else if (this.avgFrameTime > 25 && this.performanceMode === 'medium') {
         // Below 40fps
-        this.setPerformanceMode("low");
-        console.log("🐌 Reduced to low performance mode");
-      } else if (this.avgFrameTime < 17 && this.performanceMode !== "high") {
+        this.setPerformanceMode('low');
+        console.log('🐌 Reduced to low performance mode');
+      } else if (this.avgFrameTime < 17 && this.performanceMode !== 'high') {
         // Above 58fps
-        this.setPerformanceMode("high");
-        console.log("🚀 Increased to high performance mode");
+        this.setPerformanceMode('high');
+        console.log('🚀 Increased to high performance mode');
       }
     }
 
@@ -603,7 +603,7 @@ export default class ParticleManager {
       turbulence: 0,
     };
 
-    console.log("🗑️ ParticleManager destroyed and cleaned up");
+    console.log('🗑️ ParticleManager destroyed and cleaned up');
   }
 
   /**
@@ -734,21 +734,21 @@ export default class ParticleManager {
   logPoolVerification() {
     const verification = this.verifyPool();
 
-    console.group("🔍 Particle Pool Verification");
+    console.group('🔍 Particle Pool Verification');
     console.log(
-      "Pool Health:",
-      verification.isHealthy ? "✅ Healthy" : "❌ Issues Found"
+      'Pool Health:',
+      verification.isHealthy ? '✅ Healthy' : '❌ Issues Found'
     );
     console.table(verification.stats);
 
     if (verification.issues.length > 0) {
-      console.group("❌ Issues");
+      console.group('❌ Issues');
       verification.issues.forEach((issue) => console.error(issue));
       console.groupEnd();
     }
 
     if (verification.warnings.length > 0) {
-      console.group("⚠️ Warnings");
+      console.group('⚠️ Warnings');
       verification.warnings.forEach((warning) => console.warn(warning));
       console.groupEnd();
     }

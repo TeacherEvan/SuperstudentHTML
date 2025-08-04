@@ -60,7 +60,7 @@ export class LevelCompletionScreen {
     document.body.appendChild(completionDiv);
     this.addCompletionScreenCSS();
     this.attachEventListeners();
-    
+
     // Animate in
     setTimeout(() => {
       completionDiv.classList.add('visible');
@@ -210,15 +210,15 @@ export class LevelCompletionScreen {
 
   handleAction(action) {
     switch (action) {
-      case 'restart':
-        if (this.onRestart) this.onRestart();
-        break;
-      case 'next':
-        if (this.onNextLevel) this.onNextLevel();
-        break;
-      case 'menu':
-        if (this.onBackToMenu) this.onBackToMenu();
-        break;
+    case 'restart':
+      if (this.onRestart) this.onRestart();
+      break;
+    case 'next':
+      if (this.onNextLevel) this.onNextLevel();
+      break;
+    case 'menu':
+      if (this.onBackToMenu) this.onBackToMenu();
+      break;
     }
     this.hide();
   }

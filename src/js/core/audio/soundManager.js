@@ -3,7 +3,7 @@ import { getAudioConfig } from './audioConfig.js';
 export default class SoundManager {
   constructor() {
     const audioConfig = getAudioConfig();
-    
+
     // Initialize audio context with proper error handling
     try {
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -39,7 +39,7 @@ export default class SoundManager {
       this.masterGain = stubGain;
       this.gains = { sfx: stubGain, music: stubGain, ambient: stubGain, phonics: stubGain };
     }
-    
+
     // Buffers storage
     this.buffers = {}; // { name: { buffer, type } }
     this.activeSources = {};
@@ -49,12 +49,12 @@ export default class SoundManager {
     this.phonicsCache = new Map(); // Cache for phonics sounds
     this.soundQueue = []; // Queue for sequenced sounds
     this.isProcessingQueue = false;
-    
+
     // Performance optimization
     this.maxConcurrentSounds = 8;
     this.activeSoundsCount = 0;
     this.activeSoundsList = new Set(); // Track active sources for cleanup
-    
+
     // Initialize default sounds only if the AudioContext was created successfully
     if (this.audioContext) {
       this.initializeDefaultSounds();
@@ -69,7 +69,7 @@ export default class SoundManager {
   createSyntheticSounds() {
     // Create basic synthetic sounds for immediate use
     const sampleRate = this.audioContext.sampleRate;
-    
+
     // Pop sound for bubbles
     const popBuffer = this.audioContext.createBuffer(1, sampleRate * 0.1, sampleRate);
     const popData = popBuffer.getChannelData(0);
@@ -78,7 +78,7 @@ export default class SoundManager {
       popData[i] = Math.sin(2 * Math.PI * 800 * t) * Math.exp(-t * 20) * 0.3;
     }
     this.buffers['pop'] = { buffer: popBuffer, type: 'sfx' };
-    
+
     // Success sound
     const successBuffer = this.audioContext.createBuffer(1, sampleRate * 0.3, sampleRate);
     const successData = successBuffer.getChannelData(0);
@@ -92,7 +92,7 @@ export default class SoundManager {
       ) * envelope;
     }
     this.buffers['success'] = { buffer: successBuffer, type: 'sfx' };
-    
+
     // Wrong sound
     const wrongBuffer = this.audioContext.createBuffer(1, sampleRate * 0.2, sampleRate);
     const wrongData = wrongBuffer.getChannelData(0);
@@ -101,7 +101,7 @@ export default class SoundManager {
       wrongData[i] = Math.sin(2 * Math.PI * 150 * t) * Math.exp(-t * 10) * 0.4;
     }
     this.buffers['wrong'] = { buffer: wrongBuffer, type: 'sfx' };
-    
+
     // Explosion sound
     const explosionBuffer = this.audioContext.createBuffer(1, sampleRate * 0.4, sampleRate);
     const explosionData = explosionBuffer.getChannelData(0);
@@ -134,44 +134,44 @@ export default class SoundManager {
       console.warn('AudioContext not available, cannot play sound');
       return null;
     }
-    
+
     // Resume audio context if suspended
     if (this.audioContext.state === 'suspended') {
       this.audioContext.resume().catch(err => {
         console.warn('Failed to resume audio context:', err);
       });
     }
-    
+
     if (this.activeSoundsCount >= this.maxConcurrentSounds) {
       return null; // Skip if too many sounds playing
     }
-    
+
     const entry = this.buffers[name];
     if (!entry) {
       console.warn(`Sound ${name} not found`);
       return null;
     }
-    
+
     const source = this.audioContext.createBufferSource();
     source.buffer = entry.buffer;
-    
+
     // Add volume control
     const gainNode = this.audioContext.createGain();
     gainNode.gain.value = Math.max(0, Math.min(1, volume)); // Clamp volume
     source.connect(gainNode);
     gainNode.connect(this.gains[entry.type] || this.gains.sfx);
-    
+
     // Add pitch control with bounds checking
     source.playbackRate.value = Math.max(0.1, Math.min(4.0, pitch));
-    
+
     // Track this source for cleanup
     this.activeSoundsList.add(source);
-    
+
     source.onended = () => {
       this.activeSoundsCount--;
       this.activeSoundsList.delete(source);
     };
-    
+
     try {
       source.start(0);
       this.activeSoundsCount++;
@@ -180,19 +180,19 @@ export default class SoundManager {
       this.activeSoundsList.delete(source);
       return null;
     }
-    
+
     return source;
   }
 
   playPhonicsSound(letter, volume = 1.0) {
     // Play phonetic sound for a letter
     const soundName = `phonics_${letter.toLowerCase()}`;
-    
+
     // Check cache first
     if (this.phonicsCache.has(soundName)) {
       return this.playSound(soundName, volume);
     }
-    
+
     // Generate synthetic phonics sound if not available
     return this.generateSyntheticPhonicsSound(letter, volume);
   }
@@ -208,7 +208,7 @@ export default class SoundManager {
     const duration = 0.5;
     const buffer = this.audioContext.createBuffer(1, sampleRate * duration, sampleRate);
     const data = buffer.getChannelData(0);
-    
+
     // Basic phonics mapping to frequencies
     const phonicsMap = {
       'a': [800, 1200], 'b': [100, 200], 'c': [200, 300], 'd': [150, 250],
@@ -219,9 +219,9 @@ export default class SoundManager {
       'u': [300, 500], 'v': [200, 400], 'w': [250, 450], 'x': [300, 600],
       'y': [400, 700], 'z': [400, 800]
     };
-    
+
     const freqs = phonicsMap[letter.toLowerCase()] || [400, 600];
-    
+
     for (let i = 0; i < data.length; i++) {
       const t = i / sampleRate;
       const envelope = Math.exp(-t * 2) * (1 - Math.exp(-t * 10));
@@ -230,58 +230,58 @@ export default class SoundManager {
         Math.sin(2 * Math.PI * freqs[1] * t) * 0.2
       ) * envelope * volume;
     }
-    
+
     // Cache the generated sound
     const soundName = `phonics_${letter.toLowerCase()}`;
     this.buffers[soundName] = { buffer, type: 'phonics' };
     this.phonicsCache.set(soundName, buffer);
-    
+
     return this.playSound(soundName, volume);
   }
 
   playMusic(name, loop = true, volume = 1.0) {
     const entry = this.buffers[name];
     if (!entry) return null;
-    
+
     if (this.activeSources[name]) {
       this.activeSources[name].stop();
     }
-    
+
     const source = this.audioContext.createBufferSource();
     source.buffer = entry.buffer;
     source.loop = loop;
-    
+
     const gainNode = this.audioContext.createGain();
     gainNode.gain.value = volume;
     source.connect(gainNode);
     gainNode.connect(this.gains.music);
-    
+
     source.start(0);
     this.activeSources[name] = source;
-    
+
     return source;
   }
 
   playAmbient(name, loop = true, volume = 1.0) {
     const entry = this.buffers[name];
     if (!entry) return null;
-    
+
     if (this.activeSources[name]) {
       this.activeSources[name].stop();
     }
-    
+
     const source = this.audioContext.createBufferSource();
     source.buffer = entry.buffer;
     source.loop = loop;
-    
+
     const gainNode = this.audioContext.createGain();
     gainNode.gain.value = volume;
     source.connect(gainNode);
     gainNode.connect(this.gains.ambient);
-    
+
     source.start(0);
     this.activeSources[name] = source;
-    
+
     return source;
   }
 
@@ -330,16 +330,16 @@ export default class SoundManager {
     if (this.isProcessingQueue) {
       return;
     }
-    
+
     this.isProcessingQueue = true;
-    
+
     try {
       while (this.soundQueue.length > 0) {
         const { sounds, delay } = this.soundQueue.shift();
-        
+
         for (let i = 0; i < sounds.length; i++) {
           const sound = sounds[i];
-          
+
           try {
             if (typeof sound === 'string') {
               this.playSound(sound);
@@ -351,7 +351,7 @@ export default class SoundManager {
           } catch (error) {
             console.warn('Error playing sound in sequence:', error);
           }
-          
+
           if (i < sounds.length - 1) {
             await new Promise(resolve => setTimeout(resolve, delay));
           }
@@ -384,7 +384,7 @@ export default class SoundManager {
       }
     });
     this.activeSources = {};
-    
+
     // Stop all tracked active sounds
     this.activeSoundsList.forEach(source => {
       if (source && typeof source.stop === 'function') {
@@ -396,7 +396,7 @@ export default class SoundManager {
       }
     });
     this.activeSoundsList.clear();
-    
+
     // Reset counter
     this.activeSoundsCount = 0;
   }
@@ -485,19 +485,19 @@ export default class SoundManager {
   createDynamicSound(frequency, duration, type = 'sine', volume = 0.3) {
     const oscillator = this.audioContext.createOscillator();
     const gainNode = this.audioContext.createGain();
-    
+
     oscillator.type = type;
     oscillator.frequency.value = frequency;
-    
+
     gainNode.gain.value = volume;
     gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
-    
+
     oscillator.connect(gainNode);
     gainNode.connect(this.gains.sfx);
-    
+
     oscillator.start();
     oscillator.stop(this.audioContext.currentTime + duration);
-    
+
     return oscillator;
   }
 

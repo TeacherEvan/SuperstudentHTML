@@ -1,4 +1,4 @@
-import { eventTracker } from "../../utils/eventTracker.js";
+import { eventTracker } from '../../utils/eventTracker.js';
 
 export default class HudManager {
   constructor(canvas, ctx) {
@@ -17,8 +17,8 @@ export default class HudManager {
   updateScore(points) {
     const previousScore = this.score;
     this.score += points;
-    eventTracker.trackState("score", this.score, previousScore);
-    eventTracker.trackEvent("game", "score_change", {
+    eventTracker.trackState('score', this.score, previousScore);
+    eventTracker.trackEvent('game', 'score_change', {
       points,
       totalScore: this.score,
     });
@@ -27,15 +27,15 @@ export default class HudManager {
   updateLevel(newLevel) {
     const previousLevel = this.level;
     this.level = newLevel;
-    eventTracker.trackState("level", newLevel, previousLevel);
+    eventTracker.trackState('level', newLevel, previousLevel);
   }
 
   updateLives(newLives) {
     const previousLives = this.lives;
     this.lives = newLives;
-    eventTracker.trackState("lives", newLives, previousLives);
+    eventTracker.trackState('lives', newLives, previousLives);
     if (newLives < previousLives) {
-      eventTracker.trackEvent("game", "life_lost", { remaining: newLives });
+      eventTracker.trackEvent('game', 'life_lost', { remaining: newLives });
     }
   }
 
@@ -51,9 +51,9 @@ export default class HudManager {
 
   draw() {
     this.ctx.save();
-    this.ctx.fillStyle = "#FFFFFF";
+    this.ctx.fillStyle = '#FFFFFF';
     this.ctx.font = `${this.fontSize}px Arial`;
-    this.ctx.textAlign = "left";
+    this.ctx.textAlign = 'left';
 
     // Score
     this.ctx.fillText(`Score: ${this.score}`, 20, 40);
@@ -68,14 +68,14 @@ export default class HudManager {
     let yOffset = 160;
     Object.entries(this.abilities).forEach(([name, ability]) => {
       const cooldownPercent = ability.cooldown / ability.maxCooldown;
-      const color = cooldownPercent > 0 ? "#FF6B6B" : "#4ECDC4";
+      const color = cooldownPercent > 0 ? '#FF6B6B' : '#4ECDC4';
 
       this.ctx.fillStyle = color;
       this.ctx.fillText(
         `${name}: ${
           cooldownPercent > 0
-            ? (ability.cooldown / 1000).toFixed(1) + "s"
-            : "Ready"
+            ? (ability.cooldown / 1000).toFixed(1) + 's'
+            : 'Ready'
         }`,
         20,
         yOffset

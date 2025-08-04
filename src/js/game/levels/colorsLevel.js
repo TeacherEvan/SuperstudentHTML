@@ -10,15 +10,15 @@ export default class ColorsLevel extends BaseLevel {
     this.state = 'memory';
     this.targetDotsRemaining = 0;
     this.onPointerDown = this.onPointerDown.bind(this);
-    
+
     // Enhanced features
     this.correctStreak = 0;
     this.lastCorrectTime = 0;
     this.levelStartTime = 0;
-    
+
     // Timer tracking for memory leak prevention
     this.activeTimers = [];
-    
+
     // Bind cleanup method to prevent context loss
     this.cleanup = this.cleanup.bind(this);
   }
@@ -33,7 +33,7 @@ export default class ColorsLevel extends BaseLevel {
       }
       callback();
     }, delay);
-    
+
     this.activeTimers.push(timerId);
     return timerId;
   }
@@ -49,20 +49,20 @@ export default class ColorsLevel extends BaseLevel {
       radius: this.managers?.displaySettings?.motherRadius || GAME_CONFIG.DOT_RADIUS,
       color: `rgb(${rgb})`
     };
-    
+
     // Enhanced sound feedback
     if (this.managers.sound) {
       // Play level start sound
       this.managers.sound.playSuccess();
-      
+
       // Resume audio context
       await this.managers.sound.resumeContext();
     }
-    
+
     // Show memory dot then disperse
     this.canvas.addEventListener('pointerdown', this.onPointerDown);
     this.levelStartTime = performance.now();
-    
+
     // Use safe timer creation
     this.createTimer(() => this.disperse(), this.memoryTime);
   }
@@ -74,18 +74,18 @@ export default class ColorsLevel extends BaseLevel {
     const targetCount = cfg.targetDots;
     this.targetDotsRemaining = targetCount;
     const others = GAME_CONFIG.COLORS.COLORS_LIST.filter(c => c !== this.targetColor);
-    
+
     // Generate target dots
     for (let i = 0; i < targetCount; i++) {
       this.addDot(this.targetColor, true);
     }
-    
+
     // Generate distractor dots
     for (let i = 0; i < total - targetCount; i++) {
       const color = others[Math.floor(Math.random() * others.length)];
       this.addDot(color, false);
     }
-    
+
     // Play dispersion sound effect
     if (this.managers.sound) {
       this.managers.sound.playPop(0.8);
@@ -112,30 +112,30 @@ export default class ColorsLevel extends BaseLevel {
 
   update(deltaTime) {
     if (this.state !== 'playing') return;
-    
+
     const dt = deltaTime / 16;
     this.dots.forEach(dot => {
       // Update position
       dot.x += dot.dx * dt;
       dot.y += dot.dy * dt;
-      
+
       // Update visual effects
       dot.shimmer += 0.1 * dt;
       dot.pulsePhase += 0.05 * dt;
-      
+
       // Add trail effect for target dots
       if (dot.isTarget) {
         dot.trail.push({ x: dot.x, y: dot.y, alpha: 1.0 });
         if (dot.trail.length > 10) {
           dot.trail.shift();
         }
-        
+
         // Fade trail
         dot.trail.forEach((point, index) => {
           point.alpha = (index + 1) / dot.trail.length * 0.5;
         });
       }
-      
+
       // Bounce on edges with sound
       if (dot.x - dot.radius < 0 || dot.x + dot.radius > this.canvas.width) {
         dot.dx *= -1;
@@ -156,19 +156,19 @@ export default class ColorsLevel extends BaseLevel {
     if (this.state === 'memory') {
       // Draw mother dot with enhanced effects
       this.drawEnhancedDot(this.mother, true, true);
-      
+
       // Draw instruction text
       this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
       this.ctx.font = 'bold 24px Arial';
       this.ctx.textAlign = 'center';
       this.ctx.fillText('Remember this color!', this.canvas.width / 2, 50);
-      
+
     } else if (this.state === 'playing') {
       // Draw moving dots with enhanced visuals
       this.dots.forEach(dot => {
         this.drawEnhancedDot(dot, dot.isTarget);
       });
-      
+
       // Draw UI
       this.drawUI();
     }
@@ -176,7 +176,7 @@ export default class ColorsLevel extends BaseLevel {
 
   drawEnhancedDot(dot, isTarget = false, isMemory = false) {
     this.ctx.save();
-    
+
     // Draw trail for target dots
     if (isTarget && dot.trail) {
       dot.trail.forEach(point => {
@@ -187,25 +187,25 @@ export default class ColorsLevel extends BaseLevel {
         this.ctx.fill();
       });
     }
-    
+
     // Draw main dot with effects
     this.ctx.globalAlpha = 1.0;
-    
+
     // Glow effect for target dots
     if (isTarget || isMemory) {
       const glowIntensity = 0.5 + Math.sin(dot.pulsePhase || 0) * 0.3;
       this.ctx.shadowColor = dot.color;
       this.ctx.shadowBlur = 20 * glowIntensity;
     }
-    
+
     // Shimmer effect
     const shimmerOffset = Math.sin(dot.shimmer || 0) * 5;
-    
+
     this.ctx.fillStyle = dot.color;
     this.ctx.beginPath();
     this.ctx.arc(dot.x + shimmerOffset, dot.y, dot.radius, 0, Math.PI * 2);
     this.ctx.fill();
-    
+
     // Highlight for target dots
     if (isTarget || isMemory) {
       this.ctx.globalAlpha = 0.8;
@@ -214,7 +214,7 @@ export default class ColorsLevel extends BaseLevel {
       this.ctx.arc(dot.x + shimmerOffset - dot.radius * 0.3, dot.y - dot.radius * 0.3, dot.radius * 0.4, 0, Math.PI * 2);
       this.ctx.fill();
     }
-    
+
     this.ctx.restore();
   }
 
@@ -224,13 +224,13 @@ export default class ColorsLevel extends BaseLevel {
     this.ctx.font = 'bold 18px Arial';
     this.ctx.textAlign = 'left';
     this.ctx.fillText(`Target Dots Remaining: ${this.targetDotsRemaining}`, 20, 30);
-    
+
     // Draw streak if active
     if (this.correctStreak > 0) {
       this.ctx.fillStyle = '#2ecc71';
       this.ctx.fillText(`Streak: ${this.correctStreak}`, 20, 55);
     }
-    
+
     // Draw timer
     const elapsed = performance.now() - this.levelStartTime;
     const seconds = Math.floor(elapsed / 1000);
@@ -241,18 +241,18 @@ export default class ColorsLevel extends BaseLevel {
 
   onPointerDown(event) {
     if (this.state !== 'playing') return;
-    
+
     const rect = this.canvas.getBoundingClientRect();
     const x = (event.clientX - rect.left) * (this.canvas.width / rect.width);
     const y = (event.clientY - rect.top) * (this.canvas.height / rect.height);
-    
+
     // Check for dot collision
     for (let i = this.dots.length - 1; i >= 0; i--) {
       const dot = this.dots[i];
       const dx = x - dot.x;
       const dy = y - dot.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      
+
       if (distance <= dot.radius) {
         // Hit a dot
         if (dot.isTarget) {
@@ -270,34 +270,34 @@ export default class ColorsLevel extends BaseLevel {
   handleCorrectHit(dot, index) {
     this.correctStreak++;
     this.lastCorrectTime = performance.now();
-    
+
     // Enhanced explosion effect
     this.helpers.createExplosion(dot.x, dot.y, dot.color, 1.5);
-    
+
     // Sound feedback
     if (this.managers.sound) {
       this.managers.sound.playSuccess();
-      
+
       // Additional pop sound
       this.createTimer(() => {
         this.managers.sound.playPop(1.2);
       }, 100);
     }
-    
+
     // Score calculation with streak bonus
     const baseScore = 100;
     const streakBonus = Math.min(this.correctStreak, 5) * 20;
     const totalScore = baseScore + streakBonus;
-    
+
     this.updateScore(totalScore);
     this.targetDotsRemaining--;
     this.dots.splice(index, 1);
-    
+
     // Sparkle effect for high streaks
     if (this.correctStreak >= 3) {
       this.managers.particleManager.createSparkle(dot.x, dot.y, '#ffd700', 1.5);
     }
-    
+
     // Check if level complete
     if (this.targetDotsRemaining <= 0) {
       this.completeLevel();
@@ -306,19 +306,19 @@ export default class ColorsLevel extends BaseLevel {
 
   handleWrongHit(dot, index) {
     this.correctStreak = 0;
-    
+
     // Glass shatter effect
     this.helpers.applyExplosionEffect(dot.x, dot.y, 30, 1);
-    
+
     // Sound feedback
     if (this.managers.sound) {
       this.managers.sound.playWrong();
     }
-    
+
     // Score penalty
     this.updateScore(-50);
     this.dots.splice(index, 1);
-    
+
     // Screen shake effect
     if (this.managers.centerPiece) {
       // Trigger screen shake (if available)
@@ -333,11 +333,11 @@ export default class ColorsLevel extends BaseLevel {
         { type: 'sound', name: 'pop', volume: 0.8, pitch: 1.2 }
       ], 300);
     }
-    
+
     // Fireworks effect
     const centerX = this.canvas.width / 2;
     const centerY = this.canvas.height / 2;
-    
+
     for (let i = 0; i < 3; i++) {
       this.createTimer(() => {
         this.managers.particleManager.createExplosion(
@@ -349,13 +349,13 @@ export default class ColorsLevel extends BaseLevel {
         );
       }, i * 500);
     }
-    
+
     // Calculate bonus score
     const timeBonus = Math.max(0, 10000 - (performance.now() - this.levelStartTime)) / 100;
     const accuracyBonus = this.correctStreak * 50;
-    
+
     this.updateScore(Math.floor(timeBonus + accuracyBonus));
-    
+
     // End level after celebration
     this.createTimer(() => {
       this.end();
@@ -372,16 +372,16 @@ export default class ColorsLevel extends BaseLevel {
       }
     });
     this.activeTimers = [];
-    
+
     // Safely remove event listener
     try {
       this.canvas.removeEventListener('pointerdown', this.onPointerDown);
     } catch (error) {
       console.warn('Error removing event listener:', error);
     }
-    
+
     this.dots = [];
-    
+
     console.log('🧹 ColorsLevel cleanup completed');
   }
 }

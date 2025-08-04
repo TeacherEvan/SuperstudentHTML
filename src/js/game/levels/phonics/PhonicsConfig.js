@@ -12,7 +12,7 @@ export const PhonicsConfig = {
     bubblePoolSize: 20,
     particlePoolSize: 50
   },
-  
+
   // Bubble physics
   physics: {
     gravity: 0.1,
@@ -28,7 +28,7 @@ export const PhonicsConfig = {
       elasticity: 0.3
     }
   },
-  
+
   // Visual settings
   visuals: {
     bubbleSize: {
@@ -62,7 +62,7 @@ export const PhonicsConfig = {
       }
     }
   },
-  
+
   // Educational settings
   education: {
     alphabet: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
@@ -122,7 +122,7 @@ export const PhonicsConfig = {
       maxStreak: 5
     }
   },
-  
+
   // Game mechanics
   gameplay: {
     spawnZone: {
@@ -142,7 +142,7 @@ export const PhonicsConfig = {
     pauseOnWrong: 500, // 0.5 second pause on wrong answer
     celebrationDuration: 2000 // 2 seconds celebration
   },
-  
+
   // Audio settings
   audio: {
     phonics: {

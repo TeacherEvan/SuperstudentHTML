@@ -1,4 +1,4 @@
-import { eventTracker } from "../../utils/eventTracker.js";
+import { eventTracker } from '../../utils/eventTracker.js';
 
 export class BaseLevel {
   // Accept core level parameters
@@ -12,23 +12,23 @@ export class BaseLevel {
   }
 
   async init() {
-    throw new Error("init() must be implemented by subclass");
+    throw new Error('init() must be implemented by subclass');
   }
 
   update(deltaTime) {
-    throw new Error("update() must be implemented by subclass");
+    throw new Error('update() must be implemented by subclass');
   }
 
   render() {
-    throw new Error("render() must be implemented by subclass");
+    throw new Error('render() must be implemented by subclass');
   }
 
   cleanup() {
-    throw new Error("cleanup() must be implemented by subclass");
+    throw new Error('cleanup() must be implemented by subclass');
   }
 
   async start() {
-    eventTracker.trackEvent("level", "start", {
+    eventTracker.trackEvent('level', 'start', {
       levelType: this.constructor.name,
     });
     await this.init();
@@ -37,7 +37,7 @@ export class BaseLevel {
 
   end() {
     this.running = false;
-    eventTracker.trackEvent("level", "end", {
+    eventTracker.trackEvent('level', 'end', {
       levelType: this.constructor.name,
       score: this.score,
       duration: Date.now() - (this.startTime || Date.now()),

@@ -3,7 +3,7 @@
  * Monitors frame rate, memory usage, and rendering performance
  * Integrates with the event tracking system for comprehensive debugging
  */
-import { eventTracker } from "../utils/eventTracker.js";
+import { eventTracker } from '../utils/eventTracker.js';
 
 export class PerformanceMonitor {
   constructor(options = {}) {
@@ -32,26 +32,26 @@ export class PerformanceMonitor {
     this.lastSampleTime = performance.now();
 
     // Performance states
-    this.performanceLevel = "high"; // high, medium, low
+    this.performanceLevel = 'high'; // high, medium, low
     this.adaptiveSettings = {
-      high: { maxParticles: 500, particleQuality: "high", enableEffects: true },
+      high: { maxParticles: 500, particleQuality: 'high', enableEffects: true },
       medium: {
         maxParticles: 300,
-        particleQuality: "medium",
+        particleQuality: 'medium',
         enableEffects: true,
       },
-      low: { maxParticles: 150, particleQuality: "low", enableEffects: false },
+      low: { maxParticles: 150, particleQuality: 'low', enableEffects: false },
     };
 
     this.initialize();
   }
 
   initialize() {
-    if (this.options.trackMemory && "memory" in performance) {
+    if (this.options.trackMemory && 'memory' in performance) {
       this.memorySupported = true;
     }
 
-    eventTracker.trackEvent("performance", "monitor_initialized", {
+    eventTracker.trackEvent('performance', 'monitor_initialized', {
       features: {
         frameTracking: this.options.trackFrameRate,
         memoryTracking: this.memorySupported,
@@ -115,21 +115,21 @@ export class PerformanceMonitor {
 
     // Track performance metrics
     eventTracker.trackPerformance(
-      "frame_rate",
+      'frame_rate',
       this.metrics.frameRate.toFixed(1),
-      "fps"
+      'fps'
     );
     eventTracker.trackPerformance(
-      "frame_time",
+      'frame_time',
       this.metrics.averageFrameTime.toFixed(2),
-      "ms"
+      'ms'
     );
 
     if (this.memorySupported) {
       eventTracker.trackPerformance(
-        "memory_usage",
+        'memory_usage',
         this.metrics.memoryUsage.toFixed(2),
-        "MB"
+        'MB'
       );
     }
   }
@@ -142,18 +142,18 @@ export class PerformanceMonitor {
 
     // Performance degradation detection
     if (averageFrameTime > this.options.frameTimeThreshold) {
-      if (this.performanceLevel === "high") {
-        newLevel = "medium";
-      } else if (this.performanceLevel === "medium") {
-        newLevel = "low";
+      if (this.performanceLevel === 'high') {
+        newLevel = 'medium';
+      } else if (this.performanceLevel === 'medium') {
+        newLevel = 'low';
       }
     }
     // Performance improvement detection (be conservative)
     else if (averageFrameTime < 14 && frameRate > 65) {
-      if (this.performanceLevel === "low") {
-        newLevel = "medium";
-      } else if (this.performanceLevel === "medium" && averageFrameTime < 12) {
-        newLevel = "high";
+      if (this.performanceLevel === 'low') {
+        newLevel = 'medium';
+      } else if (this.performanceLevel === 'medium' && averageFrameTime < 12) {
+        newLevel = 'high';
       }
     }
 
@@ -166,17 +166,17 @@ export class PerformanceMonitor {
     const previousLevel = this.performanceLevel;
     this.performanceLevel = level;
 
-    eventTracker.trackEvent("performance", "level_changed", {
+    eventTracker.trackEvent('performance', 'level_changed', {
       from: previousLevel,
       to: level,
       metrics: this.metrics,
-      reason: "adaptive_quality",
+      reason: 'adaptive_quality',
     });
 
     // Dispatch event for systems to adjust their settings
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       window.dispatchEvent(
-        new CustomEvent("PerformanceLevelChanged", {
+        new CustomEvent('PerformanceLevelChanged', {
           detail: {
             level,
             previousLevel,
@@ -217,7 +217,7 @@ export class PerformanceMonitor {
   forcePerformanceLevel(level) {
     if (level in this.adaptiveSettings) {
       this.setPerformanceLevel(level);
-      eventTracker.trackEvent("performance", "level_forced", { level });
+      eventTracker.trackEvent('performance', 'level_forced', { level });
     }
   }
 
@@ -227,9 +227,9 @@ export class PerformanceMonitor {
     this.frameCount = 0;
     this.lastFrameTime = performance.now();
     this.lastSampleTime = performance.now();
-    this.performanceLevel = "high";
+    this.performanceLevel = 'high';
 
-    eventTracker.trackEvent("performance", "monitor_reset");
+    eventTracker.trackEvent('performance', 'monitor_reset');
   }
 
   /**
@@ -242,7 +242,7 @@ export class PerformanceMonitor {
    */
   setParticleManager(particleManager) {
     this.particleManager = particleManager;
-    eventTracker.trackEvent("performance", "particle_manager_linked");
+    eventTracker.trackEvent('performance', 'particle_manager_linked');
   }
 
   /**
@@ -251,7 +251,7 @@ export class PerformanceMonitor {
    */
   verifyParticlePool() {
     if (!this.particleManager) {
-      console.warn("⚠️ No particle manager linked for pool verification");
+      console.warn('⚠️ No particle manager linked for pool verification');
       return null;
     }
 
@@ -259,7 +259,7 @@ export class PerformanceMonitor {
 
     // Log critical issues to event tracker
     if (!verification.isHealthy) {
-      eventTracker.trackEvent("performance", "particle_pool_issues", {
+      eventTracker.trackEvent('performance', 'particle_pool_issues', {
         issues: verification.issues,
         warnings: verification.warnings,
         stats: verification.stats,
@@ -297,32 +297,32 @@ export class PerformanceMonitor {
    * Run comprehensive performance analysis including pool verification
    */
   runDiagnostics() {
-    console.group("🔬 Performance Diagnostics");
+    console.group('🔬 Performance Diagnostics');
 
     // Base performance metrics
     console.table(this.metrics);
 
     // Particle pool verification
     if (this.particleManager) {
-      console.log("\n🎯 Particle Pool Analysis:");
+      console.log('\n🎯 Particle Pool Analysis:');
       this.particleManager.logPoolVerification();
     } else {
       console.warn(
-        "⚠️ Particle manager not linked - skipping pool verification"
+        '⚠️ Particle manager not linked - skipping pool verification'
       );
     }
 
     // Memory analysis
     if (this.memorySupported) {
-      console.log("\n🧠 Memory Analysis:");
+      console.log('\n🧠 Memory Analysis:');
       console.table({
-        "Used Heap": `${this.metrics.memoryUsage.toFixed(2)} MB`,
-        "Total Heap": `${(
+        'Used Heap': `${this.metrics.memoryUsage.toFixed(2)} MB`,
+        'Total Heap': `${(
           performance.memory.totalJSHeapSize /
           1024 /
           1024
         ).toFixed(2)} MB`,
-        "Heap Limit": `${(
+        'Heap Limit': `${(
           performance.memory.jsHeapSizeLimit /
           1024 /
           1024
@@ -333,7 +333,7 @@ export class PerformanceMonitor {
     console.groupEnd();
 
     // Track diagnostic run
-    eventTracker.trackEvent("performance", "diagnostics_run", {
+    eventTracker.trackEvent('performance', 'diagnostics_run', {
       timestamp: Date.now(),
       performanceLevel: this.performanceLevel,
       hasParticleManager: !!this.particleManager,
