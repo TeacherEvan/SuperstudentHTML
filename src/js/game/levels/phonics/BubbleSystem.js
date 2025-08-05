@@ -9,37 +9,37 @@ export class BubbleSystem {
     this.ctx = ctx;
     this.particleManager = particleManager;
     this.soundManager = soundManager;
-    
+
     // Configuration
     this.config = PhonicsConfig;
-    
+
     // Bubble management
     this.bubbles = [];
     this.bubblePool = [];
     this.activeBubbles = 0;
-    
+
     // Performance optimization
     this.lastSpawnTime = 0;
     this.spawnRate = this.config.education.difficulty.easy.spawnRate;
     this.maxBubbles = this.config.performance.maxBubbles;
-    
+
     // Visual effects
     this.time = 0;
     this.shimmerPhase = 0;
-    
+
     // Initialize bubble pool
     this.initializeBubblePool();
-    
+
     // Target letter tracking
     this.targetLetter = null;
     this.targetLetterIndex = 0;
     this.currentDifficulty = 'easy';
-    
+
     // Game state
     this.streak = 0;
     this.combo = 0;
     this.lastCorrectTime = 0;
-    
+
     // Bind methods
     this.onPointerDown = this.onPointerDown.bind(this);
     this.setupEventListeners();
@@ -88,7 +88,7 @@ export class BubbleSystem {
   setDifficulty(difficulty) {
     this.currentDifficulty = difficulty;
     this.spawnRate = this.config.education.difficulty[difficulty].spawnRate;
-    this.maxBubbles = Math.floor(this.config.performance.maxBubbles * 
+    this.maxBubbles = Math.floor(this.config.performance.maxBubbles *
       (difficulty === 'easy' ? 0.7 : difficulty === 'medium' ? 0.85 : 1.0));
   }
 
@@ -105,19 +105,19 @@ export class BubbleSystem {
 
   spawnBubble(letter = null, isTarget = false) {
     if (this.activeBubbles >= this.maxBubbles) return null;
-    
+
     // Get bubble from pool
     let bubble = this.bubblePool.find(b => !b.active);
     if (!bubble) {
       bubble = this.createBubbleObject();
       this.bubblePool.push(bubble);
     }
-    
+
     // Configure bubble
     const spawnZone = this.config.gameplay.spawnZone;
-    const size = this.config.visuals.bubbleSize.min + 
+    const size = this.config.visuals.bubbleSize.min +
                 Math.random() * (this.config.visuals.bubbleSize.max - this.config.visuals.bubbleSize.min);
-    
+
     bubble.x = (spawnZone.x + Math.random() * spawnZone.width) * this.canvas.width;
     bubble.y = spawnZone.y * this.canvas.height;
     bubble.vx = (Math.random() - 0.5) * 0.5;
@@ -136,15 +136,15 @@ export class BubbleSystem {
     bubble.age = 0;
     bubble.bounceCount = 0;
     bubble.lastSoundTime = 0;
-    
+
     this.bubbles.push(bubble);
     this.activeBubbles++;
-    
+
     // Play phonics sound if enabled
     if (this.config.audio.phonics.playOnSpawn) {
       this.soundManager.playPhonicsSound(bubble.letter, this.config.audio.phonics.volume);
     }
-    
+
     return bubble;
   }
 
@@ -156,16 +156,16 @@ export class BubbleSystem {
   update(deltaTime) {
     this.time += deltaTime;
     this.shimmerPhase += this.config.visuals.effects.shimmer.speed * deltaTime / 16;
-    
+
     // Spawn bubbles
     this.updateSpawning(deltaTime);
-    
+
     // Update existing bubbles
     this.updateBubbles(deltaTime);
-    
+
     // Check for expired bubbles
     this.cleanupBubbles();
-    
+
     // Update combo timer
     this.updateCombo(deltaTime);
   }
@@ -173,30 +173,30 @@ export class BubbleSystem {
   updateSpawning(deltaTime) {
     const now = performance.now();
     if (now - this.lastSpawnTime >= this.spawnRate) {
-      const shouldSpawnTarget = this.targetLetter && 
-                               Math.random() < 0.4 && 
+      const shouldSpawnTarget = this.targetLetter &&
+                               Math.random() < 0.4 &&
                                !this.bubbles.some(b => b.isTarget);
-      
+
       if (shouldSpawnTarget) {
         this.spawnBubble(this.targetLetter, true);
       } else {
         this.spawnBubble();
       }
-      
+
       this.lastSpawnTime = now;
     }
   }
 
   updateBubbles(deltaTime) {
     const dt = deltaTime / 16; // Normalize to 60fps
-    
+
     this.bubbles.forEach(bubble => {
       if (!bubble.active) return;
-      
+
       // Update lifetime
       bubble.lifetime += deltaTime;
       bubble.age += deltaTime;
-      
+
       if (bubble.isPopping) {
         bubble.popAnimation += deltaTime / 200;
         if (bubble.popAnimation >= 1) {
@@ -204,16 +204,16 @@ export class BubbleSystem {
         }
         return;
       }
-      
+
       // Physics update
       this.updateBubblePhysics(bubble, dt);
-      
+
       // Visual effects update
       this.updateBubbleEffects(bubble, dt);
-      
+
       // Check boundaries
       this.checkBoundaries(bubble);
-      
+
       // Check if bubble should be removed
       if (bubble.lifetime >= bubble.maxLifetime) {
         this.popBubble(bubble, false);
@@ -224,21 +224,21 @@ export class BubbleSystem {
   updateBubblePhysics(bubble, dt) {
     // Apply buoyancy (bubbles float up)
     bubble.vy -= this.config.physics.buoyancy * dt;
-    
+
     // Apply gravity (slight downward force)
     bubble.vy += this.config.physics.gravity * dt;
-    
+
     // Apply drag
     bubble.vx *= this.config.physics.drag;
     bubble.vy *= this.config.physics.drag;
-    
+
     // Add floating motion
     if (this.config.visuals.effects.floating.enabled) {
-      const floatOffset = Math.sin(this.time * this.config.visuals.effects.floating.frequency + bubble.phase) * 
+      const floatOffset = Math.sin(this.time * this.config.visuals.effects.floating.frequency + bubble.phase) *
                          this.config.visuals.effects.floating.amplitude;
       bubble.vx += floatOffset * 0.01;
     }
-    
+
     // Update position
     bubble.x += bubble.vx * dt;
     bubble.y += bubble.vy * dt;
@@ -247,19 +247,19 @@ export class BubbleSystem {
   updateBubbleEffects(bubble, dt) {
     // Update phase for animations
     bubble.phase += 0.02 * dt;
-    
+
     // Update glow for target letters
     if (bubble.isTarget) {
       bubble.glowIntensity = 0.5 + Math.sin(this.time * 0.005) * 0.3;
     }
-    
+
     // Update shimmer effect
     bubble.shimmerOffset += this.config.visuals.effects.shimmer.speed * dt;
   }
 
   checkBoundaries(bubble) {
     const radius = bubble.size / 2;
-    
+
     // Side boundaries
     if (bubble.x - radius < 0) {
       bubble.x = radius;
@@ -270,19 +270,19 @@ export class BubbleSystem {
       bubble.vx = -bubble.vx * this.config.physics.bounce.elasticity;
       bubble.bounceCount++;
     }
-    
+
     // Top boundary (bubbles escape here)
     if (bubble.y + radius < 0) {
       this.deactivateBubble(bubble);
     }
-    
+
     // Bottom boundary (bubbles bounce)
     if (bubble.y + radius > this.canvas.height) {
       bubble.y = this.canvas.height - radius;
       bubble.vy = -bubble.vy * this.config.physics.bounce.elasticity;
       bubble.bounceCount++;
     }
-    
+
     // Apply bounce damping
     if (bubble.bounceCount > 0) {
       bubble.vx *= this.config.physics.bounce.damping;
@@ -304,11 +304,11 @@ export class BubbleSystem {
 
   onPointerDown(event) {
     event.preventDefault();
-    
+
     const rect = this.canvas.getBoundingClientRect();
     const x = (event.clientX - rect.left) * (this.canvas.width / rect.width);
     const y = (event.clientY - rect.top) * (this.canvas.height / rect.height);
-    
+
     // Check for bubble collision
     const clickedBubble = this.findBubbleAtPoint(x, y);
     if (clickedBubble) {
@@ -321,11 +321,11 @@ export class BubbleSystem {
     for (let i = this.bubbles.length - 1; i >= 0; i--) {
       const bubble = this.bubbles[i];
       if (!bubble.active || bubble.isPopping) continue;
-      
+
       const dx = x - bubble.x;
       const dy = y - bubble.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      
+
       if (distance <= bubble.size / 2) {
         return bubble;
       }
@@ -335,13 +335,13 @@ export class BubbleSystem {
 
   handleBubbleClick(bubble) {
     const isCorrect = bubble.letter === this.targetLetter;
-    
+
     if (isCorrect) {
       this.handleCorrectAnswer(bubble);
     } else {
       this.handleWrongAnswer(bubble);
     }
-    
+
     this.popBubble(bubble, isCorrect);
   }
 
@@ -350,26 +350,26 @@ export class BubbleSystem {
     this.streak++;
     this.combo++;
     this.lastCorrectTime = performance.now();
-    
+
     // Calculate score with multipliers
     const baseScore = this.config.education.progression.correctScorePoints;
-    const streakMultiplier = Math.min(this.streak, this.config.education.progression.maxStreak) * 
+    const streakMultiplier = Math.min(this.streak, this.config.education.progression.maxStreak) *
                             this.config.education.progression.streakMultiplier;
     const comboMultiplier = Math.min(this.combo, 3) * 0.5;
-    
+
     const score = Math.floor(baseScore * (1 + streakMultiplier + comboMultiplier));
-    
+
     // Play success sound
     this.soundManager.playSuccess();
-    
+
     // Play phonics sound
     if (this.config.audio.phonics.playOnPop) {
       this.soundManager.playPhonicsSound(bubble.letter, this.config.audio.phonics.volume);
     }
-    
+
     // Trigger visual effects
     this.createSuccessEffect(bubble);
-    
+
     // Notify parent level
     if (this.onCorrectAnswer) {
       this.onCorrectAnswer(bubble.letter, score);
@@ -379,13 +379,13 @@ export class BubbleSystem {
   handleWrongAnswer(bubble) {
     // Reset streak but keep combo for educational value
     this.streak = 0;
-    
+
     // Play wrong sound
     this.soundManager.playWrong();
-    
+
     // Trigger visual effects
     this.createWrongEffect(bubble);
-    
+
     // Notify parent level
     if (this.onWrongAnswer) {
       this.onWrongAnswer(bubble.letter, this.config.education.progression.wrongScorePenalty);
@@ -394,16 +394,16 @@ export class BubbleSystem {
 
   popBubble(bubble, isCorrect) {
     if (bubble.isPopping) return;
-    
+
     bubble.isPopping = true;
     bubble.popAnimation = 0;
-    
+
     // Play pop sound
     this.soundManager.playPop(1.0);
-    
+
     // Create pop particles
     this.createPopParticles(bubble, isCorrect);
-    
+
     // Remove from active bubbles immediately
     this.activeBubbles--;
   }
@@ -418,7 +418,7 @@ export class BubbleSystem {
       const dy = Math.sin(angle) * speed;
       const size = 2 + Math.random() * 3;
       const duration = 800 + Math.random() * 400;
-      
+
       this.particleManager.createParticle(
         bubble.x, bubble.y,
         this.config.visuals.colors.correctGlow,
@@ -437,7 +437,7 @@ export class BubbleSystem {
       const dy = Math.sin(angle) * speed;
       const size = 1 + Math.random() * 2;
       const duration = 600 + Math.random() * 300;
-      
+
       this.particleManager.createParticle(
         bubble.x, bubble.y,
         this.config.visuals.colors.wrongGlow,
@@ -449,7 +449,7 @@ export class BubbleSystem {
   createPopParticles(bubble, isCorrect) {
     const particleCount = this.config.physics.pop.particleCount;
     const color = isCorrect ? this.config.visuals.colors.correctGlow : this.config.visuals.colors.bubbleBase;
-    
+
     for (let i = 0; i < particleCount; i++) {
       const angle = (i / particleCount) * Math.PI * 2;
       const speed = 1 + Math.random() * 2;
@@ -457,7 +457,7 @@ export class BubbleSystem {
       const dy = Math.sin(angle) * speed;
       const size = 1 + Math.random() * 2;
       const duration = 500 + Math.random() * 500;
-      
+
       this.particleManager.createParticle(
         bubble.x, bubble.y,
         color,
@@ -479,15 +479,15 @@ export class BubbleSystem {
   draw(ctx) {
     this.bubbles.forEach(bubble => {
       if (!bubble.active) return;
-      
+
       ctx.save();
-      
+
       if (bubble.isPopping) {
         this.drawPoppingBubble(ctx, bubble);
       } else {
         this.drawBubble(ctx, bubble);
       }
-      
+
       ctx.restore();
     });
   }
@@ -501,14 +501,14 @@ export class BubbleSystem {
       ctx.arc(bubble.x, bubble.y, bubble.size / 2 + 10, 0, Math.PI * 2);
       ctx.fill();
     }
-    
+
     // Draw bubble shadow
     ctx.globalAlpha = 0.3;
     ctx.fillStyle = this.config.visuals.colors.bubbleShadow;
     ctx.beginPath();
     ctx.arc(bubble.x + 2, bubble.y + 2, bubble.size / 2, 0, Math.PI * 2);
     ctx.fill();
-    
+
     // Draw main bubble
     ctx.globalAlpha = 0.8;
     const gradient = ctx.createRadialGradient(
@@ -517,19 +517,19 @@ export class BubbleSystem {
     );
     gradient.addColorStop(0, this.config.visuals.colors.bubbleHighlight);
     gradient.addColorStop(1, this.config.visuals.colors.bubbleBase);
-    
+
     ctx.fillStyle = gradient;
     ctx.beginPath();
     ctx.arc(bubble.x, bubble.y, bubble.size / 2, 0, Math.PI * 2);
     ctx.fill();
-    
+
     // Draw bubble highlight
     ctx.globalAlpha = 0.9;
     ctx.fillStyle = this.config.visuals.colors.bubbleHighlight;
     ctx.beginPath();
     ctx.arc(bubble.x - bubble.size / 4, bubble.y - bubble.size / 4, bubble.size / 8, 0, Math.PI * 2);
     ctx.fill();
-    
+
     // Draw shimmer effect
     if (this.config.visuals.effects.shimmer.enabled) {
       ctx.globalAlpha = 0.4 + Math.sin(this.shimmerPhase + bubble.shimmerOffset) * 0.2;
@@ -538,7 +538,7 @@ export class BubbleSystem {
       ctx.arc(bubble.x + bubble.size / 6, bubble.y - bubble.size / 6, bubble.size / 12, 0, Math.PI * 2);
       ctx.fill();
     }
-    
+
     // Draw letter
     ctx.globalAlpha = 1.0;
     ctx.fillStyle = this.config.visuals.colors.letterColor;
@@ -552,16 +552,16 @@ export class BubbleSystem {
     const progress = bubble.popAnimation;
     const scale = 1 + progress * 0.5;
     const alpha = 1 - progress;
-    
+
     ctx.globalAlpha = alpha;
     ctx.scale(scale, scale);
-    
+
     // Draw expanded bubble
     ctx.fillStyle = this.config.visuals.colors.bubbleBase;
     ctx.beginPath();
     ctx.arc(bubble.x / scale, bubble.y / scale, (bubble.size / 2) / scale, 0, Math.PI * 2);
     ctx.fill();
-    
+
     // Draw letter
     ctx.fillStyle = this.config.visuals.colors.letterColor;
     ctx.font = `bold ${(bubble.size / 2) / scale}px Arial`;
@@ -575,7 +575,7 @@ export class BubbleSystem {
     this.bubbles.forEach(bubble => this.deactivateBubble(bubble));
     this.bubbles = [];
     this.activeBubbles = 0;
-    
+
     // Reset state
     this.streak = 0;
     this.combo = 0;

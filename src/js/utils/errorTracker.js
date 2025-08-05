@@ -8,7 +8,7 @@ export class EventTracker {
     this.options = {
       overlay: true,
       consoleLogging: true,
-      logLevel: "all", // 'all', 'errors', 'warnings', 'info'
+      logLevel: 'all', // 'all', 'errors', 'warnings', 'info'
       maxLogEntries: 1000,
       ...options,
     };
@@ -25,18 +25,18 @@ export class EventTracker {
     this.setupGlobalErrorHandlers();
 
     this.isInitialized = true;
-    this.trackEvent("system", "tracker_initialized", { timestamp: Date.now() });
+    this.trackEvent('system', 'tracker_initialized', { timestamp: Date.now() });
   }
 
   // Track general events with category, action, and optional data
   trackEvent(category, action, data = {}) {
     const entry = {
-      type: "event",
+      type: 'event',
       category,
       action,
       data,
       timestamp: Date.now(),
-      level: "info",
+      level: 'info',
     };
 
     this.addLogEntry(entry);
@@ -50,12 +50,12 @@ export class EventTracker {
   // Track errors with context
   trackError(error, context = {}) {
     const entry = {
-      type: "error",
+      type: 'error',
       message: error.message || String(error),
       stack: error.stack,
       context,
       timestamp: Date.now(),
-      level: "error",
+      level: 'error',
     };
 
     this.addLogEntry(entry);
@@ -66,18 +66,18 @@ export class EventTracker {
       if (entry.stack) console.error(entry.stack);
     }
 
-    this.updateOverlay(`ERROR: ${entry.message}`, "error");
+    this.updateOverlay(`ERROR: ${entry.message}`, 'error');
   }
 
   // Track state changes
   trackState(stateName, value, previousValue = null) {
     const entry = {
-      type: "state",
+      type: 'state',
       stateName,
       value,
       previousValue,
       timestamp: Date.now(),
-      level: "info",
+      level: 'info',
     };
 
     this.addLogEntry(entry);
@@ -86,20 +86,20 @@ export class EventTracker {
       const time = new Date(entry.timestamp).toLocaleTimeString();
       console.log(
         `🔄 [${time}] STATE: ${stateName} = ${value}`,
-        previousValue !== null ? `(was: ${previousValue})` : ""
+        previousValue !== null ? `(was: ${previousValue})` : ''
       );
     }
   }
 
   // Track performance metrics
-  trackPerformance(metric, value, unit = "ms") {
+  trackPerformance(metric, value, unit = 'ms') {
     const entry = {
-      type: "performance",
+      type: 'performance',
       metric,
       value,
       unit,
       timestamp: Date.now(),
-      level: "info",
+      level: 'info',
     };
 
     this.addLogEntry(entry);
@@ -124,7 +124,7 @@ export class EventTracker {
   }
 
   setupGlobalErrorHandlers() {
-    window.addEventListener("error", (e) => {
+    window.addEventListener('error', (e) => {
       this.trackError(e.error || new Error(e.message), {
         filename: e.filename,
         lineno: e.lineno,
@@ -132,7 +132,7 @@ export class EventTracker {
       });
     });
 
-    window.addEventListener("unhandledrejection", (e) => {
+    window.addEventListener('unhandledrejection', (e) => {
       this.trackError(
         e.reason instanceof Error ? e.reason : new Error(e.reason),
         {}
@@ -141,13 +141,13 @@ export class EventTracker {
   }
 
   // Update overlay display (optional visual feedback)
-  updateOverlay(message, type = "info") {
+  updateOverlay(message, type = 'info') {
     if (!this.options.overlay) return;
 
     // Create overlay if it doesn't exist
     if (!this.overlayEl) {
-      this.overlayEl = document.createElement("div");
-      this.overlayEl.id = "event-tracker-overlay";
+      this.overlayEl = document.createElement('div');
+      this.overlayEl.id = 'event-tracker-overlay';
       this.overlayEl.style.cssText = `
         position: fixed;
         top: 10px;
@@ -171,18 +171,18 @@ export class EventTracker {
     this.overlayEl.innerHTML = `[${time}] ${message}`;
 
     // Apply type-specific styling
-    if (type === "error") {
-      this.overlayEl.style.background = "rgba(255,0,0,0.8)";
-    } else if (type === "warning") {
-      this.overlayEl.style.background = "rgba(255,165,0,0.8)";
+    if (type === 'error') {
+      this.overlayEl.style.background = 'rgba(255,0,0,0.8)';
+    } else if (type === 'warning') {
+      this.overlayEl.style.background = 'rgba(255,165,0,0.8)';
     } else {
-      this.overlayEl.style.background = "rgba(0,0,0,0.8)";
+      this.overlayEl.style.background = 'rgba(0,0,0,0.8)';
     }
 
     // Auto-hide overlay after 3 seconds
     setTimeout(() => {
       if (this.overlayEl) {
-        this.overlayEl.style.opacity = "0.5";
+        this.overlayEl.style.opacity = '0.5';
       }
     }, 3000);
   }
@@ -211,6 +211,6 @@ export class EventTracker {
   // Clear event log
   clearLog() {
     this.eventLog = [];
-    this.trackEvent("system", "log_cleared", { timestamp: Date.now() });
+    this.trackEvent('system', 'log_cleared', { timestamp: Date.now() });
   }
 }

@@ -13,25 +13,25 @@ export class WelcomeScreen {
     this.particles = [];
     this.animationId = null;
     this.isVisible = false;
-    
+
     // Animation properties
     this.time = 0;
     this.maxParticles = 150;
     this.particleSpeed = 0.5;
-    
+
     // Callbacks
     this.onStartGame = null;
     this.onShowOptions = null;
-    
+
     this.particleColors = ['#ff595e','#ffca3a','#8ac926','#1982c4','#6a4c93'];
-    
+
     this.setupParticles();
     this.setupUI();
 
     // Keep background canvas in sync on resize
     window.addEventListener('resize', () => this.onResize());
   }
-  
+
   setupParticles() {
     // Create animated background particles (color confetti style)
     for (let i = 0; i < this.maxParticles; i++) {
@@ -45,13 +45,13 @@ export class WelcomeScreen {
       });
     }
   }
-  
+
   setupUI() {
     // Create DOM elements for welcome screen UI
     this.createWelcomeScreenHTML();
     this.attachEventListeners();
   }
-  
+
   createWelcomeScreenHTML() {
     // Remove existing welcome screen if present
     const existing = document.getElementById('welcome-screen');
@@ -83,7 +83,7 @@ export class WelcomeScreen {
     document.body.appendChild(welcomeDiv);
     this.addWelcomeScreenCSS();
   }
-  
+
   addWelcomeScreenCSS() {
     const style = document.createElement('style');
     style.textContent = `
@@ -122,7 +122,7 @@ export class WelcomeScreen {
     `;
     document.head.appendChild(style);
   }
-  
+
   attachEventListeners() {
     const updateSelection = (button) => {
       document.querySelectorAll('.display-btn').forEach(btn => btn.classList.remove('selected'));
@@ -134,20 +134,20 @@ export class WelcomeScreen {
         textEl.style.display='block';
         textEl.textContent=`Display mode set to ${mode}. Loading...`;
       }
-      setTimeout(()=>{ if(this.onStartGame){ this.hide(); this.onStartGame(); } }, 1200);
+      setTimeout(() => { if(this.onStartGame){ this.hide(); this.onStartGame(); } }, 1200);
     };
 
-    setTimeout(()=>{
+    setTimeout(() => {
       document.querySelectorAll('.display-btn').forEach(btn => {
-        btn.addEventListener('click',()=> updateSelection(btn));
+        btn.addEventListener('click',() => updateSelection(btn));
       });
     },100);
   }
-  
+
   show() {
     this.isVisible = true;
     this.startAnimation();
-    
+
     setTimeout(() => {
       const welcomeScreen = document.getElementById('welcome-screen');
       if (welcomeScreen) {
@@ -155,11 +155,11 @@ export class WelcomeScreen {
       }
     }, 100);
   }
-  
+
   hide() {
     this.isVisible = false;
     this.stopAnimation();
-    
+
     const welcomeScreen = document.getElementById('welcome-screen');
     if (welcomeScreen) {
       welcomeScreen.classList.remove('visible');
@@ -168,24 +168,24 @@ export class WelcomeScreen {
       }, 500);
     }
   }
-  
+
   startAnimation() {
     // Prevent multiple animation loops
     if (this.animationId) {
       console.warn('Animation already running');
       return;
     }
-    
+
     const animate = () => {
       // Check visibility state at the beginning of each frame
       if (!this.isVisible) {
         this.animationId = null;
         return;
       }
-      
+
       this.updateAnimatedBackground();
       this.renderAnimatedBackground();
-      
+
       // Only schedule next frame if still visible
       if (this.isVisible) {
         this.animationId = requestAnimationFrame(animate);
@@ -193,38 +193,38 @@ export class WelcomeScreen {
         this.animationId = null;
       }
     };
-    
+
     // Start the animation loop
     this.animationId = requestAnimationFrame(animate);
   }
-  
+
   stopAnimation() {
     if (this.animationId) {
       cancelAnimationFrame(this.animationId);
       this.animationId = null;
     }
   }
-  
+
   updateAnimatedBackground() {
     this.time += 0.01;
-    
+
     this.particles.forEach(particle => {
       particle.y -= particle.speed;
-      
+
       if (particle.y < -10) {
         particle.y = this.bgCanvas.height + 10;
         particle.x = Math.random() * this.bgCanvas.width;
       }
-      
+
       particle.opacity = 0.5 + Math.sin(this.time * 0.1) * 0.3;
     });
   }
-  
+
   renderAnimatedBackground() {
     const ctx = this.bgCtx;
     ctx.fillStyle = 'rgba(0,0,0,0.9)';
     ctx.fillRect(0,0,this.bgCanvas.width,this.bgCanvas.height);
-    this.particles.forEach(p=>{
+    this.particles.forEach(p => {
       ctx.save();
       ctx.globalAlpha = p.opacity;
       ctx.fillStyle = p.color;
@@ -234,7 +234,7 @@ export class WelcomeScreen {
       ctx.restore();
     });
   }
-  
+
   onResize() {
     this.syncCanvasSize();
     // Re-position particles within new bounds
@@ -247,14 +247,14 @@ export class WelcomeScreen {
       }
     });
   }
-  
+
   syncCanvasSize() {
     this.bgCanvas.width = window.innerWidth;
     this.bgCanvas.height = window.innerHeight;
   }
-  
+
   setCallbacks(startGameCallback, showOptionsCallback) {
     this.onStartGame = startGameCallback;
     this.onShowOptions = showOptionsCallback;
   }
-} 
+}

@@ -6,31 +6,31 @@ export class InputHandler {
     this.eventListeners = new Map();
     this.setupEventListeners();
   }
-  
+
   setupEventListeners() {
     // Unified pointer events for cross-device support
     this.canvas.addEventListener('pointerdown', this.handlePointerDown.bind(this));
     this.canvas.addEventListener('pointerup', this.handlePointerUp.bind(this));
     this.canvas.addEventListener('pointermove', this.handlePointerMove.bind(this));
-    
+
     // Prevent default touch behaviors
     this.canvas.addEventListener('touchstart', e => e.preventDefault());
     this.canvas.addEventListener('touchmove', e => e.preventDefault());
     this.canvas.addEventListener('touchend', e => e.preventDefault());
   }
-  
+
   handlePointerDown(event) {
     const pointerId = event.pointerId;
     const rect = this.canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
-    
+
     // Check cooldown
     if (this.isInCooldown(pointerId)) return;
-    
+
     this.activeTouches.set(pointerId, { x, y, startTime: Date.now() });
     this.setCooldown(pointerId);
-    
+
     // Dispatch to registered handlers
     this.dispatchEvent('pointerdown', { pointerId, x, y, event });
   }
@@ -52,7 +52,7 @@ export class InputHandler {
       this.dispatchEvent('pointermove', { pointerId, x, y, event });
     }
   }
-  
+
   isInCooldown(pointerId) {
     return this.touchCooldown.has(pointerId) && Date.now() - this.touchCooldown.get(pointerId) < 50;
   }
@@ -67,7 +67,7 @@ export class InputHandler {
     }
     this.eventListeners.get(eventType).push(handler);
   }
-  
+
   dispatchEvent(eventType, data) {
     const handlers = this.eventListeners.get(eventType) || [];
     handlers.forEach(handler => handler(data));

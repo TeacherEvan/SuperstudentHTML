@@ -8,7 +8,7 @@ export class EventTracker {
     this.options = {
       overlay: true,
       consoleLogging: true,
-      logLevel: "all", // 'all', 'errors', 'warnings', 'info'
+      logLevel: 'all', // 'all', 'errors', 'warnings', 'info'
       maxLogEntries: 1000,
       ...options,
     };
@@ -25,18 +25,18 @@ export class EventTracker {
     this.setupGlobalErrorHandlers();
 
     this.isInitialized = true;
-    this.trackEvent("system", "tracker_initialized", { timestamp: Date.now() });
+    this.trackEvent('system', 'tracker_initialized', { timestamp: Date.now() });
   }
 
   // Track general events with category, action, and optional data
   trackEvent(category, action, data = {}) {
     const entry = {
-      type: "event",
+      type: 'event',
       category,
       action,
       data,
       timestamp: Date.now(),
-      level: "info",
+      level: 'info',
     };
 
     this.addLogEntry(entry);
@@ -50,12 +50,12 @@ export class EventTracker {
   // Track errors with context
   trackError(error, context = {}) {
     const entry = {
-      type: "error",
+      type: 'error',
       message: error.message || String(error),
       stack: error.stack,
       context,
       timestamp: Date.now(),
-      level: "error",
+      level: 'error',
     };
 
     this.addLogEntry(entry);
@@ -66,18 +66,18 @@ export class EventTracker {
       if (entry.stack) console.error(entry.stack);
     }
 
-    this.updateOverlay(`ERROR: ${entry.message}`, "error");
+    this.updateOverlay(`ERROR: ${entry.message}`, 'error');
   }
 
   // Track state changes
   trackState(stateName, value, previousValue = null) {
     const entry = {
-      type: "state",
+      type: 'state',
       stateName,
       value,
       previousValue,
       timestamp: Date.now(),
-      level: "info",
+      level: 'info',
     };
 
     this.addLogEntry(entry);
@@ -86,20 +86,20 @@ export class EventTracker {
       const time = new Date(entry.timestamp).toLocaleTimeString();
       console.log(
         `🔄 [${time}] STATE: ${stateName} = ${value}`,
-        previousValue !== null ? `(was: ${previousValue})` : ""
+        previousValue !== null ? `(was: ${previousValue})` : ''
       );
     }
   }
 
   // Track performance metrics
-  trackPerformance(metric, value, unit = "ms") {
+  trackPerformance(metric, value, unit = 'ms') {
     const entry = {
-      type: "performance",
+      type: 'performance',
       metric,
       value,
       unit,
       timestamp: Date.now(),
-      level: "info",
+      level: 'info',
     };
 
     this.addLogEntry(entry);
@@ -124,33 +124,33 @@ export class EventTracker {
   }
 
   // Update visual overlay for errors and warnings
-  updateOverlay(message, type = "info") {
+  updateOverlay(message, type = 'info') {
     if (!this.options.overlay) return;
 
     if (!this.overlayEl) {
       this.createOverlay();
     }
 
-    const div = document.createElement("div");
+    const div = document.createElement('div');
     div.className = `overlay-${type}`;
     div.textContent = message;
 
     // Add styling based on type
     const colors = {
-      error: "rgba(255, 0, 0, 0.9)",
-      warning: "rgba(255, 165, 0, 0.9)",
-      info: "rgba(0, 100, 200, 0.9)",
+      error: 'rgba(255, 0, 0, 0.9)',
+      warning: 'rgba(255, 165, 0, 0.9)',
+      info: 'rgba(0, 100, 200, 0.9)',
     };
 
     div.style.background = colors[type] || colors.info;
-    div.style.color = "#fff";
-    div.style.padding = "2px 4px";
-    div.style.marginBottom = "1px";
+    div.style.color = '#fff';
+    div.style.padding = '2px 4px';
+    div.style.marginBottom = '1px';
 
     this.overlayEl.appendChild(div);
 
     // Auto-remove info messages after 3 seconds
-    if (type === "info") {
+    if (type === 'info') {
       setTimeout(() => {
         if (div.parentNode) {
           div.parentNode.removeChild(div);
@@ -161,8 +161,8 @@ export class EventTracker {
 
   // Create the overlay element
   createOverlay() {
-    this.overlayEl = document.createElement("div");
-    this.overlayEl.id = "event-tracker-overlay";
+    this.overlayEl = document.createElement('div');
+    this.overlayEl.id = 'event-tracker-overlay';
     this.overlayEl.style.cssText = `
       position: fixed;
       top: 10px;
@@ -180,19 +180,19 @@ export class EventTracker {
 
   // Set up global error handlers
   setupGlobalErrorHandlers() {
-    window.addEventListener("error", (e) => {
+    window.addEventListener('error', (e) => {
       this.trackError(e.error || new Error(e.message), {
-        source: "global",
+        source: 'global',
         filename: e.filename,
         lineno: e.lineno,
         colno: e.colno,
       });
     });
 
-    window.addEventListener("unhandledrejection", (e) => {
-      this.trackError(e.reason || new Error("Unhandled Promise Rejection"), {
-        source: "promise",
-        type: "unhandled_rejection",
+    window.addEventListener('unhandledrejection', (e) => {
+      this.trackError(e.reason || new Error('Unhandled Promise Rejection'), {
+        source: 'promise',
+        type: 'unhandled_rejection',
       });
     });
   }
@@ -229,7 +229,7 @@ export class EventTracker {
     }
 
     if (this.overlayEl) {
-      this.overlayEl.innerHTML = "";
+      this.overlayEl.innerHTML = '';
     }
   }
 
@@ -277,7 +277,7 @@ export function initializeErrorTracker(options = {}) {
   eventTracker.options = { ...eventTracker.options, ...options };
   eventTracker.initialize();
   return {
-    getErrors: () => eventTracker.getEvents({ type: "error" }),
-    clear: () => eventTracker.clear("error"),
+    getErrors: () => eventTracker.getEvents({ type: 'error' }),
+    clear: () => eventTracker.clear('error'),
   };
 }

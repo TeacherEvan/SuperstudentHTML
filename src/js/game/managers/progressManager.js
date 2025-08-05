@@ -14,7 +14,7 @@ export class ProgressManager {
     } catch (error) {
       console.warn('Failed to load progress:', error);
     }
-    
+
     // Default progress - ALL levels unlocked from start
     return {
       unlockedLevels: ['colors', 'shapes', 'alphabet', 'numbers', 'clcase'],

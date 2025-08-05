@@ -48,7 +48,7 @@ export default class CheckpointManager {
     if (!this.isActive || this.fadeAlpha === 0) return;
 
     this.ctx.save();
-    
+
     // Semi-transparent overlay
     this.ctx.fillStyle = `rgba(0, 0, 0, ${0.5 * this.fadeAlpha})`;
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -59,14 +59,14 @@ export default class CheckpointManager {
     this.ctx.fillStyle = `rgba(255, 255, 255, ${this.fadeAlpha})`;
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'middle';
-    
+
     const centerX = this.canvas.width / 2;
     const centerY = this.canvas.height / 2;
-    
+
     // Add glow effect
     this.ctx.shadowColor = '#4ECDC4';
     this.ctx.shadowBlur = 20 * this.fadeAlpha;
-    
+
     this.ctx.fillText(this.currentMessage, centerX, centerY);
 
     // Subtitle

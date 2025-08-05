@@ -7,7 +7,7 @@ export default class MultiTouchManager {
       pointermove: [],
       pointerup: []
     };
-    
+
     // Bind event handlers once so the same references can be removed later
     this._onPointerDown = this.handlePointerDown.bind(this);
     this._onPointerMove = this.handlePointerMove.bind(this);
@@ -43,30 +43,30 @@ export default class MultiTouchManager {
       pressure: e.pressure || 1,
       startTime: performance.now()
     };
-    
+
     this.pointers.set(e.pointerId, pointer);
     this.triggerCallbacks('pointerdown', pointer, e);
   }
 
   handlePointerMove(e) {
     if (!this.pointers.has(e.pointerId)) return;
-    
+
     const rect = this.canvas.getBoundingClientRect();
     const pointer = this.pointers.get(e.pointerId);
-    
+
     pointer.x = e.clientX - rect.left;
     pointer.y = e.clientY - rect.top;
     pointer.pressure = e.pressure || 1;
-    
+
     this.triggerCallbacks('pointermove', pointer, e);
   }
 
   handlePointerUp(e) {
     if (!this.pointers.has(e.pointerId)) return;
-    
+
     const pointer = this.pointers.get(e.pointerId);
     pointer.endTime = performance.now();
-    
+
     this.triggerCallbacks('pointerup', pointer, e);
     this.pointers.delete(e.pointerId);
   }
@@ -115,10 +115,10 @@ export default class MultiTouchManager {
   getPinchDistance() {
     const pointers = this.getActivePointers();
     if (pointers.length < 2) return null;
-    
+
     const [p1, p2] = pointers;
     return Math.sqrt(
-      Math.pow(p2.x - p1.x, 2) + 
+      Math.pow(p2.x - p1.x, 2) +
       Math.pow(p2.y - p1.y, 2)
     );
   }
@@ -126,7 +126,7 @@ export default class MultiTouchManager {
   getPinchCenter() {
     const pointers = this.getActivePointers();
     if (pointers.length < 2) return null;
-    
+
     const [p1, p2] = pointers;
     return {
       x: (p1.x + p2.x) / 2,
