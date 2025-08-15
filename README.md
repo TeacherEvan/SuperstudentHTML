@@ -1,6 +1,6 @@
 # Super Student HTML Port
 
-This project reimplements the Super Student game using HTML, CSS, and JavaScript with modern build tooling via Vite. The code is modularized into separate files for maintainability and performance.
+This project reimplements the Super Student game using HTML, CSS, and JavaScript with modern build tooling via Webpack. The code is modularized into separate files for maintainability and performance.
 
 ## Features
 
@@ -9,7 +9,7 @@ This project reimplements the Super Student game using HTML, CSS, and JavaScript
 - **Particle System**: Dynamic particle effects for explosions and visual feedback
 - **Sound System**: Audio playback with Web Audio API
 - **Responsive Design**: Full-screen canvas that adapts to window size
-- **Modern Build Pipeline**: Vite for development and production builds
+- **Modern Build Pipeline**: Webpack for development and production builds
 
 ## Quick Start
 
@@ -28,7 +28,7 @@ This project reimplements the Super Student game using HTML, CSS, and JavaScript
    ```bash
    npm run dev
    ```
-   This will start a local development server with hot reload at `http://localhost:5173`
+   This will start a local development server with hot reload at `http://localhost:3000`
 
 3. **Open your browser** and navigate to the local server URL
 
@@ -38,8 +38,7 @@ This project reimplements the Super Student game using HTML, CSS, and JavaScript
 # Build for production
 npm run build
 
-# Preview production build
-npm run preview
+# Preview production build is not available in the current configuration.
 ```
 
 The production build will be generated in the `dist/` directory with optimized and minified assets.
@@ -57,7 +56,7 @@ The production build will be generated in the `dist/` directory with optimized a
 /
 ├── index.html              # Main HTML page
 ├── package.json           # Dependencies and scripts
-├── vite.config.js         # Build configuration
+├── webpack.config.js      # Build configuration
 ├── css/
 │   └── styles.css         # Global styles and UI
 ├── js/
@@ -96,7 +95,6 @@ The production build will be generated in the `dist/` directory with optimized a
 
 - `npm run dev` - Start development server with hot reload
 - `npm run build` - Build optimized production bundle
-- `npm run preview` - Preview production build locally
 - `npm run serve` - Serve production build on port 3000
 
 ## Browser Support
@@ -122,7 +120,7 @@ The production build will be generated in the `dist/` directory with optimized a
 ## Troubleshooting
 
 ### Development Issues
-- **Port conflicts**: Change port in `vite.config.js` if 5173 is in use
+- **Port conflicts**: Change port in `webpack.config.js` if 3000 is in use
 - **Module errors**: Ensure all imports use correct file paths
 - **Asset loading**: Check console for failed resource loads
 
