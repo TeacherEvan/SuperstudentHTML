@@ -1,6 +1,6 @@
 import { GAME_CONFIG } from '../../src/js/config/constants.js';
 import { EventTracker } from '../../src/js/utils/eventTracker.js';
-import ResourceManager from '../../src/js/core/resources/resourceManager.js';
+import ResourceManager from '../../src/js/core/resourceManager.js';
 
 describe('Game Integration Tests', () => {
   let eventTracker;
