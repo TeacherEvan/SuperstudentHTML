@@ -1,1 +1,266 @@
-  
+/* Mobile-First Responsive Design */
+
+/* Base Mobile Styles (up to 768px) */
+@media screen and (max-width: 768px) {
+  /* Welcome Screen Mobile Optimizations */
+  #welcome-screen h1 {
+    font-size: clamp(32px, 8vw, 48px);
+    margin: 5px 0;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  }
+
+  #welcome-screen p {
+    font-size: clamp(16px, 4vw, 20px);
+    margin: 3px 0;
+    padding: 0 10px;
+  }
+
+  .welcome-button {
+    padding: 12px 24px;
+    margin: 8px;
+    font-size: clamp(16px, 4vw, 18px);
+    min-height: 44px; /* iOS touch target minimum */
+    min-width: 88px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 122, 204, 0.3);
+    transform: scale(1);
+    transition: all 0.2s ease;
+  }
+
+  .welcome-button:active {
+    transform: scale(0.95);
+    box-shadow: 0 1px 4px rgba(0, 122, 204, 0.4);
+  }
+
+  /* Modal Mobile Optimizations */
+  .modal-content {
+    padding: 20px;
+    margin: 10px;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 12px;
+  }
+
+  .modal-content h2 {
+    font-size: clamp(20px, 5vw, 24px);
+  }
+
+  .modal-content button {
+    padding: 12px 20px;
+    margin: 8px 4px;
+    font-size: 16px;
+    min-height: 44px;
+    border-radius: 8px;
+  }
+
+  .modal-content select,
+  .modal-content input[type="range"] {
+    padding: 12px;
+    font-size: 16px;
+    border-radius: 8px;
+  }
+
+  /* Level Grid Mobile Layout */
+  .level-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+    padding: 10px;
+  }
+
+  .level-card {
+    padding: 15px;
+    margin: 5px 0;
+    border-radius: 12px;
+    min-height: 80px;
+  }
+
+  .level-card h3 {
+    font-size: clamp(16px, 4vw, 18px);
+  }
+
+  .level-description {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  /* Menu Actions Mobile */
+  .menu-actions {
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .reset-button {
+    padding: 14px 24px;
+    font-size: 16px;
+    min-height: 44px;
+    width: 100%;
+    max-width: 280px;
+  }
+
+  /* Footer Mobile */
+  #welcome-screen footer {
+    bottom: 10px;
+    font-size: 11px;
+    padding: 0 10px;
+    text-align: center;
+  }
+}
+
+/* Small Mobile Devices (up to 480px) */
+@media screen and (max-width: 480px) {
+  #welcome-screen h1 {
+    font-size: clamp(28px, 7vw, 36px);
+  }
+
+  .welcome-button {
+    width: 80%;
+    max-width: 240px;
+    margin: 6px auto;
+    display: block;
+  }
+
+  .modal-content {
+    padding: 15px;
+    margin: 5px;
+  }
+
+  .level-grid {
+    padding: 5px;
+    gap: 10px;
+  }
+
+  .level-card {
+    padding: 12px;
+  }
+}
+
+/* Tablet Portrait (769px to 1024px) */
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+  .level-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+
+  .welcome-button {
+    margin: 10px 15px;
+  }
+
+  .modal-content {
+    min-width: 400px;
+  }
+}
+
+/* Landscape Mobile Optimizations */
+@media screen and (max-height: 500px) and (orientation: landscape) {
+  #welcome-screen h1 {
+    font-size: clamp(24px, 5vh, 32px);
+    margin: 2px 0;
+  }
+
+  #welcome-screen p {
+    font-size: clamp(12px, 3vh, 16px);
+    margin: 2px 0;
+  }
+
+  .welcome-button {
+    padding: 8px 16px;
+    margin: 4px;
+    font-size: 14px;
+  }
+
+  .modal-content {
+    max-height: 85vh;
+    padding: 15px;
+  }
+
+  #welcome-screen footer {
+    bottom: 5px;
+    font-size: 10px;
+  }
+}
+
+/* Touch-Friendly Improvements */
+@media (pointer: coarse) {
+  /* Increase touch targets for finger navigation */
+  button, .welcome-button, .level-card.unlocked, .level-card.completed {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Add visual feedback for touch */
+  .welcome-button:hover,
+  .level-card:hover {
+    transform: none; /* Disable hover effects on touch devices */
+  }
+
+  .welcome-button:active,
+  .level-card:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+}
+
+/* High DPI Display Optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  /* Crisp text rendering on high-DPI displays */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Sharper borders and shadows */
+  .welcome-button,
+  .modal-content,
+  .level-card {
+    border-width: 0.5px;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .modal-content {
+    background: #1a1a2e;
+    border: 1px solid #16213e;
+  }
+
+  .welcome-button {
+    background: #0f4c75;
+  }
+
+  .welcome-button:hover {
+    background: #3282b8;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .welcome-button,
+  .level-card,
+  .modal-content {
+    transition: none;
+  }
+
+  .welcome-button:active,
+  .level-card:active {
+    transform: none;
+  }
+}
+
+/* Safe Area Insets for Notched Devices */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  #welcome-screen {
+    padding-top: max(20px, env(safe-area-inset-top));
+  }
+
+  #welcome-screen footer {
+    bottom: max(10px, env(safe-area-inset-bottom));
+  }
+}

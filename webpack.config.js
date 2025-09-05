@@ -11,6 +11,7 @@ export default {
     path: path.resolve(__dirname, 'dist'),
     filename: 'js/[name].[contenthash].js',
     clean: true,
+    assetModuleFilename: 'assets/[name].[hash][ext]'
   },
   module: {
     rules: [
@@ -58,12 +59,24 @@ export default {
     })
   ],
   devServer: {
-    static: {
-      directory: path.join(__dirname, 'dist'),
-    },
+    static: [
+      {
+        directory: path.join(__dirname, 'dist'),
+      },
+      {
+        directory: path.join(__dirname),
+        publicPath: '/',
+        serveIndex: false,
+        watch: true,
+      }
+    ],
     port: 3000,
     open: true,
     hot: true,
+    allowedHosts: 'all',
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+    },
   },
   resolve: {
     extensions: ['.js', '.json'],

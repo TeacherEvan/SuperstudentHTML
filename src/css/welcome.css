@@ -1,1 +1,72 @@
+/* Welcome Screen Styles */
+.welcome-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  text-align: center;
+  z-index: 1000;
+}
+
+.welcome-title {
+  font-size: clamp(32px, 8vw, 72px);
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  font-weight: bold;
+}
+
+.welcome-subtitle {
+  font-size: clamp(16px, 4vw, 24px);
+  margin-bottom: 30px;
+  opacity: 0.9;
+}
+
+.welcome-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  align-items: center;
+}
+
+.welcome-btn {
+  padding: 12px 24px;
+  font-size: clamp(16px, 4vw, 18px);
+  background: linear-gradient(145deg, #007ACC, #005A9E);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-height: 44px;
+  min-width: 120px;
+  box-shadow: 0 4px 8px rgba(0, 122, 204, 0.3);
+}
+
+.welcome-btn:hover {
+  background: linear-gradient(145deg, #3282b8, #007ACC);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 122, 204, 0.4);
+}
+
+.welcome-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 122, 204, 0.4);
+}
+
+@media (max-width: 768px) {
+  .welcome-buttons {
+    width: 90%;
+    max-width: 300px;
+  }
   
+  .welcome-btn {
+    width: 100%;
+  }
+}

@@ -18,17 +18,74 @@ class SuperStudentGame {
   async init() {
     await this.resourceManager.loadAssets();
     this.setupCanvas();
+    this.setupMobileOptimizations();
     this.startWelcomeScreen();
     this.gameLoop.start();
   }
 
   setupCanvas() {
+    this.resizeCanvas();
+
+    // Handle window resize for responsive design
+    window.addEventListener('resize', () => {
+      clearTimeout(this.resizeTimeout);
+      this.resizeTimeout = setTimeout(() => this.resizeCanvas(), 100);
+    });
+
+    // Handle orientation change on mobile
+    window.addEventListener('orientationchange', () => {
+      setTimeout(() => this.resizeCanvas(), 200);
+    });
+  }
+
+  resizeCanvas() {
     const dpr = window.devicePixelRatio || 1;
-    this.canvas.width = window.innerWidth * dpr;
-    this.canvas.height = window.innerHeight * dpr;
-    this.canvas.style.width = `${window.innerWidth}px`;
-    this.canvas.style.height = `${window.innerHeight}px`;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    this.canvas.width = width * dpr;
+    this.canvas.height = height * dpr;
+    this.canvas.style.width = `${width}px`;
+    this.canvas.style.height = `${height}px`;
     this.ctx.scale(dpr, dpr);
+
+    // Store viewport dimensions for game logic
+    this.viewportWidth = width;
+    this.viewportHeight = height;
+    this.devicePixelRatio = dpr;
+  }
+
+  setupMobileOptimizations() {
+    // Prevent zoom on double-tap
+    document.addEventListener('gesturestart', e => e.preventDefault());
+    document.addEventListener('gesturechange', e => e.preventDefault());
+
+    // Prevent context menu on long press
+    document.addEventListener('contextmenu', e => e.preventDefault());
+
+    // Hide address bar on mobile by scrolling
+    if (this.isMobileDevice()) {
+      setTimeout(() => {
+        window.scrollTo(0, 1);
+      }, 100);
+    }
+
+    // Add mobile device class for CSS targeting
+    if (this.isMobileDevice()) {
+      document.body.classList.add('mobile-device');
+    }
+
+    if (this.isTouchDevice()) {
+      document.body.classList.add('touch-device');
+    }
+  }
+
+  isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  }
+
+  isTouchDevice() {
+    return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
   }
 
   startWelcomeScreen() {
