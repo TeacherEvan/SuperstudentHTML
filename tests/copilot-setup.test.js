@@ -95,14 +95,14 @@ describe('Copilot Instructions Setup', () => {
           // Simulate loading different asset types
           let asset;
           switch (assetInfo.type) {
-          case 'image':
-            asset = { type: 'image', data: 'mock-image-data' };
-            break;
-          case 'audio':
-            asset = { type: 'audio', data: 'mock-audio-data' };
-            break;
-          default:
-            asset = { type: 'unknown', data: null };
+        case 'image':
+          asset = { type: 'image', data: 'mock-image-data' };
+          break;
+        case 'audio':
+          asset = { type: 'audio', data: 'mock-audio-data' };
+          break;
+        default:
+          asset = { type: 'unknown', data: null };
           }
           
           this.assets.set(assetInfo.id, asset);
