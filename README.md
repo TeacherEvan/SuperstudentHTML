@@ -136,6 +136,15 @@ The production build will be generated in the `dist/` directory with optimized a
 3. Ensure all assets are properly organized in the `assets/` directory
 4. Update documentation when adding new features
 
+### GitHub Copilot Instructions
+
+This repository includes comprehensive GitHub Copilot instructions to help with development:
+
+- **`.github/copilot-instructions.md`** - Detailed coding patterns, architecture guidelines, and best practices
+- **`.github/COPILOT_CONTEXT.md`** - Quick reference for project structure and common debugging areas
+
+These instructions help Copilot understand the educational game architecture, manager patterns, level system, and testing strategies used in this project.
+
 ## License
 
 MIT License
