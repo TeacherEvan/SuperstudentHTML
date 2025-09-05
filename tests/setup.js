@@ -56,3 +56,13 @@ Object.defineProperty(window, 'localStorage', {
   },
   writable: true,
 });
+
+// Mock window.location properly
+delete window.location;
+window.location = {
+  hostname: 'localhost',
+  href: 'http://localhost',
+  origin: 'http://localhost',
+  protocol: 'http:',
+  host: 'localhost'
+};
