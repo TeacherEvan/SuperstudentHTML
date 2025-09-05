@@ -278,7 +278,7 @@ export class PhonicsLevel extends BaseLevel {
     this.checkLevelCompletion();
   }
 
-  updatePerformanceStats(deltaTime) {
+  updatePerformanceStats(_deltaTime) {
     this.frameCount++;
     const now = performance.now();
 

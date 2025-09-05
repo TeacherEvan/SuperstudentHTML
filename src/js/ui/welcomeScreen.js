@@ -3,7 +3,7 @@ export class WelcomeScreen {
     // Initialization for the welcome screen
   }
 
-  update(deltaTime) {
+  update(_deltaTime) {
     // Update logic for the welcome screen
   }
 
