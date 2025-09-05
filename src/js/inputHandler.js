@@ -21,7 +21,7 @@ export class InputHandler {
     this.canvas.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
     this.canvas.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
     this.canvas.addEventListener('touchend', e => e.preventDefault(), { passive: false });
-    
+
     // Prevent context menu and selection
     this.canvas.addEventListener('contextmenu', e => e.preventDefault());
     this.canvas.addEventListener('selectstart', e => e.preventDefault());
@@ -65,7 +65,7 @@ export class InputHandler {
     if (touchData) {
       const duration = Date.now() - touchData.startTime;
       const distance = this.getDistance(touchData.startX, touchData.startY, coords.x, coords.y);
-      
+
       // Clear long press timeout
       if (this.longPressTimeout.has(pointerId)) {
         clearTimeout(this.longPressTimeout.get(pointerId));
@@ -86,32 +86,32 @@ export class InputHandler {
   handlePointerMove(event) {
     const pointerId = event.pointerId;
     const touchData = this.activeTouches.get(pointerId);
-    
+
     if (touchData) {
       const coords = this.getEventCoordinates(event);
       const distance = this.getDistance(touchData.startX, touchData.startY, coords.x, coords.y);
-      
+
       // Mark as moved if significant movement
       if (distance > 5) {
         touchData.moved = true;
       }
-      
+
       touchData.x = coords.x;
       touchData.y = coords.y;
-      
+
       this.dispatchEvent('pointermove', { pointerId, x: coords.x, y: coords.y, event });
     }
   }
 
   handlePointerCancel(event) {
     const pointerId = event.pointerId;
-    
+
     // Clear timeouts
     if (this.longPressTimeout.has(pointerId)) {
       clearTimeout(this.longPressTimeout.get(pointerId));
       this.longPressTimeout.delete(pointerId);
     }
-    
+
     this.activeTouches.delete(pointerId);
     this.dispatchEvent('pointercancel', { pointerId, event });
   }
@@ -119,7 +119,7 @@ export class InputHandler {
   handleTap(coords, event) {
     const now = Date.now();
     const timeDiff = now - this.lastTapTime;
-    
+
     // Double tap detection
     if (timeDiff < 300) {
       clearTimeout(this.tapTimeout);
@@ -130,7 +130,7 @@ export class InputHandler {
         this.dispatchEvent('tap', { x: coords.x, y: coords.y, event });
       }, 200);
     }
-    
+
     this.lastTapTime = now;
   }
 
@@ -183,11 +183,11 @@ export class InputHandler {
     // Clear all timeouts
     this.longPressTimeout.forEach(timeout => clearTimeout(timeout));
     this.longPressTimeout.clear();
-    
+
     if (this.tapTimeout) {
       clearTimeout(this.tapTimeout);
     }
-    
+
     // Clear maps
     this.activeTouches.clear();
     this.touchCooldown.clear();
