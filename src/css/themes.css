@@ -1,1 +1,23 @@
- 
+/* Theme Support */
+:root {
+  --primary-color: #007ACC;
+  --primary-hover: #005A9E;
+  --primary-active: #003F6B;
+  --secondary-color: #6c757d;
+  --background-dark: #000000;
+  --text-light: #ffffff;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --primary-color: #0f4c75;
+    --primary-hover: #3282b8;
+    --background-dark: #1a1a2e;
+  }
+}
+
+.theme-dark {
+  background-color: var(--background-dark);
+  color: var(--text-light);
+}
