@@ -1,4 +1,4 @@
-import ResourceManager from '../../src/js/core/resources/resourceManager.js';
+import ResourceManager from '../../src/js/core/resourceManager.js';
 
 // Mock eventTracker
 jest.mock('../../src/js/utils/eventTracker.js', () => ({
