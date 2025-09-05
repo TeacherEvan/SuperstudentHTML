@@ -15,7 +15,8 @@
     "format": "prettier --write src/",
     "analyze": "webpack-bundle-analyzer dist/js/*.js",
     "deploy": "npm run build && npm run deploy:netlify",
-    "repo:health": "scripts/check-repo-health.sh"
+    "repo:health": "scripts/check-repo-health.sh",
+    "setup:hooks": "scripts/setup-git-hooks.sh"
   },
   "devDependencies": {
     "@babel/core": "^7.22.0",
