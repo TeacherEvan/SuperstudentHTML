@@ -105,7 +105,9 @@ export default (env, argv) => {
         new BundleAnalyzerPlugin({
           analyzerMode: 'static',
           openAnalyzer: false,
-          reportFilename: 'bundle-report.html'
+          reportFilename: 'bundle-report.html',
+          generateStatsFile: true,
+          statsFilename: 'bundle-stats.json'
         })
       ] : [])
     ],
