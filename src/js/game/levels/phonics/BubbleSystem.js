@@ -170,7 +170,7 @@ export class BubbleSystem {
     this.updateCombo(deltaTime);
   }
 
-  updateSpawning(deltaTime) {
+  updateSpawning(_deltaTime) {
     const now = performance.now();
     if (now - this.lastSpawnTime >= this.spawnRate) {
       const shouldSpawnTarget = this.targetLetter &&
@@ -295,7 +295,7 @@ export class BubbleSystem {
     this.activeBubbles = this.bubbles.length;
   }
 
-  updateCombo(deltaTime) {
+  updateCombo(_deltaTime) {
     const now = performance.now();
     if (now - this.lastCorrectTime > this.config.gameplay.comboWindow) {
       this.combo = 0;

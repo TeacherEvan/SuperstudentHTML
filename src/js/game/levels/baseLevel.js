@@ -15,7 +15,7 @@ export class BaseLevel {
     throw new Error('init() must be implemented by subclass');
   }
 
-  update(deltaTime) {
+  update(_deltaTime) {
     throw new Error('update() must be implemented by subclass');
   }
 

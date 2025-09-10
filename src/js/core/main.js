@@ -14,7 +14,7 @@ import HudManager from '../game/managers/hudManager.js';
 import MultiTouchManager from '../game/managers/multiTouchManager.js';
 import { ProgressManager } from '../game/managers/progressManager.js';
 import { InputHandler } from '../inputHandler.js';
-import { LevelMenu } from '../ui/levelMenu.js';
+// import { LevelMenu } from '../ui/levelMenu.js'; // Currently unused
 import { eventTracker } from '../utils/eventTracker.js';
 import { performanceMonitor } from '../utils/performanceMonitor.js';
 import SoundManager from './audio/soundManager.js';
@@ -23,13 +23,13 @@ import { Renderer } from './engine/renderer.js';
 import ParticleManager from './graphics/particleSystem.js';
 import ResourceManager from './resources/resourceManager.js';
 import { LevelCompletionScreen } from '../ui/components/levelCompletionScreen.js';
-import { GAME_CONFIG } from '../config/constants.js';
+// import { GAME_CONFIG } from '../config/constants.js'; // Currently unused
 import { WelcomeScreen } from '../ui/components/welcomeScreen.js';
-import { initializeErrorTracker } from '../utils/errorTracker.js';
+// import { initializeErrorTracker } from '../utils/errorTracker.js'; // Currently unused
 
-let canvas = document.getElementById('game-canvas');
-let renderer = new Renderer(canvas);
-let ctx = renderer.ctx;
+const canvas = document.getElementById('game-canvas');
+const renderer = new Renderer(canvas);
+const ctx = renderer.ctx;
 
 // Current display-specific settings
 let displaySettings;
@@ -41,7 +41,7 @@ const managers = {};
 let currentLevel = null;
 let currentLevelName = '';
 let gameState = 'menu'; // menu, playing, paused, gameOver
-let lastTime = 0;
+// const lastTime = 0; // Currently unused
 let gameLoop;
 let welcomeScreen;
 let levelCompletionScreen;
@@ -244,7 +244,7 @@ function startLevel(levelName) {
       }
     };
 
-    lastTime = performance.now();
+    // lastTime = performance.now(); // Currently unused
 
     // Instantiate the chosen level
     switch (levelName) {
@@ -405,6 +405,7 @@ function restartGame() {
   }
 }
 
+/*
 function cleanupGame() {
   // Cleanup current level
   if (currentLevel && typeof currentLevel.destroy === 'function') {
@@ -422,6 +423,7 @@ function cleanupGame() {
     managers.multiTouch.destroy();
   }
 }
+*/
 
 // Reset all retry counters (useful for manual resets or successful state transitions)
 function resetRetryCounters() {
@@ -602,6 +604,7 @@ function render() {
   performanceMonitor.frameEnd(frameStartTime);
 }
 
+/*
 // Enhanced canvas setup with better error handling
 function setupCanvas() {
   console.log('🔧 Setting up canvas...');
@@ -629,6 +632,7 @@ function setupCanvas() {
   console.log('✅ Canvas setup complete:', canvas.width, 'x', canvas.height);
   return true;
 }
+*/
 
 window.onload = async () => {
   console.log('🎮 Super Student: Starting initialization...');

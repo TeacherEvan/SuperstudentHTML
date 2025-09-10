@@ -3,9 +3,9 @@
   "short_name": "SuperStudent",
   "description": "Educational action game with multiple learning modes",
   "start_url": "/",
-  "display": "fullscreen",
-  "orientation": "landscape",
-  "theme_color": "#000000",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#007ACC",
   "background_color": "#000000",
   "icons": [
     {
@@ -26,5 +26,9 @@
       "sizes": "1280x720",
       "type": "image/png"
     }
-  ]
+  ],
+  "prefer_related_applications": false,
+  "lang": "en-US",
+  "scope": "/",
+  "id": "super-student-html5"
 }

@@ -10,10 +10,23 @@ build/
 
 # IDE and Editor files
 .vscode/
+.vs/
 .idea/
 *.swp
 *.swo
 *~
+*.vsidx
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.opendb
+*.VC.db
 
 # OS generated files
 .DS_Store
@@ -23,6 +36,14 @@ build/
 .Trashes
 ehthumbs.db
 Thumbs.db
+desktop.ini
+
+# Large temporary files and screenshots
+Error.jpg
+error.jpg
+screenshot*.png
+debug*.jpg
+temp*.png
 
 # Development artifacts
 *.log
@@ -33,6 +54,23 @@ Thumbs.db
 *.orig
 .snapshots/
 *.code-workspace
+
+# Environment and configuration
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.eslintcache
+.stylelintcache
+
+# Dependency locks (comment out if you want to track them)
+# package-lock.json
+# yarn.lock
+
+# Editor and debugging
+.history/
+.vscode/launch.json
+.vscode/tasks.json
 
 # Test coverage
 coverage/

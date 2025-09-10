@@ -3,6 +3,7 @@
 
 // Mock Canvas API for testing
 global.HTMLCanvasElement.prototype.getContext = jest.fn(() => ({
+  canvas: { width: 800, height: 600 }, // Add canvas property with dimensions
   fillRect: jest.fn(),
   clearRect: jest.fn(),
   getImageData: jest.fn(() => ({ data: new Array(4) })),

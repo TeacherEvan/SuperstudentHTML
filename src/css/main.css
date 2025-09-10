@@ -14,3 +14,9 @@ canvas {
     display: block;
     background: #000;
 }
+
+/* Import responsive styles */
+@import './responsive.css';
+@import './welcome.css';
+@import './components.css';
+@import './themes.css';
