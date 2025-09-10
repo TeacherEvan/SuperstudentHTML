@@ -1,5 +1,5 @@
 # Stage 1: Build the application
-FROM node:16-alpine AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Install dependencies
@@ -11,7 +11,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Serve via nginx
-FROM nginx:stable-alpine
+FROM nginx:1.25-alpine
 
 # Copy built assets
 COPY --from=builder /app/dist /usr/share/nginx/html
