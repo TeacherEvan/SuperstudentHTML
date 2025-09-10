@@ -10,25 +10,25 @@ export default class ParticleManager {
 
     this.particlePool = [];
     this.activeParticles = 0;
-    
+
     // Performance optimization
     this.lastCleanupTime = 0;
     this.cleanupInterval = 100; // Cleanup every 100ms
     this.renderBatch = [];
     this.colorCache = new Map();
-    
+
     // Visual effects
     this.globalEffects = {
       wind: { x: 0, y: 0 },
       gravity: 0.1,
       turbulence: 0
     };
-    
+
     // Performance monitoring
     this.performanceMode = 'high'; // high, medium, low
     this.frameTimeHistory = [];
     this.avgFrameTime = 16; // Target 60fps
-    
+
     // Initialize particle pool
     this.initializePool();
   }
@@ -70,20 +70,20 @@ export default class ParticleManager {
 
   setPerformanceMode(mode) {
     this.performanceMode = mode;
-    
+
     // Adjust settings based on performance
     switch (mode) {
-      case 'low':
-        this.maxParticles = Math.min(100, this.maxParticles);
-        this.cleanupInterval = 200;
-        break;
-      case 'medium':
-        this.maxParticles = Math.min(250, this.maxParticles);
-        this.cleanupInterval = 150;
-        break;
-      case 'high':
-        // Use defaults
-        break;
+    case 'low':
+      this.maxParticles = Math.min(100, this.maxParticles);
+      this.cleanupInterval = 200;
+      break;
+    case 'medium':
+      this.maxParticles = Math.min(250, this.maxParticles);
+      this.cleanupInterval = 150;
+      break;
+    case 'high':
+      // Use defaults
+      break;
     }
   }
 
@@ -96,14 +96,14 @@ export default class ParticleManager {
         return null;
       }
     }
-    
+
     // Get particle from pool
     let particle = this.particlePool.find(p => !p.active);
     if (!particle) {
       particle = this.createParticleObject();
       this.particlePool.push(particle);
     }
-    
+
     // Configure particle
     particle.x = x;
     particle.y = y;
@@ -123,18 +123,18 @@ export default class ParticleManager {
     particle.type = options.type || 'circle';
     particle.trail = options.trail || false;
     particle.trailPositions = [];
-    
+
     // Physics options
     particle.physics.gravity = options.gravity !== undefined ? options.gravity : true;
     particle.physics.bounce = options.bounce || false;
     particle.physics.friction = options.friction || 0.99;
-    
+
     // Only add to particles array if not already there
     if (!this.particles.includes(particle)) {
       this.particles.push(particle);
     }
     this.activeParticles++;
-    
+
     return particle;
   }
 
@@ -145,7 +145,7 @@ export default class ParticleManager {
       const speed = 2 + Math.random() * 4 * intensity;
       const size = 1 + Math.random() * 3 * intensity;
       const duration = 500 + Math.random() * 1000;
-      
+
       this.createParticle(
         x, y, color, size,
         Math.cos(angle) * speed,
@@ -176,7 +176,7 @@ export default class ParticleManager {
       const speed = 0.5 + Math.random() * 2 * intensity;
       const size = 1 + Math.random() * 2;
       const duration = 800 + Math.random() * 600;
-      
+
       this.createParticle(
         x + (Math.random() - 0.5) * 20,
         y + (Math.random() - 0.5) * 20,
@@ -200,7 +200,7 @@ export default class ParticleManager {
       const speed = 0.5 + Math.random() * 1.5;
       const size = 2 + Math.random() * 4;
       const duration = 1000 + Math.random() * 2000;
-      
+
       this.createParticle(
         x, y,
         `hsla(${200 + Math.random() * 60}, 70%, 80%, 0.7)`,
@@ -221,14 +221,14 @@ export default class ParticleManager {
   removeOldestParticle() {
     let oldestIndex = -1;
     let oldestAge = 0;
-    
+
     for (let i = 0; i < this.particles.length; i++) {
       if (this.particles[i].active && this.particles[i].age > oldestAge) {
         oldestAge = this.particles[i].age;
         oldestIndex = i;
       }
     }
-    
+
     if (oldestIndex >= 0) {
       this.deactivateParticle(this.particles[oldestIndex]);
     }
@@ -243,40 +243,40 @@ export default class ParticleManager {
   updateAndDraw(ctx, deltaTime) {
     const now = performance.now();
     const actualDeltaTime = deltaTime !== undefined ? deltaTime : 16; // Default to 16ms
-    
+
     // Update particles
     this.updateParticles(actualDeltaTime);
-    
+
     // Clean up inactive particles periodically
     if (now - this.lastCleanupTime > this.cleanupInterval) {
       this.cleanupInactiveParticles();
       this.lastCleanupTime = now;
     }
-    
+
     // Draw particles
     this.drawParticles(ctx);
-    
+
     // Performance monitoring
     this.monitorPerformance(now);
   }
 
   updateParticles(deltaTime) {
     const dt = deltaTime / 16; // Normalize to 60fps
-    
+
     for (let i = 0; i < this.particles.length; i++) {
       const particle = this.particles[i];
       if (!particle.active) continue;
-      
+
       // Update age and life
       particle.age += deltaTime;
       particle.life = 1 - (particle.age / particle.maxLife);
-      
+
       // Remove expired particles
       if (particle.life <= 0) {
         this.deactivateParticle(particle);
         continue;
       }
-      
+
       // Update trail positions
       if (particle.trail) {
         particle.trailPositions.push({ x: particle.x, y: particle.y });
@@ -284,10 +284,10 @@ export default class ParticleManager {
           particle.trailPositions.shift();
         }
       }
-      
+
       // Apply physics
       this.updateParticlePhysics(particle, dt);
-      
+
       // Update visual properties
       this.updateParticleVisuals(particle, dt);
     }
@@ -297,25 +297,25 @@ export default class ParticleManager {
     // Apply global effects
     particle.vx += this.globalEffects.wind.x * dt;
     particle.vy += this.globalEffects.wind.y * dt;
-    
+
     if (particle.physics.gravity) {
       particle.vy += this.globalEffects.gravity * dt;
     }
-    
+
     // Apply turbulence
     if (this.globalEffects.turbulence > 0) {
       particle.vx += (Math.random() - 0.5) * this.globalEffects.turbulence * dt;
       particle.vy += (Math.random() - 0.5) * this.globalEffects.turbulence * dt;
     }
-    
+
     // Apply friction
     particle.vx *= particle.physics.friction;
     particle.vy *= particle.physics.friction;
-    
+
     // Update position
     particle.x += particle.vx * dt;
     particle.y += particle.vy * dt;
-    
+
     // Boundary handling
     if (particle.physics.bounce) {
       // Simple boundary bouncing (can be enhanced)
@@ -332,11 +332,11 @@ export default class ParticleManager {
   updateParticleVisuals(particle, dt) {
     // Update rotation
     particle.rotation += particle.rotationSpeed * dt;
-    
+
     // Update scale
     particle.scale += particle.scaleVelocity * dt;
     particle.scale = Math.max(0.1, particle.scale);
-    
+
     // Update opacity based on life
     particle.opacity = particle.life;
   }
@@ -349,30 +349,30 @@ export default class ParticleManager {
       bubble: [],
       trail: []
     };
-    
+
     // Sort particles into batches
     for (let i = 0; i < this.particles.length; i++) {
       const particle = this.particles[i];
       if (!particle.active) continue;
-      
+
       if (batches[particle.type]) {
         batches[particle.type].push(particle);
       } else {
         batches.circle.push(particle);
       }
     }
-    
+
     // Draw each batch
     ctx.save();
-    
+
     // Draw trails first (behind other particles)
     this.drawTrailParticles(ctx, batches.trail);
-    
+
     // Draw main particles
     this.drawCircleParticles(ctx, batches.circle);
     this.drawStarParticles(ctx, batches.star);
     this.drawBubbleParticles(ctx, batches.bubble);
-    
+
     ctx.restore();
   }
 
@@ -383,12 +383,12 @@ export default class ParticleManager {
       ctx.translate(particle.x, particle.y);
       ctx.scale(particle.scale, particle.scale);
       ctx.rotate(particle.rotation);
-      
+
       ctx.fillStyle = particle.color;
       ctx.beginPath();
       ctx.arc(0, 0, particle.size, 0, Math.PI * 2);
       ctx.fill();
-      
+
       ctx.restore();
     });
   }
@@ -400,7 +400,7 @@ export default class ParticleManager {
       ctx.translate(particle.x, particle.y);
       ctx.scale(particle.scale, particle.scale);
       ctx.rotate(particle.rotation);
-      
+
       // Draw star shape
       ctx.fillStyle = particle.color;
       ctx.beginPath();
@@ -413,7 +413,7 @@ export default class ParticleManager {
       }
       ctx.closePath();
       ctx.fill();
-      
+
       ctx.restore();
     });
   }
@@ -424,7 +424,7 @@ export default class ParticleManager {
       ctx.globalAlpha = particle.opacity;
       ctx.translate(particle.x, particle.y);
       ctx.scale(particle.scale, particle.scale);
-      
+
       // Draw bubble with highlight
       const gradient = ctx.createRadialGradient(
         -particle.size * 0.3, -particle.size * 0.3, 0,
@@ -433,18 +433,18 @@ export default class ParticleManager {
       gradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
       gradient.addColorStop(0.7, particle.color);
       gradient.addColorStop(1, 'rgba(255, 255, 255, 0.2)');
-      
+
       ctx.fillStyle = gradient;
       ctx.beginPath();
       ctx.arc(0, 0, particle.size, 0, Math.PI * 2);
       ctx.fill();
-      
+
       // Add bubble highlight
       ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
       ctx.beginPath();
       ctx.arc(-particle.size * 0.3, -particle.size * 0.3, particle.size * 0.3, 0, Math.PI * 2);
       ctx.fill();
-      
+
       ctx.restore();
     });
   }
@@ -452,24 +452,24 @@ export default class ParticleManager {
   drawTrailParticles(ctx, particles) {
     particles.forEach(particle => {
       if (particle.trailPositions.length < 2) return;
-      
+
       ctx.save();
       ctx.globalAlpha = particle.opacity * 0.5;
       ctx.strokeStyle = particle.color;
       ctx.lineWidth = particle.size;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
-      
+
       ctx.beginPath();
       ctx.moveTo(particle.trailPositions[0].x, particle.trailPositions[0].y);
-      
+
       for (let i = 1; i < particle.trailPositions.length; i++) {
         ctx.lineTo(particle.trailPositions[i].x, particle.trailPositions[i].y);
       }
-      
+
       ctx.stroke();
       ctx.restore();
-      
+
       // Draw current particle
       ctx.save();
       ctx.globalAlpha = particle.opacity;
@@ -488,17 +488,17 @@ export default class ParticleManager {
   monitorPerformance(now) {
     const frameTime = now - (this.lastFrameTime || now);
     this.frameTimeHistory.push(frameTime);
-    
+
     // Prevent memory leak by limiting history size
     if (this.frameTimeHistory.length > 120) {
       this.frameTimeHistory.splice(0, this.frameTimeHistory.length - 60);
     }
-    
+
     if (this.frameTimeHistory.length > 60) {
       // Calculate average frame time
       const sum = this.frameTimeHistory.reduce((a, b) => a + b, 0);
       this.avgFrameTime = sum / this.frameTimeHistory.length;
-      
+
       // Adjust performance if needed
       if (this.avgFrameTime > 20 && this.performanceMode === 'high') { // Below 50fps
         this.setPerformanceMode('medium');
@@ -511,7 +511,7 @@ export default class ParticleManager {
         console.log('🚀 Increased to high performance mode');
       }
     }
-    
+
     this.lastFrameTime = now;
   }
 
@@ -555,30 +555,30 @@ export default class ParticleManager {
   destroy() {
     // Clear all active particles
     this.clear();
-    
+
     // Clean up arrays and objects
     this.particles = [];
     this.particlePool = [];
     this.frameTimeHistory = [];
     this.renderBatch = [];
-    
+
     // Clear cache
     this.colorCache.clear();
-    
+
     // Reset counters
     this.activeParticles = 0;
     this.lastUpdateTime = 0;
     this.lastCleanupTime = 0;
     this.lastFrameTime = 0;
     this.avgFrameTime = 16;
-    
+
     // Reset effects
     this.globalEffects = {
       wind: { x: 0, y: 0 },
       gravity: 0.1,
       turbulence: 0
     };
-    
+
     console.log('🗑️ ParticleManager destroyed and cleaned up');
   }
 }

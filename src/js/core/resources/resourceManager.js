@@ -26,7 +26,7 @@ export default class ResourceManager {
 
       // Parse absolute URLs
       const urlObj = new URL(url);
-      
+
       // Check protocol (only allow http/https)
       if (!['http:', 'https:'].includes(urlObj.protocol)) {
         console.warn(`Invalid protocol in URL: ${url}`);
@@ -56,7 +56,7 @@ export default class ResourceManager {
   validateFileExtension(url, type) {
     const allowedExts = this.allowedExtensions[type];
     if (!allowedExts) return false;
-    
+
     const lowerUrl = url.toLowerCase();
     return allowedExts.some(ext => lowerUrl.endsWith(ext));
   }
@@ -85,9 +85,9 @@ export default class ResourceManager {
 
     return new Promise((resolve, reject) => {
       const img = new Image();
-      img.onload = () => { 
-        this.images[name] = img; 
-        resolve(img); 
+      img.onload = () => {
+        this.images[name] = img;
+        resolve(img);
       };
       img.onerror = (error) => {
         console.error(`Failed to load image ${name} from ${url}:`, error);
@@ -104,9 +104,9 @@ export default class ResourceManager {
 
     return new Promise((resolve, reject) => {
       const audio = new Audio();
-      audio.oncanplaythrough = () => { 
-        this.audio[name] = audio; 
-        resolve(audio); 
+      audio.oncanplaythrough = () => {
+        this.audio[name] = audio;
+        resolve(audio);
       };
       audio.onerror = (error) => {
         console.error(`Failed to load audio ${name} from ${url}:`, error);
@@ -123,19 +123,19 @@ export default class ResourceManager {
     } catch (e) {
       console.warn('Could not load title font, using fallback');
     }
-    
+
     try {
       await this.loadFont('SubtitleFont', 'assets/fonts/subtitle.ttf');
     } catch (e) {
       console.warn('Could not load subtitle font, using fallback');
     }
-    
+
     try {
       await this.loadFont('BodyFont', 'assets/fonts/body.ttf');
     } catch (e) {
       console.warn('Could not load body font, using fallback');
     }
-    
+
     try {
       await this.loadImage('placeholder', 'assets/images/placeholder.svg');
     } catch (e) {
@@ -157,7 +157,7 @@ export default class ResourceManager {
     // } catch (e) {
     //   console.warn('Could not load ambient space sound');
     // }
-    
+
     return { fonts: this.fonts, images: this.images, audio: this.audio };
   }
 
@@ -175,7 +175,7 @@ export default class ResourceManager {
     console.log('Loaded fonts:', Object.keys(this.fonts));
     console.log('Loaded images:', Object.keys(this.images));
     console.log('Loaded audio:', Object.keys(this.audio));
-    
+
     // Test if placeholder image is loaded and accessible
     if (this.images.placeholder) {
       console.log('✓ Placeholder image loaded successfully');
@@ -184,7 +184,7 @@ export default class ResourceManager {
     } else {
       console.log('✗ Placeholder image not loaded');
     }
-    
+
     return {
       fontsCount: Object.keys(this.fonts).length,
       imagesCount: Object.keys(this.images).length,
