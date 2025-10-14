@@ -12,7 +12,7 @@ import GlassShatterManager from "../game/managers/glassShatterManager.js";
 import HudManager from "../game/managers/hudManager.js";
 import MultiTouchManager from "../game/managers/multiTouchManager.js";
 import { InputHandler } from "../inputHandler.js";
-import { LevelMenu } from "../ui/levelMenu.js";
+import { LevelMenu } from "../ui/components/levelMenu.js";
 import { WelcomeScreen } from "../ui/components/welcomeScreen.js";
 import { eventTracker } from "../utils/eventTracker.js";
 import { performanceMonitor } from "../utils/performanceMonitor.js";
@@ -238,6 +238,13 @@ function startLevel(levelName) {
       },
       applyExplosionEffect: (x, y, radius, force) => {
         managers.glassShatter.triggerShatter(x, y, force * 0.5);
+      },
+      applyScreenShake: (intensity, duration) => {
+        // Simple screen shake effect using canvas translation
+        if (managers.centerPiece) {
+          // Could implement screen shake through centerPiece manager
+          // For now, just trigger a visual effect
+        }
       },
       onLevelComplete: (score) => {
         handleLevelComplete(levelName, score);

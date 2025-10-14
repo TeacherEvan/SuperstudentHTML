@@ -11,17 +11,13 @@ export default class ColorsLevel extends BaseLevel {
     this.targetDotsRemaining = 0;
     this.onPointerDown = this.onPointerDown.bind(this);
     this.lastCollisionTime = 0;
+    this.correctStreak = 0;
+    this.levelStartTime = 0;
+    this.activeTimers = [];
   }
 
   async init() {
     // Choose first color in sequence
-    const colorsList = GAME_CONFIG.COLORS.COLORS_LIST;
-    this.targetColor = colorsList[0];
-    const rgb = this.targetColor.join(',');
-    this.mother = {
-      x: this.canvas.width / 2,
-  async init() {
-    // Choose first color in sequence  
     const colorsList = GAME_CONFIG.COLORS.COLORS_LIST;
     this.targetColor = colorsList[0];
     const rgb = this.targetColor.join(',');
@@ -31,24 +27,18 @@ export default class ColorsLevel extends BaseLevel {
       x: this.canvas.width / 2,
       y: this.canvas.height / 2,
       radius: GAME_CONFIG.MOTHER_RADIUS[GAME_CONFIG.DEFAULT_MODE] || GAME_CONFIG.DOT_RADIUS,
-      color: `rgb(${rgb})`
+      color: `rgb(${rgb})`,
+      shimmer: 0,
+      pulsePhase: 0
     };
     
     this.canvas.addEventListener('pointerdown', this.onPointerDown);
+    this.levelStartTime = performance.now();
     
     // Memory Phase: Player clicks to remember the target color, shown for ~2 seconds
     setTimeout(() => this.disperse(), this.memoryTime);
-  } this.targetDotsRemaining = targetCount;
-    const others = GAME_CONFIG.COLORS.COLORS_LIST.filter(c => c !== this.targetColor);
-    
-    // Generate target dots
-    for (let i = 0; i < targetCount; i++) {
-      this.addDot(this.targetColor, true);
-    }
-    
-    // Generate distractor dots
-    for (let i = 0; i < total - targetCount; i++) {
-      const color = others[Math.floor(Math.random() * others.length)];
+  }
+
   disperse() {
     // Dispersion Phase: Mother dot explodes into 85 total dots
     this.state = 'playing';
@@ -67,13 +57,8 @@ export default class ColorsLevel extends BaseLevel {
       const color = distractorColors[Math.floor(Math.random() * distractorColors.length)];
       this.addDot(color, false);
     }
-  } };
-    this.dots.push(dot);
   }
 
-  update(deltaTime) {
-    if (this.state !== 'playing') return;
-    
   addDot(colArray, isTarget) {
     const angle = Math.random() * Math.PI * 2;
     const speed = Math.random() * (GAME_CONFIG.DOT_SPEED_RANGE[1] - GAME_CONFIG.DOT_SPEED_RANGE[0]) + GAME_CONFIG.DOT_SPEED_RANGE[0];
@@ -85,10 +70,33 @@ export default class ColorsLevel extends BaseLevel {
       dx: Math.cos(angle) * speed,
       dy: Math.sin(angle) * speed,
       isTarget: isTarget,
-      shimmer: Math.random() * Math.PI * 2
+      shimmer: Math.random() * Math.PI * 2,
+      pulsePhase: Math.random() * Math.PI * 2,
+      trail: []
     };
     this.dots.push(dot);
-  }     
+  }
+
+  update(deltaTime) {
+    if (this.state !== 'playing') return;
+    
+    const dt = deltaTime / 16;
+    this.dots.forEach(dot => {
+      // Update position
+      dot.x += dot.dx * dt;
+      dot.y += dot.dy * dt;
+      
+      // Update visual effects
+      dot.shimmer += 0.1 * dt;
+      dot.pulsePhase += 0.05 * dt;
+      
+      // Add trail effect for target dots
+      if (dot.isTarget) {
+        dot.trail.push({ x: dot.x, y: dot.y, alpha: 1.0 });
+        if (dot.trail.length > 10) {
+          dot.trail.shift();
+        }
+        
         // Fade trail
         dot.trail.forEach((point, index) => {
           point.alpha = (index + 1) / dot.trail.length * 0.5;
