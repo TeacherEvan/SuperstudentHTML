@@ -5,18 +5,14 @@ import { LevelSettings } from '../../config/gameSettings.js';
 export default class ColorsLevel extends BaseLevel {
   constructor(canvas, ctx, managers, helpers) {
     super(canvas, ctx, managers, helpers);
-    this.memoryTime = LevelSettings.colors.memoryTime;
+    this.memoryTime = GAME_CONFIG.COLORS_LEVEL_CONFIG.MEMORY_DISPLAY_TIME;
     this.dots = [];
     this.state = 'memory';
     this.targetDotsRemaining = 0;
     this.onPointerDown = this.onPointerDown.bind(this);
-
-    // Enhanced features
+    this.lastCollisionTime = 0;
     this.correctStreak = 0;
-    this.lastCorrectTime = 0;
     this.levelStartTime = 0;
-
-    // Timer tracking for memory leak prevention
     this.activeTimers = [];
 
     // Bind cleanup method to prevent context loss
@@ -43,52 +39,41 @@ export default class ColorsLevel extends BaseLevel {
     const colorsList = GAME_CONFIG.COLORS.COLORS_LIST;
     this.targetColor = colorsList[0];
     const rgb = this.targetColor.join(',');
+    
+    // Mother Dot Phase: A large colored dot (radius 90-120px) appears at screen center
     this.mother = {
       x: this.canvas.width / 2,
       y: this.canvas.height / 2,
-      radius: this.managers?.displaySettings?.motherRadius || GAME_CONFIG.DOT_RADIUS,
-      color: `rgb(${rgb})`
+      radius: GAME_CONFIG.MOTHER_RADIUS[GAME_CONFIG.DEFAULT_MODE] || GAME_CONFIG.DOT_RADIUS,
+      color: `rgb(${rgb})`,
+      shimmer: 0,
+      pulsePhase: 0
     };
-
-    // Enhanced sound feedback
-    if (this.managers.sound) {
-      // Play level start sound
-      this.managers.sound.playSuccess();
-
-      // Resume audio context
-      await this.managers.sound.resumeContext();
-    }
-
-    // Show memory dot then disperse
+    
     this.canvas.addEventListener('pointerdown', this.onPointerDown);
     this.levelStartTime = performance.now();
-
-    // Use safe timer creation
-    this.createTimer(() => this.disperse(), this.memoryTime);
+    
+    // Memory Phase: Player clicks to remember the target color, shown for ~2 seconds
+    setTimeout(() => this.disperse(), this.memoryTime);
   }
 
   disperse() {
+    // Dispersion Phase: Mother dot explodes into 85 total dots
     this.state = 'playing';
-    const cfg = LevelSettings.colors;
-    const total = cfg.totalDots;
-    const targetCount = cfg.targetDots;
-    this.targetDotsRemaining = targetCount;
-    const others = GAME_CONFIG.COLORS.COLORS_LIST.filter(c => c !== this.targetColor);
-
-    // Generate target dots
-    for (let i = 0; i < targetCount; i++) {
+    const totalDots = GAME_CONFIG.COLORS_LEVEL_CONFIG.TOTAL_DOTS;
+    const targetDots = GAME_CONFIG.COLORS_LEVEL_CONFIG.TARGET_DOTS;
+    this.targetDotsRemaining = targetDots;
+    const distractorColors = GAME_CONFIG.COLORS.COLORS_LIST.filter(c => c !== this.targetColor);
+    
+    // 17 target color dots (correct targets)
+    for (let i = 0; i < targetDots; i++) {
       this.addDot(this.targetColor, true);
     }
-
-    // Generate distractor dots
-    for (let i = 0; i < total - targetCount; i++) {
-      const color = others[Math.floor(Math.random() * others.length)];
+    
+    // 68 distractor dots (4 other colors, ~17 each)
+    for (let i = 0; i < totalDots - targetDots; i++) {
+      const color = distractorColors[Math.floor(Math.random() * distractorColors.length)];
       this.addDot(color, false);
-    }
-
-    // Play dispersion sound effect
-    if (this.managers.sound) {
-      this.managers.sound.playPop(0.8);
     }
   }
 
@@ -98,7 +83,7 @@ export default class ColorsLevel extends BaseLevel {
     const dot = {
       x: this.mother.x,
       y: this.mother.y,
-      radius: GAME_CONFIG.DOT_RADIUS,
+      radius: GAME_CONFIG.DOT_RADIUS, // 48px radius
       color: `rgb(${colArray.join(',')})`,
       dx: Math.cos(angle) * speed,
       dy: Math.sin(angle) * speed,
