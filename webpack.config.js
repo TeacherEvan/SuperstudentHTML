@@ -1,10 +1,10 @@
-import path from 'path';
-import HtmlWebpackPlugin from 'html-webpack-plugin';
 import CompressionPlugin from 'compression-webpack-plugin';
-import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import CssMinimizerPlugin from 'css-minimizer-webpack-plugin';
-import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
+import HtmlWebpackPlugin from 'html-webpack-plugin';
+import MiniCssExtractPlugin from 'mini-css-extract-plugin';
+import path from 'path';
 import { fileURLToPath } from 'url';
+import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 export default (env, argv) => {
   const isProduction = argv.mode === 'production';
   const isAnalyze = env && env.analyze;
-  
+
   return {
     entry: './src/js/main.js',
     output: {
@@ -21,7 +21,7 @@ export default (env, argv) => {
       chunkFilename: isProduction ? 'js/[name].[contenthash].chunk.js' : 'js/[name].chunk.js',
       clean: true,
       assetModuleFilename: 'assets/[name].[hash][ext]',
-      publicPath: './'
+      publicPath: '/'
     },
     module: {
       rules: [
