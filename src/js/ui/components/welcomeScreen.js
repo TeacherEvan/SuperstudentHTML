@@ -23,7 +23,7 @@ export class WelcomeScreen {
     this.onStartGame = null;
     this.onShowOptions = null;
 
-    this.particleColors = ['#ff595e','#ffca3a','#8ac926','#1982c4','#6a4c93'];
+    this.particleColors = ['#ff595e', '#ffca3a', '#8ac926', '#1982c4', '#6a4c93'];
 
     this.setupParticles();
     this.setupUI();
@@ -41,7 +41,7 @@ export class WelcomeScreen {
         size: Math.random() * 6 + 2,
         speed: Math.random() * this.particleSpeed + 0.3,
         opacity: Math.random() * 0.9 + 0.1,
-        color: this.particleColors[Math.floor(Math.random()*this.particleColors.length)]
+        color: this.particleColors[Math.floor(Math.random() * this.particleColors.length)]
       });
     }
   }
@@ -130,18 +130,18 @@ export class WelcomeScreen {
       const mode = button.dataset.mode;
       this.resourceManager.setDisplayMode(mode);
       const textEl = document.querySelector('.mode-selected-text');
-      if (textEl){
-        textEl.style.display='block';
-        textEl.textContent=`Display mode set to ${mode}. Loading...`;
+      if (textEl) {
+        textEl.style.display = 'block';
+        textEl.textContent = `Display mode set to ${mode}. Loading...`;
       }
-      setTimeout(() => { if(this.onStartGame){ this.hide(); this.onStartGame(); } }, 1200);
+      setTimeout(() => { if (this.onStartGame) { this.hide(); this.onStartGame(); } }, 1200);
     };
 
     setTimeout(() => {
       document.querySelectorAll('.display-btn').forEach(btn => {
-        btn.addEventListener('click',() => updateSelection(btn));
+        btn.addEventListener('click', () => updateSelection(btn));
       });
-    },100);
+    }, 100);
   }
 
   show() {
@@ -223,13 +223,13 @@ export class WelcomeScreen {
   renderAnimatedBackground() {
     const ctx = this.bgCtx;
     ctx.fillStyle = 'rgba(0,0,0,0.9)';
-    ctx.fillRect(0,0,this.bgCanvas.width,this.bgCanvas.height);
+    ctx.fillRect(0, 0, this.bgCanvas.width, this.bgCanvas.height);
     this.particles.forEach(p => {
       ctx.save();
       ctx.globalAlpha = p.opacity;
       ctx.fillStyle = p.color;
       ctx.beginPath();
-      ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     });
