@@ -1,7 +1,7 @@
-import { GameLoop } from './gameLoop.js';
 import { ResourceManager } from './core/resourceManager.js';
+import { GameLoop } from './gameLoop.js';
 import { InputHandler } from './inputHandler.js';
-import { WelcomeScreen } from './ui/welcomeScreen.js';
+import { WelcomeScreen } from './ui/components/welcomeScreen.js';
 
 // Import CSS for webpack to process
 import '../css/main.css';
@@ -16,9 +16,9 @@ class SuperStudentGame {
   }
 
   async init() {
-    await this.resourceManager.loadAssets();
     this.setupCanvas();
     this.setupMobileOptimizations();
+    await this.resourceManager.loadAssets();
     this.startWelcomeScreen();
     this.gameLoop.start();
   }
@@ -89,7 +89,25 @@ class SuperStudentGame {
   }
 
   startWelcomeScreen() {
-    const welcomeScreen = new WelcomeScreen();
+    const welcomeScreen = new WelcomeScreen(this.canvas, this.ctx, this.resourceManager);
+
+    // Set callback for when user selects display mode
+    welcomeScreen.setCallbacks(
+      () => {
+        // Start game callback - this is where you'd transition to the actual game
+        console.log('Game starting with selected display mode');
+        // TODO: Implement game start logic
+      },
+      () => {
+        // Show options callback (if needed)
+        console.log('Show options');
+      }
+    );
+
+    // Show the welcome screen
+    welcomeScreen.show();
+
+    // Set it as current screen for the game loop (if needed for rendering)
     this.gameLoop.setCurrentScreen(welcomeScreen);
   }
 }

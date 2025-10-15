@@ -1,5 +1,5 @@
-import { GAME_CONFIG } from "../../config/constants.js";
-import { BaseLevel } from "./baseLevel.js";
+import { GAME_CONFIG } from '../../config/constants.js';
+import { BaseLevel } from './baseLevel.js';
 
 export default class ShapesLevel extends BaseLevel {
   constructor(canvas, ctx, managers, helpers) {
@@ -19,7 +19,7 @@ export default class ShapesLevel extends BaseLevel {
     this.objects = [];
     this.groupCount = 0;
     this.spawnTimer = 0;
-    this.canvas.addEventListener("pointerdown", this.onPointerDown);
+    this.canvas.addEventListener('pointerdown', this.onPointerDown);
     this.running = true;
 
     // Play level start sound
@@ -60,7 +60,7 @@ export default class ShapesLevel extends BaseLevel {
     const size = GAME_CONFIG.TEXT_LEVEL_CONFIG.CENTER_FONT_SIZE;
     this.ctx.save();
     this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
-    this.ctx.fillStyle = "#FFFFFF";
+    this.ctx.fillStyle = '#FFFFFF';
     this.drawShape(this.currentTarget, size);
     this.ctx.restore();
 
@@ -120,7 +120,7 @@ export default class ShapesLevel extends BaseLevel {
       GAME_CONFIG.COLORS.COLORS_LIST[
         Math.floor(Math.random() * GAME_CONFIG.COLORS.COLORS_LIST.length)
       ];
-    const color = `rgb(${colorArr.join(",")})`;
+    const color = `rgb(${colorArr.join(',')})`;
 
     this.objects.push({ shape, x, y, dx, dy, color });
   }
@@ -192,33 +192,33 @@ export default class ShapesLevel extends BaseLevel {
     this.ctx.beginPath();
 
     switch (shape) {
-      case "Circle":
-        this.ctx.arc(0, 0, half, 0, Math.PI * 2);
-        break;
-      case "Square":
-        this.ctx.rect(-half, -half, size, size);
-        break;
-      case "Triangle":
-        this.ctx.moveTo(0, -half);
-        this.ctx.lineTo(half, half);
-        this.ctx.lineTo(-half, half);
-        this.ctx.closePath();
-        break;
-      case "Rectangle":
-        this.ctx.rect(-half, -half * 0.6, size, size * 0.6);
-        break;
-      case "Pentagon":
-        for (let i = 0; i < 5; i++) {
-          const angle = ((Math.PI * 2) / 5) * i - Math.PI / 2;
-          const px = Math.cos(angle) * half;
-          const py = Math.sin(angle) * half;
-          if (i === 0) this.ctx.moveTo(px, py);
-          else this.ctx.lineTo(px, py);
-        }
-        this.ctx.closePath();
-        break;
-      default:
-        this.ctx.arc(0, 0, half, 0, Math.PI * 2);
+    case 'Circle':
+      this.ctx.arc(0, 0, half, 0, Math.PI * 2);
+      break;
+    case 'Square':
+      this.ctx.rect(-half, -half, size, size);
+      break;
+    case 'Triangle':
+      this.ctx.moveTo(0, -half);
+      this.ctx.lineTo(half, half);
+      this.ctx.lineTo(-half, half);
+      this.ctx.closePath();
+      break;
+    case 'Rectangle':
+      this.ctx.rect(-half, -half * 0.6, size, size * 0.6);
+      break;
+    case 'Pentagon':
+      for (let i = 0; i < 5; i++) {
+        const angle = ((Math.PI * 2) / 5) * i - Math.PI / 2;
+        const px = Math.cos(angle) * half;
+        const py = Math.sin(angle) * half;
+        if (i === 0) this.ctx.moveTo(px, py);
+        else this.ctx.lineTo(px, py);
+      }
+      this.ctx.closePath();
+      break;
+    default:
+      this.ctx.arc(0, 0, half, 0, Math.PI * 2);
     }
     this.ctx.fill();
   }
@@ -236,7 +236,7 @@ export default class ShapesLevel extends BaseLevel {
   }
 
   cleanup() {
-    this.canvas.removeEventListener("pointerdown", this.onPointerDown);
+    this.canvas.removeEventListener('pointerdown', this.onPointerDown);
     this.objects = [];
   }
 }

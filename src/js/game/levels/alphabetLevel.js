@@ -1,5 +1,5 @@
-import { GAME_CONFIG } from "../../config/constants.js";
-import { BaseLevel } from "./baseLevel.js";
+import { GAME_CONFIG } from '../../config/constants.js';
+import { BaseLevel } from './baseLevel.js';
 
 export default class AlphabetLevel extends BaseLevel {
   constructor(canvas, ctx, managers, helpers) {
@@ -19,7 +19,7 @@ export default class AlphabetLevel extends BaseLevel {
     this.objects = [];
     this.groupCount = 0;
     this.spawnTimer = 0;
-    this.canvas.addEventListener("pointerdown", this.onPointerDown);
+    this.canvas.addEventListener('pointerdown', this.onPointerDown);
     this.running = true;
 
     // Play level start sound
@@ -62,9 +62,9 @@ export default class AlphabetLevel extends BaseLevel {
   render() {
     // Draw center target - Large text (900px font) shows current target at screen center
     this.ctx.save();
-    this.ctx.fillStyle = "#FFFFFF";
-    this.ctx.textAlign = "center";
-    this.ctx.textBaseline = "middle";
+    this.ctx.fillStyle = '#FFFFFF';
+    this.ctx.textAlign = 'center';
+    this.ctx.textBaseline = 'middle';
     this.ctx.font = `${GAME_CONFIG.TEXT_LEVEL_CONFIG.CENTER_FONT_SIZE}px Arial`;
     this.ctx.fillText(
       this.currentTarget,
@@ -77,8 +77,8 @@ export default class AlphabetLevel extends BaseLevel {
     this.objects.forEach((obj) => {
       this.ctx.save();
       this.ctx.fillStyle = obj.color;
-      this.ctx.textAlign = "center";
-      this.ctx.textBaseline = "middle";
+      this.ctx.textAlign = 'center';
+      this.ctx.textBaseline = 'middle';
       this.ctx.font = `${GAME_CONFIG.TEXT_LEVEL_CONFIG.FALLING_FONT_SIZE}px Arial`;
       this.ctx.fillText(obj.char, obj.x, obj.y);
       this.ctx.restore();
@@ -129,7 +129,7 @@ export default class AlphabetLevel extends BaseLevel {
       GAME_CONFIG.COLORS.COLORS_LIST[
         Math.floor(Math.random() * GAME_CONFIG.COLORS.COLORS_LIST.length)
       ];
-    const color = `rgb(${colorArr.join(",")})`;
+    const color = `rgb(${colorArr.join(',')})`;
 
     this.objects.push({ char, x, y, dx, dy, color });
   }
@@ -217,7 +217,7 @@ export default class AlphabetLevel extends BaseLevel {
   }
 
   cleanup() {
-    this.canvas.removeEventListener("pointerdown", this.onPointerDown);
+    this.canvas.removeEventListener('pointerdown', this.onPointerDown);
     this.objects = [];
   }
 }

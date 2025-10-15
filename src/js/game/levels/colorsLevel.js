@@ -39,7 +39,7 @@ export default class ColorsLevel extends BaseLevel {
     const colorsList = GAME_CONFIG.COLORS.COLORS_LIST;
     this.targetColor = colorsList[0];
     const rgb = this.targetColor.join(',');
-    
+
     // Mother Dot Phase: A large colored dot (radius 90-120px) appears at screen center
     this.mother = {
       x: this.canvas.width / 2,
@@ -49,10 +49,10 @@ export default class ColorsLevel extends BaseLevel {
       shimmer: 0,
       pulsePhase: 0
     };
-    
+
     this.canvas.addEventListener('pointerdown', this.onPointerDown);
     this.levelStartTime = performance.now();
-    
+
     // Memory Phase: Player clicks to remember the target color, shown for ~2 seconds
     setTimeout(() => this.disperse(), this.memoryTime);
   }
@@ -64,12 +64,12 @@ export default class ColorsLevel extends BaseLevel {
     const targetDots = GAME_CONFIG.COLORS_LEVEL_CONFIG.TARGET_DOTS;
     this.targetDotsRemaining = targetDots;
     const distractorColors = GAME_CONFIG.COLORS.COLORS_LIST.filter(c => c !== this.targetColor);
-    
+
     // 17 target color dots (correct targets)
     for (let i = 0; i < targetDots; i++) {
       this.addDot(this.targetColor, true);
     }
-    
+
     // 68 distractor dots (4 other colors, ~17 each)
     for (let i = 0; i < totalDots - targetDots; i++) {
       const color = distractorColors[Math.floor(Math.random() * distractorColors.length)];

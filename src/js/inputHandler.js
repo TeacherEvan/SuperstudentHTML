@@ -140,7 +140,7 @@ export class InputHandler {
       console.warn('Could not get canvas bounding rect');
       return { x: 0, y: 0 };
     }
-    
+
     // Use the rendered (CSS) size of the canvas when available; fall back to
     // the intrinsic width/height attributes. This prevents extreme scaling
     // when the author relies solely on CSS for sizing.
@@ -150,7 +150,7 @@ export class InputHandler {
     // Prevent division by zero
     const scaleX = rect.width > 0 ? canvasWidth / rect.width : 1;
     const scaleY = rect.height > 0 ? canvasHeight / rect.height : 1;
-    
+
     return {
       x: event.clientX - rect.left,
       y: event.clientY - rect.top

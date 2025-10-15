@@ -4,6 +4,7 @@ export class ResourceManager {
     this.loadingProgress = 0;
     this.totalAssets = 0;
     this.loadedAssets = 0;
+    this.displayMode = 'DEFAULT'; // Default display mode
   }
 
   async loadAssets() {
@@ -43,5 +44,14 @@ export class ResourceManager {
 
   getAsset(id) {
     return this.assets.get(id);
+  }
+
+  setDisplayMode(mode) {
+    this.displayMode = mode;
+    console.log(`Display mode set to: ${mode}`);
+  }
+
+  getDisplayMode() {
+    return this.displayMode;
   }
 }

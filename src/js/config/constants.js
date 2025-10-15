@@ -1,7 +1,7 @@
 export const GAME_CONFIG = Object.freeze({
   // Display modes
-  DISPLAY_MODES: Object.freeze(["DEFAULT", "QBOARD"]),
-  DEFAULT_MODE: "DEFAULT",
+  DISPLAY_MODES: Object.freeze(['DEFAULT', 'QBOARD']),
+  DEFAULT_MODE: 'DEFAULT',
 
   // Font sizes by display mode
   FONT_SIZES: Object.freeze({
@@ -35,17 +35,17 @@ export const GAME_CONFIG = Object.freeze({
 
   // Game sequences
   SEQUENCES: Object.freeze({
-    alphabet: "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
-    numbers: Object.freeze(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]),
-    clcase: "abcdefghijklmnopqrstuvwxyz".split(""),
+    alphabet: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
+    numbers: Object.freeze(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']),
+    clcase: 'abcdefghijklmnopqrstuvwxyz'.split(''),
     shapes: Object.freeze([
-      "Circle",
-      "Square",
-      "Triangle",
-      "Rectangle",
-      "Pentagon",
+      'Circle',
+      'Square',
+      'Triangle',
+      'Rectangle',
+      'Pentagon',
     ]),
-    colors: Object.freeze(["Blue", "Red", "Green", "Yellow", "Purple"]),
+    colors: Object.freeze(['Blue', 'Red', 'Green', 'Yellow', 'Purple']),
   }),
 
   // Timing and gameplay
@@ -85,7 +85,7 @@ export const GAME_CONFIG = Object.freeze({
     SPAWN_EDGE_BUFFER: 50,
     TARGET_ADVANCE_COUNT: 5,
     CHECKPOINT_INTERVAL: 5,
-    ABILITIES: Object.freeze(["laser", "aoe", "charge_up"]),
+    ABILITIES: Object.freeze(['laser', 'aoe', 'charge_up']),
     AOE_RADIUS: 200,
     CHARGE_UP_DURATION: 60,
     LASER_WIDTH: Object.freeze([3, 5]),
@@ -99,12 +99,12 @@ export const GAME_CONFIG = Object.freeze({
     SFX_VOLUME: 0.8,
     MUSIC_VOLUME: 0.3,
     SOUNDS: Object.freeze({
-      laser: Object.freeze({ file: "laser.mp3", volume: 0.6 }),
-      completion: Object.freeze({ file: "completion.mp3", volume: 1.0 }),
+      laser: Object.freeze({ file: 'laser.mp3', volume: 0.6 }),
+      completion: Object.freeze({ file: 'completion.mp3', volume: 1.0 }),
     }),
     AMBIENT: Object.freeze({
       space: Object.freeze({
-        file: "ambient_space.mp3",
+        file: 'ambient_space.mp3',
         volume: 0.2,
         loop: true,
       }),
