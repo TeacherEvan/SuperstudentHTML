@@ -107,8 +107,7 @@ class SuperStudentGame {
     // Show the welcome screen
     welcomeScreen.show();
 
-    // Set it as current screen for the game loop (if needed for rendering)
-    this.gameLoop.setCurrentScreen(welcomeScreen);
+    // Note: WelcomeScreen manages its own animation, so we don't need to set it as the current screen
   }
 }
 

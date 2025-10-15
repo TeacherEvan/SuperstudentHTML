@@ -257,4 +257,15 @@ export class WelcomeScreen {
     this.onStartGame = startGameCallback;
     this.onShowOptions = showOptionsCallback;
   }
+
+  // GameLoop interface methods (no-op since WelcomeScreen manages its own animation)
+  update(_deltaTime) {
+    // WelcomeScreen manages its own animation loop via requestAnimationFrame
+    // This method is here to satisfy the GameLoop interface
+  }
+
+  render(_ctx) {
+    // WelcomeScreen renders via DOM elements and its own background canvas
+    // This method is here to satisfy the GameLoop interface
+  }
 }
