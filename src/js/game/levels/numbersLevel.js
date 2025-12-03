@@ -208,7 +208,7 @@ export default class NumbersLevel extends BaseLevel {
     this.ctx.textAlign = 'left';
     this.ctx.fillText(`Number: ${this.currentTarget}`, 20, 40);
     this.ctx.fillText(`Progress: ${this.currentIndex + 1}/${this.sequence.length}`, 20, 70);
-    this.ctx.fillText(`Targets: ${this.groupCount}/${LevelSettings.text.advanceCount}`, 20, 100);
+    this.ctx.fillText(`Targets: ${this.groupCount}/${GAME_CONFIG.TEXT_LEVEL_CONFIG.TARGET_ADVANCE_COUNT}`, 20, 100);
     this.ctx.restore();
   }
 
