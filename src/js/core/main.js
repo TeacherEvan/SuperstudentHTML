@@ -57,6 +57,9 @@ const isInitialized = false;
 const MAX_RETRY_ATTEMPTS = 3;
 const retryAttempts = { showLevelMenu: 0, startLevel: 0, initializeWelcomeScreen: 0 };
 
+// Timing constants
+const LEVEL_COMPLETION_DELAY_MS = 3000; // Time before returning to menu after level completion
+
 /**
  * Display a critical error screen and halt further automatic retries.
  * @param {string} userMessage - Human-readable explanation of the failure.
@@ -563,7 +566,7 @@ function handleLevelComplete(levelName, score) {
         showLevelMenu();
       }
       levelCompletionTimer = null;
-    }, 3000);
+    }, LEVEL_COMPLETION_DELAY_MS);
 
     // Calculate total possible score for this level
     let totalPossible = 1000; // Default

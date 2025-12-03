@@ -14,6 +14,58 @@ const loadingState = {
   progress: 0
 };
 
+// Level completion screen transition delay (ms)
+const LEVEL_LOAD_ANIMATION_DELAY = 200;
+
+/**
+ * Core level import function - shared by loadLevelModule and preloadLevel
+ * Uses webpack magic comments for chunk naming
+ * @param {string} levelName - Name of the level to import
+ * @returns {Promise<Function>} The level class constructor
+ */
+async function importLevelByName(levelName) {
+  switch (levelName) {
+  case 'colors':
+    return (await import(
+      /* webpackChunkName: "level-colors" */
+      '../game/levels/colorsLevel.js'
+    )).default;
+
+  case 'shapes':
+    return (await import(
+      /* webpackChunkName: "level-shapes" */
+      '../game/levels/shapesLevel.js'
+    )).default;
+
+  case 'alphabet':
+    return (await import(
+      /* webpackChunkName: "level-alphabet" */
+      '../game/levels/alphabetLevel.js'
+    )).default;
+
+  case 'numbers':
+    return (await import(
+      /* webpackChunkName: "level-numbers" */
+      '../game/levels/numbersLevel.js'
+    )).default;
+
+  case 'clcase':
+    return (await import(
+      /* webpackChunkName: "level-clcase" */
+      '../game/levels/clCaseLevel.js'
+    )).default;
+
+  case 'phonics':
+    return (await import(
+      /* webpackChunkName: "level-phonics" */
+      '../game/levels/phonics/PhonicsLevel.js'
+    )).PhonicsLevel;
+
+  default:
+    throw new Error(`Unknown level: ${levelName}`);
+  }
+}
+
 /**
  * Creates a loading indicator overlay
  * @returns {HTMLElement} The loading overlay element
@@ -205,73 +257,10 @@ async function loadLevelModule(levelName) {
   showLoadingOverlay(levelName);
 
   try {
-    let LevelClass;
+    updateLoadingProgress(30);
 
-    // Dynamic imports with webpack magic comments for chunk naming
-    switch (levelName) {
-    case 'colors':
-      updateLoadingProgress(50);
-      // eslint-disable-next-line no-case-declarations
-      const colorsModule = await import(
-        /* webpackChunkName: "level-colors" */
-        '../game/levels/colorsLevel.js'
-      );
-      LevelClass = colorsModule.default;
-      break;
-
-    case 'shapes':
-      updateLoadingProgress(50);
-      // eslint-disable-next-line no-case-declarations
-      const shapesModule = await import(
-        /* webpackChunkName: "level-shapes" */
-        '../game/levels/shapesLevel.js'
-      );
-      LevelClass = shapesModule.default;
-      break;
-
-    case 'alphabet':
-      updateLoadingProgress(50);
-      // eslint-disable-next-line no-case-declarations
-      const alphabetModule = await import(
-        /* webpackChunkName: "level-alphabet" */
-        '../game/levels/alphabetLevel.js'
-      );
-      LevelClass = alphabetModule.default;
-      break;
-
-    case 'numbers':
-      updateLoadingProgress(50);
-      // eslint-disable-next-line no-case-declarations
-      const numbersModule = await import(
-        /* webpackChunkName: "level-numbers" */
-        '../game/levels/numbersLevel.js'
-      );
-      LevelClass = numbersModule.default;
-      break;
-
-    case 'clcase':
-      updateLoadingProgress(50);
-      // eslint-disable-next-line no-case-declarations
-      const clCaseModule = await import(
-        /* webpackChunkName: "level-clcase" */
-        '../game/levels/clCaseLevel.js'
-      );
-      LevelClass = clCaseModule.default;
-      break;
-
-    case 'phonics':
-      updateLoadingProgress(50);
-      // eslint-disable-next-line no-case-declarations
-      const phonicsModule = await import(
-        /* webpackChunkName: "level-phonics" */
-        '../game/levels/phonics/PhonicsLevel.js'
-      );
-      LevelClass = phonicsModule.PhonicsLevel;
-      break;
-
-    default:
-      throw new Error(`Unknown level: ${levelName}`);
-    }
+    // Use shared import function
+    const LevelClass = await importLevelByName(levelName);
 
     updateLoadingProgress(80);
 
@@ -281,7 +270,7 @@ async function loadLevelModule(levelName) {
     updateLoadingProgress(100);
 
     // Brief delay to show completion before hiding
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise(resolve => setTimeout(resolve, LEVEL_LOAD_ANIMATION_DELAY));
 
     console.log(`✅ Level ${levelName} loaded successfully`);
     return LevelClass;
@@ -304,33 +293,9 @@ async function preloadLevel(levelName) {
   try {
     console.log(`🔄 Preloading level: ${levelName}`);
 
-    // Load in background without showing overlay
-    const silentLoad = async () => {
-      let LevelClass;
-      switch (levelName) {
-      case 'colors':
-        LevelClass = (await import('../game/levels/colorsLevel.js')).default;
-        break;
-      case 'shapes':
-        LevelClass = (await import('../game/levels/shapesLevel.js')).default;
-        break;
-      case 'alphabet':
-        LevelClass = (await import('../game/levels/alphabetLevel.js')).default;
-        break;
-      case 'numbers':
-        LevelClass = (await import('../game/levels/numbersLevel.js')).default;
-        break;
-      case 'clcase':
-        LevelClass = (await import('../game/levels/clCaseLevel.js')).default;
-        break;
-      case 'phonics':
-        LevelClass = (await import('../game/levels/phonics/PhonicsLevel.js')).PhonicsLevel;
-        break;
-      }
-      return LevelClass;
-    };
+    // Use shared import function for background loading
+    const LevelClass = await importLevelByName(levelName);
 
-    const LevelClass = await silentLoad();
     if (LevelClass) {
       levelModuleCache.set(levelName, LevelClass);
       console.log(`✅ Preloaded level: ${levelName}`);
