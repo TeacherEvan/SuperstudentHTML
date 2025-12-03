@@ -8,13 +8,15 @@ export class GameLoop {
     this.currentScreen = null;
     this.lastTime = 0;
     this.isRunning = false;
+    // OPTIMIZATION: Pre-bind loop method to avoid creating new function references each frame
+    this._boundLoop = this.loop.bind(this);
     // TODO: [OPTIMIZATION] Implement frame rate limiting for battery savings on mobile
     // TODO: [OPTIMIZATION] Add performance metrics tracking (FPS counter, frame time)
   }
 
   start() {
     this.isRunning = true;
-    this.loop(0);
+    this._boundLoop(0);
   }
 
   stop() {
@@ -37,6 +39,6 @@ export class GameLoop {
       this.currentScreen.render(this.ctx);
     }
 
-    requestAnimationFrame(this.loop.bind(this));
+    requestAnimationFrame(this._boundLoop);
   }
 }

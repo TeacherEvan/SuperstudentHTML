@@ -1,3 +1,6 @@
+// OPTIMIZATION: Cache constant to avoid repeated Math.PI calculations
+const TWO_PI = Math.PI * 2;
+
 export default class GlassShatterManager {
   constructor(canvas, ctx, particleManager) {
     this.canvas = canvas;
@@ -103,7 +106,7 @@ export default class GlassShatterManager {
     // Primary radial cracks
     const numPrimary = Math.floor(6 + intensity * 8);
     for (let i = 0; i < numPrimary; i++) {
-      const angle = (i / numPrimary) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
+      const angle = (i / numPrimary) * TWO_PI + (Math.random() - 0.5) * 0.5;
       const crack = this.createCrackLine(x, y, angle, intensity, 'primary');
       this.cracks.push(crack);
     }
@@ -111,7 +114,7 @@ export default class GlassShatterManager {
     // Secondary branching cracks
     const numSecondary = Math.floor(4 + intensity * 6);
     for (let i = 0; i < numSecondary; i++) {
-      const angle = Math.random() * Math.PI * 2;
+      const angle = Math.random() * TWO_PI;
       const distance = 50 + Math.random() * 80;
       const startX = x + Math.cos(angle) * distance;
       const startY = y + Math.sin(angle) * distance;
@@ -195,12 +198,12 @@ export default class GlassShatterManager {
       opacity: 0.6,
       propagationSpeed: this.physics.crackPropagationSpeed * 0.7,
       currentLength: 0,
-      targetLength: radius * Math.PI * 2
+      targetLength: radius * TWO_PI
     };
 
     const segments = Math.floor(radius * 0.3);
     for (let i = 0; i < segments; i++) {
-      const angle = (i / segments) * Math.PI * 2;
+      const angle = (i / segments) * TWO_PI;
       const deviation = (Math.random() - 0.5) * 15;
       const x = centerX + Math.cos(angle) * (radius + deviation);
       const y = centerY + Math.sin(angle) * (radius + deviation);
@@ -221,7 +224,7 @@ export default class GlassShatterManager {
     const { x, y, intensity } = impactPoint;
 
     for (let i = 0; i < this.physics.fragmentCount; i++) {
-      const angle = Math.random() * Math.PI * 2;
+      const angle = Math.random() * TWO_PI;
       const distance = Math.random() * 80 * intensity;
       const size = 3 + Math.random() * 8;
 
@@ -231,7 +234,7 @@ export default class GlassShatterManager {
         vx: Math.cos(angle) * (2 + Math.random() * 6) * intensity,
         vy: Math.sin(angle) * (2 + Math.random() * 6) * intensity - Math.random() * 2,
         size: size,
-        rotation: Math.random() * Math.PI * 2,
+        rotation: Math.random() * TWO_PI,
         rotationSpeed: (Math.random() - 0.5) * 0.3,
         opacity: 0.7 + Math.random() * 0.3,
         color: this.getGlassColor(),
@@ -250,14 +253,14 @@ export default class GlassShatterManager {
     // Create stress visualization points
     const stressCount = Math.floor(15 + intensity * 10);
     for (let i = 0; i < stressCount; i++) {
-      const angle = Math.random() * Math.PI * 2;
+      const angle = Math.random() * TWO_PI;
       const distance = Math.random() * radius;
 
       this.stressPoints.push({
         x: x + Math.cos(angle) * distance,
         y: y + Math.sin(angle) * distance,
         intensity: intensity * (1 - distance / radius),
-        phase: Math.random() * Math.PI * 2,
+        phase: Math.random() * TWO_PI,
         radius: 2 + Math.random() * 4
       });
     }
@@ -268,7 +271,7 @@ export default class GlassShatterManager {
     const particleCount = Math.floor(40 + intensity * 80);
 
     for (let i = 0; i < particleCount; i++) {
-      const angle = Math.random() * Math.PI * 2;
+      const angle = Math.random() * TWO_PI;
       const speed = 2 + Math.random() * 5;
       const distance = Math.random() * 60;
 
@@ -344,15 +347,27 @@ export default class GlassShatterManager {
   }
 
   updateFragments(dt) {
-    this.fragments.forEach(fragment => {
+    // OPTIMIZATION: Cache physics values to avoid repeated property lookups
+    const gravity = this.physics.gravity;
+    const friction = this.physics.friction;
+    const elasticity = this.physics.elasticity;
+    const canvasWidth = this.canvas.width;
+    const canvasHeight = this.canvas.height;
+
+    // OPTIMIZATION: Use index-based loop and inline dead fragment removal
+    // to avoid creating a new array on every frame
+    let writeIndex = 0;
+    for (let i = 0; i < this.fragments.length; i++) {
+      const fragment = this.fragments[i];
+
       // Apply physics
       fragment.x += fragment.vx * dt;
       fragment.y += fragment.vy * dt;
-      fragment.vy += this.physics.gravity * dt;
+      fragment.vy += gravity * dt;
 
       // Apply friction
-      fragment.vx *= this.physics.friction;
-      fragment.vy *= this.physics.friction;
+      fragment.vx *= friction;
+      fragment.vy *= friction;
 
       // Update rotation
       fragment.rotation += fragment.rotationSpeed * dt;
@@ -362,17 +377,20 @@ export default class GlassShatterManager {
       fragment.opacity = Math.max(0, fragment.life * 0.8);
 
       // Boundary collision
-      if (fragment.x < 0 || fragment.x > this.canvas.width) {
-        fragment.vx *= -this.physics.elasticity;
+      if (fragment.x < 0 || fragment.x > canvasWidth) {
+        fragment.vx *= -elasticity;
       }
-      if (fragment.y > this.canvas.height) {
-        fragment.vy *= -this.physics.elasticity;
-        fragment.y = this.canvas.height;
+      if (fragment.y > canvasHeight) {
+        fragment.vy *= -elasticity;
+        fragment.y = canvasHeight;
       }
-    });
 
-    // Remove dead fragments
-    this.fragments = this.fragments.filter(f => f.life > 0);
+      // Only keep fragments that are still alive
+      if (fragment.life > 0) {
+        this.fragments[writeIndex++] = fragment;
+      }
+    }
+    this.fragments.length = writeIndex;
   }
 
   updateStressField(dt) {
@@ -417,7 +435,7 @@ export default class GlassShatterManager {
 
       this.ctx.fillStyle = gradient;
       this.ctx.beginPath();
-      this.ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+      this.ctx.arc(point.x, point.y, radius, 0, TWO_PI);
       this.ctx.fill();
     });
   }

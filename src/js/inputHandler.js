@@ -7,7 +7,21 @@ export class InputHandler {
     this.longPressTimeout = new Map();
     this.tapTimeout = null;
     this.lastTapTime = 0;
+    // OPTIMIZATION: Cache bounding rect and update on resize instead of getting it each event
+    this._cachedRect = null;
+    this._cachedCanvasWidth = 0;
+    this._cachedCanvasHeight = 0;
+    this._resizeHandler = this._updateCachedRect.bind(this);
+    window.addEventListener('resize', this._resizeHandler);
+    this._updateCachedRect();
     this.setupEventListeners();
+  }
+
+  // OPTIMIZATION: Update cached rect only on resize events
+  _updateCachedRect() {
+    this._cachedRect = this.canvas.getBoundingClientRect();
+    this._cachedCanvasWidth = this.canvas.offsetWidth || this.canvas.width;
+    this._cachedCanvasHeight = this.canvas.offsetHeight || this.canvas.height;
   }
 
   setupEventListeners() {
@@ -135,22 +149,12 @@ export class InputHandler {
   }
 
   getEventCoordinates(event) {
-    const rect = this.canvas.getBoundingClientRect();
+    // OPTIMIZATION: Use cached bounding rect instead of getting it on each event
+    const rect = this._cachedRect;
     if (!rect) {
       console.warn('Could not get canvas bounding rect');
       return { x: 0, y: 0 };
     }
-
-    // Use the rendered (CSS) size of the canvas when available; fall back to
-    // the intrinsic width/height attributes. This prevents extreme scaling
-    // when the author relies solely on CSS for sizing.
-    const canvasWidth = this.canvas.offsetWidth || this.canvas.width;
-    const canvasHeight = this.canvas.offsetHeight || this.canvas.height;
-
-    // Prevent division by zero
-    // TODO: [OPTIMIZATION] Consider using scale factors for high-DPI displays
-    const _scaleX = rect.width > 0 ? canvasWidth / rect.width : 1;
-    const _scaleY = rect.height > 0 ? canvasHeight / rect.height : 1;
 
     return {
       x: event.clientX - rect.left,
@@ -208,5 +212,8 @@ export class InputHandler {
     this.activeTouches.clear();
     this.touchCooldown.clear();
     this.eventListeners.clear();
+
+    // OPTIMIZATION: Remove resize listener to prevent memory leaks
+    window.removeEventListener('resize', this._resizeHandler);
   }
 }
