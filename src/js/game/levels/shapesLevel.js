@@ -134,11 +134,12 @@ export default class ShapesLevel extends BaseLevel {
 
     // Check for collisions with falling shapes
     this.objects = this.objects.filter((obj) => {
-      const size = GAME_CONFIG.TEXT_LEVEL_CONFIG.FALLING_FONT_SIZE;
+      const hitboxSize = GAME_CONFIG.TEXT_LEVEL_CONFIG.FALLING_FONT_SIZE;
+      const hitboxRadius = hitboxSize / 2;
       const dx = x - obj.x;
       const dy = y - obj.y;
 
-      if (dx * dx + dy * dy <= radius * radius) {
+      if (dx * dx + dy * dy <= hitboxRadius * hitboxRadius) {
         if (obj.shape === this.currentTarget) {
           // Correct target hit - Enhanced visual effects for shape destruction
           this.helpers.createExplosion(obj.x, obj.y, obj.color, 1);
@@ -231,7 +232,7 @@ export default class ShapesLevel extends BaseLevel {
     this.ctx.textAlign = 'left';
     this.ctx.fillText(`Shape: ${this.currentTarget}`, 20, 40);
     this.ctx.fillText(`Progress: ${this.currentIndex + 1}/${this.sequence.length}`, 20, 70);
-    this.ctx.fillText(`Targets: ${this.groupCount}/${LevelSettings.text.advanceCount}`, 20, 100);
+    this.ctx.fillText(`Targets: ${this.groupCount}/${GAME_CONFIG.TEXT_LEVEL_CONFIG.TARGET_ADVANCE_COUNT}`, 20, 100);
     this.ctx.restore();
   }
 

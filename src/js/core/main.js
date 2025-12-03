@@ -1,27 +1,30 @@
-import { getDisplaySettings } from "../config/displayModes.js";
-import AlphabetLevel from "../game/levels/alphabetLevel.js";
-import ClCaseLevel from "../game/levels/clCaseLevel.js";
-import ColorsLevel from "../game/levels/colorsLevel.js";
-import NumbersLevel from "../game/levels/numbersLevel.js";
-import { PhonicsLevel } from "../game/levels/phonics/PhonicsLevel.js";
-import ShapesLevel from "../game/levels/shapesLevel.js";
-import CenterPieceManager from "../game/managers/centerPieceManager.js";
-import CheckpointManager from "../game/managers/checkpointManager.js";
-import FlamethrowerManager from "../game/managers/flamethrowerManager.js";
-import GlassShatterManager from "../game/managers/glassShatterManager.js";
-import HudManager from "../game/managers/hudManager.js";
-import MultiTouchManager from "../game/managers/multiTouchManager.js";
-import { InputHandler } from "../inputHandler.js";
-import { LevelMenu } from "../ui/components/levelMenu.js";
-import { WelcomeScreen } from "../ui/components/welcomeScreen.js";
-import { eventTracker } from "../utils/eventTracker.js";
-import { performanceMonitor } from "../utils/performanceMonitor.js";
-import { getAudioConfig } from "./audio/audioConfig.js";
-import SoundManager from "./audio/soundManager.js";
-import { GameLoop } from "./engine/gameLoop.js";
-import { Renderer } from "./engine/renderer.js";
-import ParticleManager from "./graphics/particleSystem.js";
-import ResourceManager from "./resources/resourceManager.js";
+import { getDisplaySettings } from '../config/displayModes.js';
+// Lazy-loaded level modules - imported dynamically for code splitting
+// import AlphabetLevel from '../game/levels/alphabetLevel.js';
+// import ClCaseLevel from '../game/levels/clCaseLevel.js';
+// import ColorsLevel from '../game/levels/colorsLevel.js';
+// import NumbersLevel from '../game/levels/numbersLevel.js';
+// import { PhonicsLevel } from '../game/levels/phonics/PhonicsLevel.js';
+// import ShapesLevel from '../game/levels/shapesLevel.js';
+import CenterPieceManager from '../game/managers/centerPieceManager.js';
+import CheckpointManager from '../game/managers/checkpointManager.js';
+import FlamethrowerManager from '../game/managers/flamethrowerManager.js';
+import GlassShatterManager from '../game/managers/glassShatterManager.js';
+import HudManager from '../game/managers/hudManager.js';
+import MultiTouchManager from '../game/managers/multiTouchManager.js';
+import { InputHandler } from '../inputHandler.js';
+import { LevelMenu } from '../ui/components/levelMenu.js';
+import { LevelCompletionScreen } from '../ui/components/levelCompletionScreen.js';
+import { WelcomeScreen } from '../ui/components/welcomeScreen.js';
+import { eventTracker } from '../utils/eventTracker.js';
+import { loadLevelModule, preloadAllLevels } from '../utils/lazyLevelLoader.js';
+import { performanceMonitor } from '../utils/performanceMonitor.js';
+import { getAudioConfig } from './audio/audioConfig.js';
+import SoundManager from './audio/soundManager.js';
+import { GameLoop } from './engine/gameLoop.js';
+import { Renderer } from './engine/renderer.js';
+import ParticleManager from './graphics/particleSystem.js';
+import ResourceManager from './resources/resourceManager.js';
 
 // Core rendering components
 let canvas;
@@ -33,30 +36,29 @@ let displaySettings;
 let resourceManager;
 let particleManager;
 let soundManager;
-let managers = {};
+const managers = {};
 
 // Game state
 let currentLevel = null;
-let currentLevelName = "";
-let gameState = "menu"; // menu, playing, paused, gameOver
+let currentLevelName = '';
+let gameState = 'menu'; // menu, playing, paused, gameOver
 let gameLoop;
 
 // UI components
 let welcomeScreen;
+let levelCompletionScreen;
 
 // Timing and lifecycle
 let lastTime = 0;
 let levelCompletionTimer = null;
-let isInitialized = false;
+const isInitialized = false;
 
 // Circuit breaker to prevent infinite loops
-let retryAttempts = {
-  showLevelMenu: 0,
-  startLevel: 0,
-  initializeWelcomeScreen: 0,
-};
 const MAX_RETRY_ATTEMPTS = 3;
 const retryAttempts = { showLevelMenu: 0, startLevel: 0, initializeWelcomeScreen: 0 };
+
+// Timing constants
+const LEVEL_COMPLETION_DELAY_MS = 3000; // Time before returning to menu after level completion
 
 /**
  * Display a critical error screen and halt further automatic retries.
@@ -83,57 +85,57 @@ function showFatalErrorScreen(userMessage, err) {
 
 function resizeCanvas() {
   if (!renderer) {
-    console.warn("Renderer not available for resize");
+    console.warn('Renderer not available for resize');
     return;
   }
 
   try {
     renderer.setupCanvas();
-    eventTracker.trackEvent("system", "canvas_resized", { 
-      width: canvas.width, 
-      height: canvas.height 
+    eventTracker.trackEvent('system', 'canvas_resized', {
+      width: canvas.width,
+      height: canvas.height
     });
 
     // Update managers and level with new canvas size
     if (managers.hud) managers.hud.resize(renderer.canvas);
     if (managers.centerPiece) managers.centerPiece.resize(renderer.canvas);
-    if (currentLevel && typeof currentLevel.resize === "function") {
+    if (currentLevel && typeof currentLevel.resize === 'function') {
       currentLevel.resize(renderer.canvas);
     }
   } catch (error) {
-    eventTracker.trackError(error, { context: "canvas_resize" });
+    eventTracker.trackError(error, { context: 'canvas_resize' });
   }
 }
 
 // Initialize and show welcome screen with animated background
 function initializeWelcomeScreen() {
   try {
-    eventTracker.trackEvent("ui", "welcome_screen_init_start");
+    eventTracker.trackEvent('ui', 'welcome_screen_init_start');
 
     // Create welcome screen instance
     welcomeScreen = new WelcomeScreen(canvas, ctx, resourceManager);
 
     // Set up callbacks
     welcomeScreen.onStartGame = () => {
-      eventTracker.trackEvent("ui", "start_game_clicked");
+      eventTracker.trackEvent('ui', 'start_game_clicked');
       showLevelMenu();
     };
 
     welcomeScreen.onShowOptions = () => {
-      eventTracker.trackEvent("ui", "options_clicked");
+      eventTracker.trackEvent('ui', 'options_clicked');
       // TODO: Implement options screen
       showLevelMenu(); // For now, just go to level menu
     };
 
     // Show the welcome screen
     welcomeScreen.show();
-    gameState = "menu";
+    gameState = 'menu';
 
     // Reset retry counter on success
     retryAttempts.initializeWelcomeScreen = 0;
-    eventTracker.trackEvent("ui", "welcome_screen_init_success");
+    eventTracker.trackEvent('ui', 'welcome_screen_init_success');
   } catch (error) {
-    eventTracker.trackError(error, { context: "welcome_screen_init" });
+    eventTracker.trackError(error, { context: 'welcome_screen_init' });
     retryAttempts.initializeWelcomeScreen++;
 
     if (retryAttempts.initializeWelcomeScreen < MAX_RETRY_ATTEMPTS) {
@@ -143,14 +145,14 @@ function initializeWelcomeScreen() {
       setTimeout(() => initializeWelcomeScreen(), 1000);
     } else {
       console.error(
-        "💥 Max retry attempts reached for welcome screen. Falling back to level menu."
+        '💥 Max retry attempts reached for welcome screen. Falling back to level menu.'
       );
       // Only call showLevelMenu if we haven't exceeded its retry attempts
       if (retryAttempts.showLevelMenu < MAX_RETRY_ATTEMPTS) {
         showLevelMenu();
       } else {
         handleCriticalFailure(
-          "Unable to initialize welcome screen or level menu"
+          'Unable to initialize welcome screen or level menu'
         );
       }
     }
@@ -160,7 +162,7 @@ function initializeWelcomeScreen() {
 // Show level selection menu
 function showLevelMenu() {
   try {
-    console.log("🎮 Showing level menu...");
+    console.log('🎮 Showing level menu...');
 
     // Hide welcome screen if it is visible
     if (welcomeScreen) {
@@ -168,14 +170,14 @@ function showLevelMenu() {
     }
 
     // Remove any existing level-menu container to avoid duplicates
-    let menuContainer = document.getElementById("level-menu-container");
+    let menuContainer = document.getElementById('level-menu-container');
     if (menuContainer) {
       menuContainer.remove();
     }
 
     // Build the level-menu container
-    menuContainer = document.createElement("div");
-    menuContainer.id = "level-menu-container";
+    menuContainer = document.createElement('div');
+    menuContainer.id = 'level-menu-container';
     menuContainer.style.cssText = `
       position: fixed;
       top: 0;
@@ -195,14 +197,14 @@ function showLevelMenu() {
     document.body.appendChild(menuContainer);
 
     // Instantiate the actual menu component
-    const menu = new LevelMenu("level-menu-container", startLevel);
+    const menu = new LevelMenu('level-menu-container', startLevel);
     menu.show();
-    gameState = "menu";
+    gameState = 'menu';
 
     // Success – reset retry counter
     retryAttempts.showLevelMenu = 0;
   } catch (error) {
-    console.error("❌ Error showing level menu:", error);
+    console.error('❌ Error showing level menu:', error);
     retryAttempts.showLevelMenu++;
     if (retryAttempts.showLevelMenu < MAX_RETRY_ATTEMPTS) {
       console.log(
@@ -211,21 +213,21 @@ function showLevelMenu() {
       setTimeout(showLevelMenu, 1000);
     } else {
       console.error(
-        "💥 Max retry attempts reached for level menu. Attempting fallback to colors level."
+        '💥 Max retry attempts reached for level menu. Attempting fallback to colors level.'
       );
       if (retryAttempts.startLevel < MAX_RETRY_ATTEMPTS) {
-        startLevel("colors");
+        startLevel('colors');
       } else {
         handleCriticalFailure(
-          "Unable to show level menu or start fallback level"
+          'Unable to show level menu or start fallback level'
         );
       }
     }
   }
 }
 
-// Start a specific level
-function startLevel(levelName) {
+// Start a specific level with lazy loading
+async function startLevel(levelName) {
   try {
     console.log(`🎯 Starting level: ${levelName}`);
 
@@ -236,14 +238,20 @@ function startLevel(levelName) {
     }
 
     // Remove the menu container if it is present
-    const menuContainer = document.getElementById("level-menu-container");
+    const menuContainer = document.getElementById('level-menu-container');
     if (menuContainer) {
       menuContainer.remove();
     }
 
-    gameState = "playing";
+    gameState = 'loading'; // New loading state
     currentLevelName = levelName;
     eventTracker.trackState('currentLevel', levelName);
+
+    // TODO: [OPTIMIZATION] Consider prefetching adjacent levels during idle time
+    // Lazy load the level module dynamically
+    const LevelClass = await loadLevelModule(levelName);
+
+    // After loading, initialize managers and set up level
     initializeManagers();
 
     const helpers = {
@@ -263,10 +271,11 @@ function startLevel(levelName) {
           );
         }
       },
-      applyExplosionEffect: (x, y, radius, force) => {
+      applyExplosionEffect: (x, y, _radius, force) => {
         managers.glassShatter.triggerShatter(x, y, force * 0.5);
       },
-      applyScreenShake: (intensity, duration) => {
+      applyScreenShake: (_intensity, _duration) => {
+        // TODO: [ENHANCEMENT] Implement screen shake through centerPiece manager
         // Simple screen shake effect using canvas translation
         if (managers.centerPiece) {
           // Could implement screen shake through centerPiece manager
@@ -280,30 +289,10 @@ function startLevel(levelName) {
 
     lastTime = performance.now();
 
-    switch (levelName) {
-      case "colors":
-        currentLevel = new ColorsLevel(canvas, ctx, managers, helpers);
-        break;
-      case "shapes":
-        currentLevel = new ShapesLevel(canvas, ctx, managers, helpers);
-        break;
-      case "alphabet":
-        currentLevel = new AlphabetLevel(canvas, ctx, managers, helpers);
-        break;
-      case "numbers":
-        currentLevel = new NumbersLevel(canvas, ctx, managers, helpers);
-        break;
-      case "clcase":
-        currentLevel = new ClCaseLevel(canvas, ctx, managers, helpers);
-        break;
-      case "phonics":
-        currentLevel = new PhonicsLevel(canvas, ctx, managers, helpers);
-        break;
-      default:
-        currentLevel = new ColorsLevel(canvas, ctx, managers, helpers);
-        break;
-    }
+    // Create level instance from dynamically loaded class
+    currentLevel = new LevelClass(canvas, ctx, managers, helpers);
 
+    gameState = 'playing';
     currentLevel.start();
     retryAttempts.startLevel = 0;
     console.log(`✅ Level ${levelName} started successfully`);
@@ -314,9 +303,9 @@ function startLevel(levelName) {
       setTimeout(() => startLevel(levelName), 1000);
     } else {
       console.error(
-        "💥 Max retry attempts reached for starting level. Reverting to menu."
+        '💥 Max retry attempts reached for starting level. Reverting to menu.'
       );
-      gameState = "menu";
+      gameState = 'menu';
       if (retryAttempts.showLevelMenu < MAX_RETRY_ATTEMPTS) {
         showLevelMenu();
       } else {
@@ -331,10 +320,10 @@ function startLevel(levelName) {
 // Show options menu
 function showOptions() {
   try {
-    let modal = document.getElementById("settings-modal");
+    let modal = document.getElementById('settings-modal');
     if (!modal) {
-      modal = document.createElement("div");
-      modal.id = "settings-modal";
+      modal = document.createElement('div');
+      modal.id = 'settings-modal';
       document.body.appendChild(modal);
     }
 
@@ -353,30 +342,30 @@ function showOptions() {
         <button id="close-options">Close</button>
       </div>
     `;
-    modal.style.display = "block";
+    modal.style.display = 'block';
 
-    const select = document.getElementById("display-mode-select");
+    const select = document.getElementById('display-mode-select');
     select.value = resourceManager.getDisplayMode();
-    document.getElementById("volume-range").value = soundManager.volume;
+    document.getElementById('volume-range').value = soundManager.volume;
 
-    document.getElementById("save-options").addEventListener("click", () => {
+    document.getElementById('save-options').addEventListener('click', () => {
       resourceManager.setDisplayMode(select.value);
       soundManager.setGlobalVolume(
-        parseFloat(document.getElementById("volume-range").value)
+        parseFloat(document.getElementById('volume-range').value)
       );
-      modal.style.display = "none";
+      modal.style.display = 'none';
     });
-    document.getElementById("close-options").addEventListener("click", () => {
-      modal.style.display = "none";
+    document.getElementById('close-options').addEventListener('click', () => {
+      modal.style.display = 'none';
     });
   } catch (error) {
-    console.error("❌ Error showing options:", error);
+    console.error('❌ Error showing options:', error);
   }
 }
 
 function initializeManagers() {
   try {
-    console.log("🔧 Initializing managers...");
+    console.log('🔧 Initializing managers...');
     managers.hud = new HudManager(canvas, ctx);
     managers.checkpoint = new CheckpointManager(canvas, ctx);
     managers.flamethrower = new FlamethrowerManager(
@@ -393,66 +382,66 @@ function initializeManagers() {
     );
     managers.particleManager = particleManager;
     managers.sound = soundManager;
-    console.log("✅ Managers initialized successfully");
+    console.log('✅ Managers initialized successfully');
   } catch (error) {
-    console.error("❌ Error initializing managers:", error);
+    console.error('❌ Error initializing managers:', error);
   }
 }
 
 function setupGlobalEventListeners() {
   // Keyboard controls
-  window.addEventListener("keydown", (e) => {
+  window.addEventListener('keydown', (e) => {
     try {
       switch (e.code) {
-        case "Space":
-          e.preventDefault();
-          if (gameState === "playing") {
-            togglePause();
-          }
-          break;
-        case "KeyR":
-          if (gameState === "gameOver" || gameState === "paused") {
-            restartGame();
-          }
-          break;
-        case "Escape":
-          if (gameState === "playing") {
-            pauseGame();
-          } else if (gameState === "paused") {
-            resumeGame();
-          }
-          break;
+      case 'Space':
+        e.preventDefault();
+        if (gameState === 'playing') {
+          togglePause();
+        }
+        break;
+      case 'KeyR':
+        if (gameState === 'gameOver' || gameState === 'paused') {
+          restartGame();
+        }
+        break;
+      case 'Escape':
+        if (gameState === 'playing') {
+          pauseGame();
+        } else if (gameState === 'paused') {
+          resumeGame();
+        }
+        break;
       }
     } catch (error) {
-      console.error("❌ Error handling keyboard event:", error);
+      console.error('❌ Error handling keyboard event:', error);
     }
   });
 
   // Prevent right-click context menu
-  canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+  canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 }
 
 function togglePause() {
-  if (gameState === "playing") {
+  if (gameState === 'playing') {
     pauseGame();
-  } else if (gameState === "paused") {
+  } else if (gameState === 'paused') {
     resumeGame();
   }
 }
 
 function pauseGame() {
-  if (gameState === "playing") {
-    gameState = "paused";
+  if (gameState === 'playing') {
+    gameState = 'paused';
     if (currentLevel) {
       currentLevel.pause();
     }
-    managers.checkpoint.showCheckpoint("Game Paused");
+    managers.checkpoint.showCheckpoint('Game Paused');
   }
 }
 
 function resumeGame() {
-  if (gameState === "paused") {
-    gameState = "playing";
+  if (gameState === 'paused') {
+    gameState = 'playing';
     if (currentLevel) {
       currentLevel.resume();
     }
@@ -460,7 +449,7 @@ function resumeGame() {
 }
 
 function restartGame() {
-  gameState = "playing";
+  gameState = 'playing';
   if (currentLevel) {
     currentLevel.reset();
     currentLevel.start();
@@ -492,28 +481,28 @@ function resetRetryCounters() {
   retryAttempts.showLevelMenu = 0;
   retryAttempts.startLevel = 0;
   retryAttempts.initializeWelcomeScreen = 0;
-  eventTracker.trackEvent("system", "retry_counters_reset");
+  eventTracker.trackEvent('system', 'retry_counters_reset');
 }
 
 // Handle critical failures when all retry attempts are exhausted
 function handleCriticalFailure(message) {
-  console.error("💥 CRITICAL FAILURE:", message);
+  console.error('💥 CRITICAL FAILURE:', message);
 
   // Reset all retry counters
   resetRetryCounters();
 
   // Set game to a safe error state
-  gameState = "error";
+  gameState = 'error';
 
   // Clean up any existing UI elements
-  const menuContainer = document.getElementById("level-menu-container");
+  const menuContainer = document.getElementById('level-menu-container');
   if (menuContainer) {
     menuContainer.remove();
   }
 
   // Display error message to user
-  const errorContainer = document.createElement("div");
-  errorContainer.id = "error-container";
+  const errorContainer = document.createElement('div');
+  errorContainer.id = 'error-container';
   errorContainer.style.cssText = `
     position: fixed;
     top: 0;
@@ -559,7 +548,7 @@ function handleCriticalFailure(message) {
 function handleLevelComplete(levelName, score) {
   try {
     console.log(`Level ${levelName} completed with score: ${score}`);
-    gameState = "completed";
+    gameState = 'completed';
 
     resetRetryCounters();
 
@@ -573,11 +562,11 @@ function handleLevelComplete(levelName, score) {
     );
 
     levelCompletionTimer = setTimeout(() => {
-      if (gameState === "completed") {
+      if (gameState === 'completed') {
         showLevelMenu();
       }
       levelCompletionTimer = null;
-    }
+    }, LEVEL_COMPLETION_DELAY_MS);
 
     // Calculate total possible score for this level
     let totalPossible = 1000; // Default
@@ -600,7 +589,7 @@ function handleLevelComplete(levelName, score) {
     levelCompletionScreen.show(levelName, score, totalPossible);
 
   } catch (error) {
-    eventTracker.trackError(error, { context: "level_completion" });
+    eventTracker.trackError(error, { context: 'level_completion' });
     showLevelMenu();
   }
 }
@@ -610,7 +599,7 @@ window.addEventListener('resize', resizeCanvas);
 // Game loop functions
 function update(deltaTime) {
   try {
-    if (gameState === "playing" && currentLevel) {
+    if (gameState === 'playing' && currentLevel) {
       currentLevel.update(deltaTime);
     }
 
@@ -629,7 +618,7 @@ function update(deltaTime) {
     }
   } catch (error) {
     eventTracker.trackError(error, {
-      context: "update_loop",
+      context: 'update_loop',
       gameState,
       currentLevel: currentLevelName,
       deltaTime,
@@ -643,7 +632,7 @@ function render() {
   try {
     renderer.clear();
 
-    if (gameState === "playing" && currentLevel) {
+    if (gameState === 'playing' && currentLevel) {
       currentLevel.render();
     }
 
@@ -660,7 +649,7 @@ function render() {
     if (managers.checkpoint) managers.checkpoint.draw(ctx);
   } catch (error) {
     eventTracker.trackError(error, {
-      context: "render_loop",
+      context: 'render_loop',
       gameState,
       currentLevel: currentLevelName,
     });
@@ -858,3 +847,4 @@ window.gameInitialized = () => isInitialized;
 
 // Export startLevel function for global access
 window.startLevel = startLevel;
+*/

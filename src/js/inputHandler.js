@@ -148,8 +148,9 @@ export class InputHandler {
     const canvasHeight = this.canvas.offsetHeight || this.canvas.height;
 
     // Prevent division by zero
-    const scaleX = rect.width > 0 ? canvasWidth / rect.width : 1;
-    const scaleY = rect.height > 0 ? canvasHeight / rect.height : 1;
+    // TODO: [OPTIMIZATION] Consider using scale factors for high-DPI displays
+    const _scaleX = rect.width > 0 ? canvasWidth / rect.width : 1;
+    const _scaleY = rect.height > 0 ? canvasHeight / rect.height : 1;
 
     return {
       x: event.clientX - rect.left,

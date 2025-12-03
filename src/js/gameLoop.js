@@ -1,9 +1,15 @@
+/**
+ * GameLoop - Core game rendering and update cycle
+ * Uses requestAnimationFrame for smooth 60fps animations
+ */
 export class GameLoop {
   constructor(ctx) {
     this.ctx = ctx;
     this.currentScreen = null;
     this.lastTime = 0;
     this.isRunning = false;
+    // TODO: [OPTIMIZATION] Implement frame rate limiting for battery savings on mobile
+    // TODO: [OPTIMIZATION] Add performance metrics tracking (FPS counter, frame time)
   }
 
   start() {
@@ -25,6 +31,7 @@ export class GameLoop {
     const deltaTime = timestamp - this.lastTime;
     this.lastTime = timestamp;
 
+    // TODO: [OPTIMIZATION] Implement dirty rectangle rendering to only redraw changed areas
     if (this.currentScreen) {
       this.currentScreen.update(deltaTime);
       this.currentScreen.render(this.ctx);

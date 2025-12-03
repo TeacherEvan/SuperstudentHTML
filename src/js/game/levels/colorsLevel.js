@@ -1,6 +1,5 @@
 import { BaseLevel } from './baseLevel.js';
 import { GAME_CONFIG } from '../../config/constants.js';
-import { LevelSettings } from '../../config/gameSettings.js';
 
 export default class ColorsLevel extends BaseLevel {
   constructor(canvas, ctx, managers, helpers) {

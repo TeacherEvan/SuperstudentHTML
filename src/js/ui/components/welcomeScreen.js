@@ -85,40 +85,299 @@ export class WelcomeScreen {
   }
 
   addWelcomeScreenCSS() {
+    // Remove existing styles to prevent duplicates
+    const existingStyle = document.getElementById('welcome-screen-styles');
+    if (existingStyle) existingStyle.remove();
+
     const style = document.createElement('style');
+    style.id = 'welcome-screen-styles';
     style.textContent = `
+      /* Welcome Screen Overlay with smooth fade */
       .welcome-screen-overlay {
         position: fixed;
         top: 0;
         left: 0;
         width: 100vw;
         height: 100vh;
-        background: rgba(0,0,0,0.8);
-        backdrop-filter: blur(2px);
+        background: rgba(0,0,0,0.85);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
         display: flex;
         align-items: center;
         justify-content: center;
         z-index: 1000;
         opacity: 0;
-        transition: opacity 0.5s ease-in-out;
+        transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
       }
-      .welcome-screen-overlay.visible { opacity:1; }
-      .welcome-content { text-align:center; color:white; max-width:90vw; }
-      .game-title { font-size:10vw; margin:0 0 40px 0; color:#ffd700; font-weight:900; text-shadow:3px 3px 8px rgba(0,0,0,0.6); }
-      .choose-text { font-size:1.2rem; margin-bottom:16px; letter-spacing:1px; }
-      .display-btn-group { display:flex; gap:40px; justify-content:center; flex-wrap:wrap; margin-bottom:30px; }
+
+      .welcome-screen-overlay.visible {
+        opacity: 1;
+      }
+
+      /* Content container with slide-up animation */
+      .welcome-content {
+        text-align: center;
+        color: white;
+        max-width: 90vw;
+        transform: translateY(30px);
+        opacity: 0;
+        transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.2s,
+                    opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.2s;
+      }
+
+      .welcome-screen-overlay.visible .welcome-content {
+        transform: translateY(0);
+        opacity: 1;
+      }
+
+      /* Game title with golden gradient and glow animation */
+      .game-title {
+        font-size: clamp(3rem, 10vw, 6rem);
+        margin: 0 0 40px 0;
+        background: linear-gradient(135deg, #ffd700 0%, #ffed4a 25%, #ffd700 50%, #ffb347 75%, #ffd700 100%);
+        background-size: 200% 200%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 900;
+        text-shadow: none;
+        filter: drop-shadow(0 4px 8px rgba(255, 215, 0, 0.3));
+        animation: shimmer 3s ease-in-out infinite, float 4s ease-in-out infinite;
+        letter-spacing: 2px;
+      }
+
+      @keyframes shimmer {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+      }
+
+      @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-8px); }
+      }
+
+      /* Choose text with subtle animation */
+      .choose-text {
+        font-size: 1.3rem;
+        margin-bottom: 24px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.9);
+        opacity: 0;
+        animation: fadeInUp 0.6s ease-out 0.5s forwards;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Button group with stagger animation */
+      .display-btn-group {
+        display: flex;
+        gap: 40px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 30px;
+      }
+
+      /* Premium buttons with glow effect */
       .display-btn {
-        width:200px; height:60px; font-size:1.1rem; font-weight:600; background:transparent; border:3px solid currentColor; color:white; cursor:pointer; transition:transform 0.2s, opacity 0.3s;
+        width: 220px;
+        height: 65px;
+        font-size: 1.15rem;
+        font-weight: 700;
+        background: transparent;
+        border: 3px solid currentColor;
+        border-radius: 12px;
+        color: white;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        opacity: 0;
+        transform: scale(0.9);
+        animation: buttonAppear 0.5s ease-out forwards;
       }
-      .display-btn.default { color:#00bfff; }
-      .display-btn.qboard { color:#ff4080; }
-      .display-btn:hover { transform:translateY(-4px); }
-      .display-btn.selected { opacity:0.6; cursor:default; }
-      .collaboration-footer { position:absolute; bottom:40px; left:50%; transform:translateX(-50%); font-size:2vw; }
-      .highlight { color:#ffd700; }
-      @media(max-width:768px){ .game-title { font-size:12vw; } .display-btn { width:160px; height:50px; } .collaboration-footer{ font-size:4vw;} }
+
+      .display-btn:nth-child(1) { animation-delay: 0.6s; }
+      .display-btn:nth-child(2) { animation-delay: 0.75s; }
+
+      @keyframes buttonAppear {
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      /* Button gradient backgrounds on hover */
+      .display-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, currentColor 0%, transparent 50%);
+        opacity: 0;
+        transition: opacity 0.4s ease;
+        z-index: -1;
+      }
+
+      .display-btn:hover::before {
+        opacity: 0.15;
+      }
+
+      /* Default button - Blue theme */
+      .display-btn.default {
+        color: #00bfff;
+        border-color: #00bfff;
+        box-shadow: 0 0 20px rgba(0, 191, 255, 0.2),
+                    inset 0 0 20px rgba(0, 191, 255, 0.05);
+      }
+
+      .display-btn.default:hover {
+        color: #4dd9ff;
+        border-color: #4dd9ff;
+        box-shadow: 0 0 30px rgba(0, 191, 255, 0.4),
+                    0 8px 25px rgba(0, 191, 255, 0.3),
+                    inset 0 0 30px rgba(0, 191, 255, 0.1);
+        transform: translateY(-6px) scale(1.02);
+      }
+
+      /* QBoard button - Pink theme */
+      .display-btn.qboard {
+        color: #ff4080;
+        border-color: #ff4080;
+        box-shadow: 0 0 20px rgba(255, 64, 128, 0.2),
+                    inset 0 0 20px rgba(255, 64, 128, 0.05);
+      }
+
+      .display-btn.qboard:hover {
+        color: #ff6699;
+        border-color: #ff6699;
+        box-shadow: 0 0 30px rgba(255, 64, 128, 0.4),
+                    0 8px 25px rgba(255, 64, 128, 0.3),
+                    inset 0 0 30px rgba(255, 64, 128, 0.1);
+        transform: translateY(-6px) scale(1.02);
+      }
+
+      /* Active/pressed state */
+      .display-btn:active {
+        transform: translateY(-2px) scale(0.98);
+        transition-duration: 0.1s;
+      }
+
+      /* Selected state with pulse animation */
+      .display-btn.selected {
+        opacity: 0.7;
+        cursor: default;
+        animation: pulse 1.5s ease-in-out infinite;
+        pointer-events: none;
+      }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 0.7; }
+        50% { opacity: 0.5; }
+      }
+
+      /* Mode selection text */
+      .mode-selected-text {
+        color: #ffd700;
+        font-size: 1.1rem;
+        margin-top: 20px;
+        animation: fadeIn 0.3s ease-out;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+
+      /* Footer with fade-in */
+      .collaboration-footer {
+        position: absolute;
+        bottom: 40px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: clamp(0.9rem, 2vw, 1.2rem);
+        opacity: 0;
+        animation: fadeInUp 0.6s ease-out 1s forwards;
+      }
+
+      .collaboration-footer p {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      .highlight {
+        color: #ffd700;
+        font-weight: 600;
+      }
+
       /* Background canvas */
-      .welcome-bg-canvas { position:absolute; top:0; left:0; width:100%; height:100%; z-index:-1; }
+      .welcome-bg-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+      }
+
+      /* Mobile responsive */
+      @media (max-width: 768px) {
+        .game-title {
+          font-size: 12vw;
+          margin-bottom: 30px;
+        }
+
+        .display-btn-group {
+          flex-direction: column;
+          gap: 20px;
+          align-items: center;
+        }
+
+        .display-btn {
+          width: 180px;
+          height: 55px;
+          font-size: 1rem;
+        }
+
+        .collaboration-footer {
+          font-size: 3.5vw;
+          bottom: 25px;
+        }
+      }
+
+      /* Reduced motion for accessibility */
+      @media (prefers-reduced-motion: reduce) {
+        .game-title,
+        .display-btn,
+        .choose-text,
+        .collaboration-footer {
+          animation: none;
+          opacity: 1;
+          transform: none;
+        }
+
+        .welcome-content {
+          transform: none;
+          opacity: 1;
+        }
+
+        .display-btn:hover {
+          transform: none;
+        }
+      }
     `;
     document.head.appendChild(style);
   }

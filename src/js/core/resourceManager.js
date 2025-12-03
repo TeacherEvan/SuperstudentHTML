@@ -1,3 +1,7 @@
+/**
+ * ResourceManager - Asset loading and management
+ * Handles loading of images, audio, and fonts with progress tracking
+ */
 export class ResourceManager {
   constructor() {
     this.assets = new Map();
@@ -5,9 +9,13 @@ export class ResourceManager {
     this.totalAssets = 0;
     this.loadedAssets = 0;
     this.displayMode = 'DEFAULT'; // Default display mode
+    // TODO: [OPTIMIZATION] Implement asset preloading with priority queue
+    // TODO: [OPTIMIZATION] Add WebP/AVIF format detection for optimal image loading
+    // TODO: [OPTIMIZATION] Consider using IndexedDB for asset caching
   }
 
   async loadAssets() {
+    // TODO: [ENHANCEMENT] Load from manifest file for better asset management
     // In a real implementation, you would load a manifest file
     // For now, we'll just resolve immediately
     return Promise.resolve();
