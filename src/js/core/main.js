@@ -1,10 +1,11 @@
 import { getDisplaySettings } from '../config/displayModes.js';
-import AlphabetLevel from '../game/levels/alphabetLevel.js';
-import ClCaseLevel from '../game/levels/clCaseLevel.js';
-import ColorsLevel from '../game/levels/colorsLevel.js';
-import NumbersLevel from '../game/levels/numbersLevel.js';
-import { PhonicsLevel } from '../game/levels/phonics/PhonicsLevel.js';
-import ShapesLevel from '../game/levels/shapesLevel.js';
+// Lazy-loaded level modules - imported dynamically for code splitting
+// import AlphabetLevel from '../game/levels/alphabetLevel.js';
+// import ClCaseLevel from '../game/levels/clCaseLevel.js';
+// import ColorsLevel from '../game/levels/colorsLevel.js';
+// import NumbersLevel from '../game/levels/numbersLevel.js';
+// import { PhonicsLevel } from '../game/levels/phonics/PhonicsLevel.js';
+// import ShapesLevel from '../game/levels/shapesLevel.js';
 import CenterPieceManager from '../game/managers/centerPieceManager.js';
 import CheckpointManager from '../game/managers/checkpointManager.js';
 import FlamethrowerManager from '../game/managers/flamethrowerManager.js';
@@ -16,6 +17,7 @@ import { LevelMenu } from '../ui/components/levelMenu.js';
 import { LevelCompletionScreen } from '../ui/components/levelCompletionScreen.js';
 import { WelcomeScreen } from '../ui/components/welcomeScreen.js';
 import { eventTracker } from '../utils/eventTracker.js';
+import { loadLevelModule, preloadAllLevels } from '../utils/lazyLevelLoader.js';
 import { performanceMonitor } from '../utils/performanceMonitor.js';
 import { getAudioConfig } from './audio/audioConfig.js';
 import SoundManager from './audio/soundManager.js';
@@ -221,8 +223,8 @@ function showLevelMenu() {
   }
 }
 
-// Start a specific level
-function startLevel(levelName) {
+// Start a specific level with lazy loading
+async function startLevel(levelName) {
   try {
     console.log(`🎯 Starting level: ${levelName}`);
 
@@ -238,9 +240,15 @@ function startLevel(levelName) {
       menuContainer.remove();
     }
 
-    gameState = 'playing';
+    gameState = 'loading'; // New loading state
     currentLevelName = levelName;
     eventTracker.trackState('currentLevel', levelName);
+
+    // TODO: [OPTIMIZATION] Consider prefetching adjacent levels during idle time
+    // Lazy load the level module dynamically
+    const LevelClass = await loadLevelModule(levelName);
+
+    // After loading, initialize managers and set up level
     initializeManagers();
 
     const helpers = {
@@ -260,10 +268,11 @@ function startLevel(levelName) {
           );
         }
       },
-      applyExplosionEffect: (x, y, radius, force) => {
+      applyExplosionEffect: (x, y, _radius, force) => {
         managers.glassShatter.triggerShatter(x, y, force * 0.5);
       },
-      applyScreenShake: (intensity, duration) => {
+      applyScreenShake: (_intensity, _duration) => {
+        // TODO: [ENHANCEMENT] Implement screen shake through centerPiece manager
         // Simple screen shake effect using canvas translation
         if (managers.centerPiece) {
           // Could implement screen shake through centerPiece manager
@@ -277,30 +286,10 @@ function startLevel(levelName) {
 
     lastTime = performance.now();
 
-    switch (levelName) {
-    case 'colors':
-      currentLevel = new ColorsLevel(canvas, ctx, managers, helpers);
-      break;
-    case 'shapes':
-      currentLevel = new ShapesLevel(canvas, ctx, managers, helpers);
-      break;
-    case 'alphabet':
-      currentLevel = new AlphabetLevel(canvas, ctx, managers, helpers);
-      break;
-    case 'numbers':
-      currentLevel = new NumbersLevel(canvas, ctx, managers, helpers);
-      break;
-    case 'clcase':
-      currentLevel = new ClCaseLevel(canvas, ctx, managers, helpers);
-      break;
-    case 'phonics':
-      currentLevel = new PhonicsLevel(canvas, ctx, managers, helpers);
-      break;
-    default:
-      currentLevel = new ColorsLevel(canvas, ctx, managers, helpers);
-      break;
-    }
+    // Create level instance from dynamically loaded class
+    currentLevel = new LevelClass(canvas, ctx, managers, helpers);
 
+    gameState = 'playing';
     currentLevel.start();
     retryAttempts.startLevel = 0;
     console.log(`✅ Level ${levelName} started successfully`);
