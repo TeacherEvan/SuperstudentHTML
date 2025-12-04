@@ -1,23 +1,117 @@
-/* Theme Support */
+/* Theme Support and CSS Custom Properties */
 :root {
+  /* Primary Colors */
   --primary-color: #007ACC;
   --primary-hover: #005A9E;
   --primary-active: #003F6B;
+  
+  /* Secondary Colors */
   --secondary-color: #6c757d;
+  --secondary-hover: #545b62;
+  
+  /* Accent Colors */
+  --accent-gold: #FFD700;
+  --accent-coral: #FF6B6B;
+  --accent-teal: #4ECDC4;
+  --accent-purple: #9B59B6;
+  
+  /* Background Colors */
   --background-dark: #000000;
+  --background-overlay: rgba(0, 0, 0, 0.85);
+  --background-card: rgba(255, 255, 255, 0.08);
+  
+  /* Text Colors */
   --text-light: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.7);
+  --text-subtle: rgba(255, 255, 255, 0.5);
+  
+  /* Border and Shadow */
+  --border-subtle: rgba(255, 255, 255, 0.1);
   --shadow-color: rgba(0, 0, 0, 0.3);
+  --shadow-glow: rgba(255, 215, 0, 0.3);
+  
+  /* Transition Timings */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Spacing Scale */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 40px;
+  
+  /* Border Radius Scale */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+  
+  /* Z-Index Scale */
+  --z-base: 1;
+  --z-dropdown: 100;
+  --z-sticky: 500;
+  --z-modal: 1000;
+  --z-overlay: 2000;
+  --z-toast: 3000;
 }
 
+/* Dark mode refinements */
 @media (prefers-color-scheme: dark) {
   :root {
     --primary-color: #0f4c75;
     --primary-hover: #3282b8;
     --background-dark: #1a1a2e;
+    --background-card: rgba(255, 255, 255, 0.05);
   }
 }
 
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --border-subtle: rgba(255, 255, 255, 0.3);
+    --text-muted: rgba(255, 255, 255, 0.85);
+    --text-subtle: rgba(255, 255, 255, 0.7);
+  }
+}
+
+/* Theme utility classes */
 .theme-dark {
   background-color: var(--background-dark);
   color: var(--text-light);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.text-subtle {
+  color: var(--text-subtle);
+}
+
+.text-accent {
+  color: var(--accent-gold);
+}
+
+/* Glass morphism effect */
+.glass-effect {
+  background: var(--background-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+}
+
+/* Gradient text utility */
+.gradient-text {
+  background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-coral) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow effect utility */
+.glow-effect {
+  box-shadow: 0 0 20px var(--shadow-glow);
 }
