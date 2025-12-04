@@ -177,8 +177,9 @@
 }
 
 .btn-interactive:active::after {
-  width: 200px;
-  height: 200px;
+  /* Use percentage-based sizing for responsive ripple effect */
+  width: 300%;
+  height: 300%;
   opacity: 1;
   transition: width 0s, height 0s, opacity 0s;
 }

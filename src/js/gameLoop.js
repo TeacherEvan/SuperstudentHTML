@@ -9,6 +9,8 @@ export class GameLoop {
     this.currentScreen = null;
     this.lastTime = 0;
     this.isRunning = false;
+    // Stores the most recent delta time for external systems (e.g., particle managers)
+    // that need access to frame timing outside the main update cycle
     this.lastDeltaTime = 0;
 
     // OPTIMIZATION: Pre-bind loop method to avoid creating new function references each frame

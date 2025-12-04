@@ -3,6 +3,16 @@
  * Handles loading of images, audio, and fonts with progress tracking
  * Implements progressive loading patterns for optimal Core Web Vitals
  */
+
+// Format detection test images (1x1 pixel encoded in each format)
+// These minimal images are used to detect browser support for modern formats
+const FORMAT_DETECTION_IMAGES = {
+  // 1x1 WebP image (26 bytes base64 encoded)
+  webp: 'data:image/webp;base64,UklGRiQAAABXRUJQVlA4IBgAAAAwAQCdASoBAAEAAwA0JaQAA3AA/vuUAAA=',
+  // 1x1 AVIF image (standard test pattern)
+  avif: 'data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAIAAAACAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQ0MAAAAABNjb2xybmNseAACAAIAAYAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKBzgADlAgIGkyCR/wAABAAAAfAAEAAAAV'
+};
+
 export class ResourceManager {
   constructor() {
     this.assets = new Map();
@@ -31,20 +41,20 @@ export class ResourceManager {
    * Enables automatic format selection for optimal performance
    */
   async detectOptimalImageFormats() {
-    // WebP detection
+    // WebP detection using minimal test image
     const webpPromise = new Promise(resolve => {
       const img = new Image();
       img.onload = () => resolve(img.width > 0 && img.height > 0);
       img.onerror = () => resolve(false);
-      img.src = 'data:image/webp;base64,UklGRiQAAABXRUJQVlA4IBgAAAAwAQCdASoBAAEAAwA0JaQAA3AA/vuUAAA=';
+      img.src = FORMAT_DETECTION_IMAGES.webp;
     });
 
-    // AVIF detection
+    // AVIF detection using minimal test image
     const avifPromise = new Promise(resolve => {
       const img = new Image();
       img.onload = () => resolve(img.width > 0 && img.height > 0);
       img.onerror = () => resolve(false);
-      img.src = 'data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAIAAAACAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQ0MAAAAABNjb2xybmNseAACAAIAAYAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKBzgADlAgIGkyCR/wAABAAAAfAAEAAAAV';
+      img.src = FORMAT_DETECTION_IMAGES.avif;
     });
 
     const [webpSupported, avifSupported] = await Promise.all([webpPromise, avifPromise]);
