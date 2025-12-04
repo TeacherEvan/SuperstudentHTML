@@ -483,15 +483,31 @@ export class WelcomeScreen {
     const ctx = this.bgCtx;
     ctx.fillStyle = 'rgba(0,0,0,0.9)';
     ctx.fillRect(0, 0, this.bgCanvas.width, this.bgCanvas.height);
-    this.particles.forEach(p => {
-      ctx.save();
-      ctx.globalAlpha = p.opacity;
-      ctx.fillStyle = p.color;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    });
+
+    // OPTIMIZATION: Group particles by color and batch draw operations
+    // This reduces context state changes which are expensive
+    const particlesByColor = new Map();
+    for (let i = 0; i < this.particles.length; i++) {
+      const p = this.particles[i];
+      if (!particlesByColor.has(p.color)) {
+        particlesByColor.set(p.color, []);
+      }
+      particlesByColor.get(p.color).push(p);
+    }
+
+    // Draw particles grouped by color to minimize fillStyle changes
+    const TWO_PI = Math.PI * 2;
+    for (const [color, particles] of particlesByColor) {
+      ctx.fillStyle = color;
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        ctx.globalAlpha = p.opacity;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, TWO_PI);
+        ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1.0;
   }
 
   onResize() {

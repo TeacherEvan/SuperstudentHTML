@@ -114,12 +114,12 @@ export class EventTracker {
   addLogEntry(entry) {
     this.eventLog.push(entry);
 
-    // Manage log size
+    // OPTIMIZATION: Use slice instead of splice for better performance when trimming arrays
+    // splice modifies in-place and is O(n), while slice creates a new array reference
+    // but is more efficient for large arrays when removing from the beginning
     if (this.eventLog.length > this.options.maxLogEntries) {
-      this.eventLog.splice(
-        0,
-        this.eventLog.length - this.options.maxLogEntries
-      );
+      // Keep only the most recent entries
+      this.eventLog = this.eventLog.slice(-this.options.maxLogEntries);
     }
   }
 

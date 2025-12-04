@@ -98,7 +98,13 @@ export default class ColorsLevel extends BaseLevel {
     if (this.state !== 'playing') return;
 
     const dt = deltaTime / 16;
-    this.dots.forEach(dot => {
+    // OPTIMIZATION: Cache canvas dimensions to avoid repeated property lookups
+    const canvasWidth = this.canvas.width;
+    const canvasHeight = this.canvas.height;
+    const sound = this.managers.sound;
+
+    for (let i = 0; i < this.dots.length; i++) {
+      const dot = this.dots[i];
       // Update position
       dot.x += dot.dx * dt;
       dot.y += dot.dy * dt;
@@ -114,26 +120,28 @@ export default class ColorsLevel extends BaseLevel {
           dot.trail.shift();
         }
 
-        // Fade trail
-        dot.trail.forEach((point, index) => {
-          point.alpha = (index + 1) / dot.trail.length * 0.5;
-        });
+        // OPTIMIZATION: Calculate trail length once
+        const trailLength = dot.trail.length;
+        for (let j = 0; j < trailLength; j++) {
+          dot.trail[j].alpha = (j + 1) / trailLength * 0.5;
+        }
       }
 
       // Bounce on edges with sound
-      if (dot.x - dot.radius < 0 || dot.x + dot.radius > this.canvas.width) {
+      const radius = dot.radius;
+      if (dot.x - radius < 0 || dot.x + radius > canvasWidth) {
         dot.dx *= -1;
-        if (this.managers.sound && Math.random() < 0.1) {
-          this.managers.sound.playPop(0.3);
+        if (sound && Math.random() < 0.1) {
+          sound.playPop(0.3);
         }
       }
-      if (dot.y - dot.radius < 0 || dot.y + dot.radius > this.canvas.height) {
+      if (dot.y - radius < 0 || dot.y + radius > canvasHeight) {
         dot.dy *= -1;
-        if (this.managers.sound && Math.random() < 0.1) {
-          this.managers.sound.playPop(0.3);
+        if (sound && Math.random() < 0.1) {
+          sound.playPop(0.3);
         }
       }
-    });
+    }
   }
 
   render() {
@@ -148,10 +156,11 @@ export default class ColorsLevel extends BaseLevel {
       this.ctx.fillText('Remember this color!', this.canvas.width / 2, 50);
 
     } else if (this.state === 'playing') {
-      // Draw moving dots with enhanced visuals
-      this.dots.forEach(dot => {
+      // OPTIMIZATION: Use index-based loop instead of forEach for better performance
+      for (let i = 0; i < this.dots.length; i++) {
+        const dot = this.dots[i];
         this.drawEnhancedDot(dot, dot.isTarget);
-      });
+      }
 
       // Draw UI
       this.drawUI();
@@ -163,13 +172,15 @@ export default class ColorsLevel extends BaseLevel {
 
     // Draw trail for target dots
     if (isTarget && dot.trail) {
-      dot.trail.forEach(point => {
+      // OPTIMIZATION: Use index-based loop for trail drawing
+      for (let i = 0; i < dot.trail.length; i++) {
+        const point = dot.trail[i];
         this.ctx.globalAlpha = point.alpha;
         this.ctx.fillStyle = dot.color;
         this.ctx.beginPath();
         this.ctx.arc(point.x, point.y, dot.radius * 0.5, 0, Math.PI * 2);
         this.ctx.fill();
-      });
+      }
     }
 
     // Draw main dot with effects
