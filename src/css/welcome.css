@@ -1,4 +1,4 @@
-/* Welcome Screen Styles */
+/* Welcome Screen Styles - Enhanced with premium micro-interactions */
 .welcome-overlay {
   position: fixed;
   top: 0;
@@ -43,21 +43,89 @@
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   min-height: 44px;
   min-width: 120px;
   box-shadow: 0 4px 8px rgba(0, 122, 204, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Shimmer effect on hover */
+.welcome-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.5s ease;
+}
+
+.welcome-btn:hover::before {
+  left: 100%;
 }
 
 .welcome-btn:hover {
   background: linear-gradient(145deg, #3282b8, #007ACC);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0, 122, 204, 0.4);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 20px rgba(0, 122, 204, 0.4),
+              0 0 15px rgba(0, 122, 204, 0.2);
 }
 
 .welcome-btn:active {
-  transform: translateY(0);
+  transform: translateY(-1px) scale(0.98);
   box-shadow: 0 2px 4px rgba(0, 122, 204, 0.4);
+  transition-duration: 0.1s;
+}
+
+/* Focus state for accessibility */
+.welcome-btn:focus-visible {
+  outline: 3px solid rgba(255, 215, 0, 0.8);
+  outline-offset: 3px;
+}
+
+/* Loading state for buttons */
+.welcome-btn.is-loading {
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.welcome-btn.is-loading::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: button-spin 0.8s linear infinite;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+@keyframes button-spin {
+  to {
+    transform: translateY(-50%) rotate(360deg);
+  }
+}
+
+/* Success feedback animation */
+.welcome-btn.success {
+  background: linear-gradient(145deg, #2ecc71, #27ae60);
+  animation: success-pulse 0.3s ease;
+}
+
+@keyframes success-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
 }
 
 @media (max-width: 768px) {
@@ -68,5 +136,18 @@
   
   .welcome-btn {
     width: 100%;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .welcome-btn,
+  .welcome-btn::before {
+    transition: none;
+    animation: none;
+  }
+  
+  .welcome-btn:hover {
+    transform: none;
   }
 }

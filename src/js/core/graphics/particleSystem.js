@@ -550,6 +550,91 @@ export default class ParticleManager {
   }
 
   /**
+   * Get detailed pool statistics for performance monitoring
+   * @returns {Object} Pool statistics including utilization and efficiency metrics
+   */
+  getPoolStats() {
+    const pooledCount = this.particlePool.length;
+    const activeCount = this.activeParticles;
+    const utilizationPercent = pooledCount > 0 ? (activeCount / pooledCount) * 100 : 0;
+
+    return {
+      poolSize: pooledCount,
+      activeCount: activeCount,
+      availableCount: pooledCount - activeCount,
+      utilizationPercent: utilizationPercent.toFixed(1),
+      maxParticles: this.maxParticles,
+      performanceMode: this.performanceMode,
+      colorCacheSize: this.colorCache.size
+    };
+  }
+
+  /**
+   * Verify particle pool health and detect potential issues
+   * @returns {Object} Verification results with health status and any issues found
+   *
+   * TODO: [OPTIMIZATION] Consider implementing automatic pool resizing based on usage patterns
+   */
+  verifyPool() {
+    const issues = [];
+    const warnings = [];
+
+    // Check for pool exhaustion
+    if (this.activeParticles >= this.maxParticles) {
+      warnings.push('Particle pool at maximum capacity - new particles may be dropped');
+    }
+
+    // Check for memory leaks (active count mismatch)
+    const actualActiveCount = this.particles.filter(p => p.active).length;
+    if (actualActiveCount !== this.activeParticles) {
+      issues.push(`Active particle count mismatch: tracked=${this.activeParticles}, actual=${actualActiveCount}`);
+    }
+
+    // Check for orphaned particles in pool
+    const orphanedParticles = this.particlePool.filter(p => p.active && !this.particles.includes(p));
+    if (orphanedParticles.length > 0) {
+      issues.push(`Found ${orphanedParticles.length} orphaned active particles in pool`);
+    }
+
+    // Check frame time health
+    if (this.avgFrameTime > 20) {
+      warnings.push(`Average frame time (${this.avgFrameTime.toFixed(1)}ms) exceeds target - consider reducing particle count`);
+    }
+
+    return {
+      isHealthy: issues.length === 0,
+      issues,
+      warnings,
+      stats: this.getPoolStats()
+    };
+  }
+
+  /**
+   * Log pool verification results to console for debugging
+   */
+  logPoolVerification() {
+    const verification = this.verifyPool();
+
+    console.group('🎯 Particle Pool Verification');
+    console.log('Health Status:', verification.isHealthy ? '✅ Healthy' : '❌ Issues Detected');
+
+    if (verification.issues.length > 0) {
+      console.group('❌ Issues');
+      verification.issues.forEach(issue => console.error(issue));
+      console.groupEnd();
+    }
+
+    if (verification.warnings.length > 0) {
+      console.group('⚠️ Warnings');
+      verification.warnings.forEach(warning => console.warn(warning));
+      console.groupEnd();
+    }
+
+    console.table(verification.stats);
+    console.groupEnd();
+  }
+
+  /**
    * Properly destroys the particle system and cleans up all resources to prevent memory leaks
    */
   destroy() {

@@ -4,6 +4,18 @@
  *
  * @author Teacher Evan and Teacher Lee
  * @version 1.0.0
+ *
+ * Architecture Overview:
+ * - ResourceManager: Handles asset loading with lazy loading and format detection
+ * - GameLoop: Manages frame-rate independent updates and rendering
+ * - InputHandler: Unified pointer/touch/keyboard input processing
+ * - WelcomeScreen: Initial game screen with animated background
+ *
+ * Performance Optimizations:
+ * - Dynamic imports for code splitting (levels loaded on demand)
+ * - Object pooling for particles and game entities
+ * - High-DPI canvas scaling with cached dimensions
+ * - RequestIdleCallback for non-critical background tasks
  */
 
 import { ResourceManager } from './core/resourceManager.js';
@@ -15,31 +27,37 @@ import { preloadAllLevels } from './utils/lazyLevelLoader.js';
 // Import CSS for webpack to process
 import '../css/main.css';
 
-// Configuration constants
-const CANVAS_RESIZE_DEBOUNCE_MS = 100;
-const ORIENTATION_CHANGE_DELAY_MS = 200;
-const MOBILE_SCROLL_DELAY_MS = 100;
+// Configuration constants for canvas and mobile behavior
+const CANVAS_RESIZE_DEBOUNCE_DURATION_MS = 100;
+const ORIENTATION_CHANGE_TRANSITION_DELAY_MS = 200;
+const MOBILE_ADDRESS_BAR_SCROLL_DELAY_MS = 100;
+const LEVEL_PRELOAD_INITIAL_DELAY_MS = 2000;
+const IDLE_PRELOAD_TIMEOUT_MS = 5000;
+const FALLBACK_PRELOAD_DELAY_MS = 3000;
 
-// Mobile device detection patterns
-const MOBILE_DEVICE_REGEX = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+// Mobile device detection patterns (supports major mobile platforms)
+const MOBILE_DEVICE_USER_AGENT_PATTERN = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
 
 /**
  * SuperStudentGame - Main game controller class
  * Manages game initialization, canvas setup, and screen transitions
+ *
+ * TODO: [OPTIMIZATION] Consider implementing a state machine pattern for game states
+ * TODO: [ENHANCEMENT] Add service worker registration for offline support
  */
 class SuperStudentGame {
   constructor() {
     this.canvas = document.getElementById('game-canvas');
-    this.ctx = this.canvas.getContext('2d');
-    this.resourceManager = new ResourceManager();
-    this.inputHandler = new InputHandler(this.canvas);
-    this.gameLoop = new GameLoop(this.ctx);
-    this.resizeTimeout = null;
+    this.canvasRenderingContext = this.canvas.getContext('2d');
+    this.assetResourceManager = new ResourceManager();
+    this.userInputHandler = new InputHandler(this.canvas);
+    this.mainGameLoop = new GameLoop(this.canvasRenderingContext);
+    this.canvasResizeTimeoutId = null;
 
-    // Store viewport dimensions
-    this.viewportWidth = 0;
-    this.viewportHeight = 0;
-    this.devicePixelRatio = 1;
+    // Store viewport dimensions for responsive calculations
+    this.currentViewportWidth = 0;
+    this.currentViewportHeight = 0;
+    this.currentDevicePixelRatio = 1;
   }
 
   /**
@@ -47,11 +65,11 @@ class SuperStudentGame {
    * Sets up canvas, mobile optimizations, loads assets, and shows welcome screen
    */
   async initializeApplication() {
-    this.configureCanvasForHighDPI();
+    this.configureCanvasForHighDPIDisplays();
     this.applyMobileDeviceOptimizations();
-    await this.resourceManager.loadAssets();
+    await this.assetResourceManager.loadAssets();
     this.displayWelcomeScreen();
-    this.gameLoop.start();
+    this.mainGameLoop.start();
 
     // TODO: [OPTIMIZATION] Consider prefetching level assets during idle time
     this.scheduleBackgroundLevelPreload();
@@ -59,57 +77,59 @@ class SuperStudentGame {
 
   /**
    * Schedule background preloading of game levels during idle time
-   * Uses requestIdleCallback for non-blocking preload
+   * Uses requestIdleCallback for non-blocking preload to avoid impacting initial load performance
    */
   scheduleBackgroundLevelPreload() {
     const schedulePreload = () => {
       if ('requestIdleCallback' in window) {
         requestIdleCallback(() => {
-          preloadAllLevels().catch(err =>
-            console.warn('Background level preload encountered issues:', err)
+          preloadAllLevels().catch(preloadError =>
+            console.warn('Background level preload encountered issues:', preloadError)
           );
-        }, { timeout: 5000 });
+        }, { timeout: IDLE_PRELOAD_TIMEOUT_MS });
       } else {
-        // Fallback for browsers without requestIdleCallback
+        // Fallback for browsers without requestIdleCallback (Safari, older browsers)
         setTimeout(() => {
-          preloadAllLevels().catch(err =>
-            console.warn('Background level preload encountered issues:', err)
+          preloadAllLevels().catch(preloadError =>
+            console.warn('Background level preload encountered issues:', preloadError)
           );
-        }, 3000);
+        }, FALLBACK_PRELOAD_DELAY_MS);
       }
     };
 
-    // Wait for initial load to complete before preloading
-    setTimeout(schedulePreload, 2000);
+    // Wait for initial load to complete before preloading to prioritize user experience
+    setTimeout(schedulePreload, LEVEL_PRELOAD_INITIAL_DELAY_MS);
   }
 
   /**
    * Configure canvas for high-DPI displays
    * Sets up event listeners for responsive resize handling
+   *
+   * TODO: [OPTIMIZATION] Consider using ResizeObserver instead of window resize for better performance
    */
-  configureCanvasForHighDPI() {
-    this.updateCanvasDimensions();
+  configureCanvasForHighDPIDisplays() {
+    this.updateCanvasDimensionsForCurrentViewport();
 
     // Handle window resize with debouncing for performance
     window.addEventListener('resize', () => {
-      clearTimeout(this.resizeTimeout);
-      this.resizeTimeout = setTimeout(
-        () => this.updateCanvasDimensions(),
-        CANVAS_RESIZE_DEBOUNCE_MS
+      clearTimeout(this.canvasResizeTimeoutId);
+      this.canvasResizeTimeoutId = setTimeout(
+        () => this.updateCanvasDimensionsForCurrentViewport(),
+        CANVAS_RESIZE_DEBOUNCE_DURATION_MS
       );
     });
 
-    // Handle orientation change on mobile devices
+    // Handle orientation change on mobile devices with delay for layout recalculation
     window.addEventListener('orientationchange', () => {
-      setTimeout(() => this.updateCanvasDimensions(), ORIENTATION_CHANGE_DELAY_MS);
+      setTimeout(() => this.updateCanvasDimensionsForCurrentViewport(), ORIENTATION_CHANGE_TRANSITION_DELAY_MS);
     });
   }
 
   /**
    * Update canvas dimensions based on viewport and device pixel ratio
-   * Ensures crisp rendering on high-DPI displays
+   * Ensures crisp rendering on high-DPI displays (Retina, 4K, etc.)
    */
-  updateCanvasDimensions() {
+  updateCanvasDimensionsForCurrentViewport() {
     const devicePixelRatio = window.devicePixelRatio || 1;
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
@@ -118,17 +138,17 @@ class SuperStudentGame {
     this.canvas.width = viewportWidth * devicePixelRatio;
     this.canvas.height = viewportHeight * devicePixelRatio;
 
-    // Set canvas display dimensions
+    // Set canvas display dimensions (CSS pixels)
     this.canvas.style.width = `${viewportWidth}px`;
     this.canvas.style.height = `${viewportHeight}px`;
 
-    // Scale context to match DPI
-    this.ctx.scale(devicePixelRatio, devicePixelRatio);
+    // Scale context to match DPI for automatic coordinate transformation
+    this.canvasRenderingContext.scale(devicePixelRatio, devicePixelRatio);
 
-    // Store dimensions for game logic
-    this.viewportWidth = viewportWidth;
-    this.viewportHeight = viewportHeight;
-    this.devicePixelRatio = devicePixelRatio;
+    // Store dimensions for game logic calculations
+    this.currentViewportWidth = viewportWidth;
+    this.currentViewportHeight = viewportHeight;
+    this.currentDevicePixelRatio = devicePixelRatio;
   }
 
   /**
@@ -137,24 +157,24 @@ class SuperStudentGame {
    */
   applyMobileDeviceOptimizations() {
     // Prevent zoom on double-tap (iOS/Safari gesture events)
-    document.addEventListener('gesturestart', e => e.preventDefault());
-    document.addEventListener('gesturechange', e => e.preventDefault());
+    document.addEventListener('gesturestart', gestureEvent => gestureEvent.preventDefault());
+    document.addEventListener('gesturechange', gestureEvent => gestureEvent.preventDefault());
 
     // Prevent context menu on long press
-    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('contextmenu', contextEvent => contextEvent.preventDefault());
 
-    const isMobile = this.detectMobileDevice();
-    const isTouch = this.detectTouchCapability();
+    const isMobileDevice = this.detectMobileDevice();
+    const hasTouchCapability = this.detectTouchCapability();
 
     // Hide address bar on mobile by scrolling
-    if (isMobile) {
+    if (isMobileDevice) {
       setTimeout(() => {
         window.scrollTo(0, 1);
-      }, MOBILE_SCROLL_DELAY_MS);
+      }, MOBILE_ADDRESS_BAR_SCROLL_DELAY_MS);
       document.body.classList.add('mobile-device');
     }
 
-    if (isTouch) {
+    if (hasTouchCapability) {
       document.body.classList.add('touch-device');
     }
   }
@@ -164,7 +184,7 @@ class SuperStudentGame {
    * @returns {boolean} True if mobile device detected
    */
   detectMobileDevice() {
-    return MOBILE_DEVICE_REGEX.test(navigator.userAgent);
+    return MOBILE_DEVICE_USER_AGENT_PATTERN.test(navigator.userAgent);
   }
 
   /**
@@ -180,7 +200,7 @@ class SuperStudentGame {
    * Sets up callbacks for game start and options
    */
   displayWelcomeScreen() {
-    const welcomeScreen = new WelcomeScreen(this.canvas, this.ctx, this.resourceManager);
+    const welcomeScreen = new WelcomeScreen(this.canvas, this.canvasRenderingContext, this.assetResourceManager);
 
     // Configure callbacks for user interactions
     welcomeScreen.setCallbacks(
