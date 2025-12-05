@@ -591,7 +591,9 @@ export default class ParticleManager {
     }
 
     // Check for orphaned particles in pool
-    const orphanedParticles = this.particlePool.filter(p => p.active && !this.particles.includes(p));
+    // OPTIMIZATION: Use Set for O(1) lookup instead of includes() for O(n) lookup
+    const particleSet = new Set(this.particles);
+    const orphanedParticles = this.particlePool.filter(p => p.active && !particleSet.has(p));
     if (orphanedParticles.length > 0) {
       issues.push(`Found ${orphanedParticles.length} orphaned active particles in pool`);
     }

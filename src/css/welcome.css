@@ -147,7 +147,20 @@
     animation: none;
   }
   
+  /* Disable shimmer effect for users who prefer reduced motion */
+  .welcome-btn:hover::before {
+    left: -100%;
+  }
+  
   .welcome-btn:hover {
     transform: none;
+  }
+  
+  .welcome-btn.is-loading::after {
+    animation: none;
+  }
+  
+  .welcome-btn.success {
+    animation: none;
   }
 }

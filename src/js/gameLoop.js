@@ -31,6 +31,7 @@ export class GameLoop {
   get currentScreen() { return this.currentActiveScreen; }
   get lastTime() { return this.previousFrameTimestamp; }
   get isRunning() { return this.isLoopRunning; }
+  get lastDeltaTime() { return this.mostRecentDeltaTime; }
 
   /**
    * Start the game loop
@@ -79,13 +80,5 @@ export class GameLoop {
 
     // Schedule next frame
     requestAnimationFrame(this._boundAnimationLoop);
-  }
-
-  /**
-   * Legacy getter for compatibility with existing code
-   * @returns {number} Most recent delta time in milliseconds
-   */
-  get lastDeltaTime() {
-    return this.mostRecentDeltaTime;
   }
 }
