@@ -19,7 +19,8 @@ describe('SuperStudent Game Core', () => {
       expect(resourceManager.assets).toBeInstanceOf(Map);
       expect(resourceManager.loadingProgress).toBe(0);
       expect(resourceManager.totalAssets).toBe(0);
-      expect(resourceManager.loadedAssets).toBe(0);
+      // loadedAssets is now a Map (via getter), use loadedAssetCount for the count
+      expect(resourceManager.loadedAssetCount).toBe(0);
     });
 
     test('should have loadAssets method', async () => {
