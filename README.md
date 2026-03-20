@@ -109,7 +109,7 @@ The production build will be generated in the `dist/` directory with optimized a
 └── tests/                    # Automated tests
    ├── unit/
    ├── integration/
-   ├── e2e/
+   ├── e2e-specs/             # Playwright end-to-end specs
    └── performance/
 ```
 
@@ -139,7 +139,9 @@ The production build will be generated in the `dist/` directory with optimized a
 
 - `npm run dev` - Start development server with hot reload
 - `npm run build` - Build optimized production bundle
-- `npm run serve` - Serve production build on port 3000
+- `npm run test` - Run Jest unit tests
+- `npm run test:e2e` - Run Playwright end-to-end tests
+- `npm run lint` - Run ESLint checks
 
 ## Browser Support
 
@@ -157,9 +159,17 @@ The production build will be generated in the `dist/` directory with optimized a
 ## Performance Optimization
 
 - **Particle Pooling**: Reuse particle objects to reduce GC pressure
-- **Asset Bundling**: Vite optimizes and bundles assets for production
+- **Asset Bundling**: Webpack optimizes and bundles assets for production
 - **Delta Time**: Consistent animation timing across different framerates
 - **Canvas Optimization**: Efficient rendering with minimal state changes
+
+## Debug, Monitoring, and Error Tracking
+
+- Global event and error telemetry is available through `eventTracker`.
+- Enable in-browser debug monitoring with:
+  - URL flag: `?debug=1`
+  - Or persisted flag: `localStorage.setItem('superstudent_debug', '1')`
+- In debug mode, the performance dashboard is loaded and can be toggled with `Ctrl+Shift+P`.
 
 ## Troubleshooting
 
@@ -174,6 +184,13 @@ The production build will be generated in the `dist/` directory with optimized a
 - **Missing assets**: Verify asset paths are relative to project root
 - **Bundle size**: Use `npm run build` to check output file sizes
 - **Browser compatibility**: Test in target browsers after building
+
+## Engineering Hygiene
+
+- Avoid silent failures in critical user flows; emit contextual tracking/logging.
+- Clean up long-lived listeners, timers, and animation handles on screen teardown.
+- Keep debug tooling opt-in (`?debug=1` or `localStorage.superstudent_debug=1`).
+- Pair critical-path fixes with targeted automated tests.
 
 ## Contributing
 

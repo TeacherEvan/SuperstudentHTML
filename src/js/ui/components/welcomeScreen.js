@@ -13,6 +13,8 @@ export class WelcomeScreen {
     this.particles = [];
     this.animationId = null;
     this.isVisible = false;
+    this.showTimeoutId = null;
+    this.startTimeoutId = null;
 
     // Animation properties
     this.time = 0;
@@ -29,7 +31,8 @@ export class WelcomeScreen {
     this.setupUI();
 
     // Keep background canvas in sync on resize
-    window.addEventListener('resize', () => this.onResize());
+    this.boundResizeHandler = () => this.onResize();
+    window.addEventListener('resize', this.boundResizeHandler);
   }
 
   setupParticles() {
@@ -393,7 +396,13 @@ export class WelcomeScreen {
         textEl.style.display = 'block';
         textEl.textContent = `Display mode set to ${mode}. Loading...`;
       }
-      setTimeout(() => { if (this.onStartGame) { this.hide(); this.onStartGame(); } }, 1200);
+      clearTimeout(this.startTimeoutId);
+      this.startTimeoutId = setTimeout(() => {
+        if (this.onStartGame) {
+          this.hide();
+          this.onStartGame();
+        }
+      }, 1200);
     };
 
     setTimeout(() => {
@@ -407,7 +416,11 @@ export class WelcomeScreen {
     this.isVisible = true;
     this.startAnimation();
 
-    setTimeout(() => {
+    clearTimeout(this.showTimeoutId);
+    this.showTimeoutId = setTimeout(() => {
+      if (!this.isVisible) {
+        return;
+      }
       const welcomeScreen = document.getElementById('welcome-screen');
       if (welcomeScreen) {
         welcomeScreen.classList.add('visible');
@@ -417,6 +430,8 @@ export class WelcomeScreen {
 
   hide() {
     this.isVisible = false;
+    clearTimeout(this.showTimeoutId);
+    clearTimeout(this.startTimeoutId);
     this.stopAnimation();
 
     const welcomeScreen = document.getElementById('welcome-screen');
@@ -426,6 +441,8 @@ export class WelcomeScreen {
         welcomeScreen.remove();
       }, 500);
     }
+
+    this.destroy();
   }
 
   startAnimation() {
@@ -531,6 +548,16 @@ export class WelcomeScreen {
   setCallbacks(startGameCallback, showOptionsCallback) {
     this.onStartGame = startGameCallback;
     this.onShowOptions = showOptionsCallback;
+  }
+
+  destroy() {
+    clearTimeout(this.showTimeoutId);
+    clearTimeout(this.startTimeoutId);
+    this.stopAnimation();
+    if (this.boundResizeHandler) {
+      window.removeEventListener('resize', this.boundResizeHandler);
+      this.boundResizeHandler = null;
+    }
   }
 
   // GameLoop interface methods (no-op since WelcomeScreen manages its own animation)

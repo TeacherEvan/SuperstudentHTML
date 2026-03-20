@@ -41,9 +41,37 @@ global.Audio = jest.fn().mockImplementation(() => ({
 
 // Mock Web Audio API
 global.AudioContext = jest.fn().mockImplementation(() => ({
-  createBufferSource: jest.fn(),
-  createGain: jest.fn(),
+  createBufferSource: jest.fn(() => ({
+    connect: jest.fn(),
+    start: jest.fn(),
+    stop: jest.fn(),
+    playbackRate: { value: 1 },
+  })),
+  createGain: jest.fn(() => ({
+    gain: {
+      value: 1,
+      cancelScheduledValues: jest.fn(),
+      setValueAtTime: jest.fn(),
+      linearRampToValueAtTime: jest.fn(),
+      exponentialRampToValueAtTime: jest.fn(),
+    },
+    connect: jest.fn(),
+  })),
+  createOscillator: jest.fn(() => ({
+    connect: jest.fn(),
+    start: jest.fn(),
+    stop: jest.fn(),
+    frequency: { value: 440 },
+    type: 'sine',
+  })),
+  createBuffer: jest.fn(() => ({
+    getChannelData: jest.fn(() => new Float32Array(22050)),
+  })),
   decodeAudioData: jest.fn(),
+  resume: jest.fn().mockResolvedValue(),
+  sampleRate: 44100,
+  currentTime: 0,
+  state: 'running',
   destination: {},
 }));
 

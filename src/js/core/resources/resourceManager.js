@@ -162,7 +162,11 @@ export default class ResourceManager {
   }
 
   setDisplayMode(mode) {
-    localStorage.setItem('displayMode', mode);
+    try {
+      localStorage.setItem('displayMode', mode);
+    } catch (error) {
+      console.warn('Failed to persist display mode:', error);
+    }
   }
 
   getDisplayMode() {

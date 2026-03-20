@@ -23,6 +23,7 @@ import { GameLoop } from './gameLoop.js';
 import { InputHandler } from './inputHandler.js';
 import { WelcomeScreen } from './ui/components/welcomeScreen.js';
 import { preloadAllLevels } from './utils/lazyLevelLoader.js';
+import { eventTracker } from './utils/eventTracker.js';
 
 // Import CSS for webpack to process
 import '../css/main.css';
@@ -60,16 +61,46 @@ class SuperStudentGame {
     this.currentDevicePixelRatio = 1;
   }
 
+  setupObservability() {
+    eventTracker.initialize();
+    eventTracker.trackEvent('system', 'bootstrap', {
+      entry: 'src/js/main.js',
+      userAgent: navigator.userAgent
+    });
+    window.__superStudentEventTracker = eventTracker;
+  }
+
+  async initializeDebugMonitoring() {
+    const queryDebugMode = new URLSearchParams(window.location.search).get('debug') === '1';
+    const storedDebugMode = localStorage.getItem('superstudent_debug') === '1';
+    const debugEnabled = queryDebugMode || storedDebugMode;
+
+    if (!debugEnabled) {
+      return;
+    }
+
+    await import('./utils/performanceDashboard.js');
+    eventTracker.trackEvent('debug', 'monitoring_enabled', { source: queryDebugMode ? 'query' : 'storage' });
+  }
+
   /**
    * Initialize the game application
    * Sets up canvas, mobile optimizations, loads assets, and shows welcome screen
    */
   async initializeApplication() {
+    this.setupObservability();
+    await this.initializeDebugMonitoring();
     this.configureCanvasForHighDPIDisplays();
     this.applyMobileDeviceOptimizations();
-    await this.assetResourceManager.loadAssets();
+    try {
+      await this.assetResourceManager.loadAssets();
+    } catch (loadError) {
+      eventTracker.trackError(loadError, { context: 'asset_load' });
+      throw loadError;
+    }
     this.displayWelcomeScreen();
     this.mainGameLoop.start();
+    eventTracker.trackEvent('system', 'game_loop_started');
 
     // TODO: [OPTIMIZATION] Consider prefetching level assets during idle time
     this.scheduleBackgroundLevelPreload();
@@ -143,6 +174,7 @@ class SuperStudentGame {
     this.canvas.style.height = `${viewportHeight}px`;
 
     // Scale context to match DPI for automatic coordinate transformation
+    this.canvasRenderingContext.setTransform(1, 0, 0, 1, 0, 0);
     this.canvasRenderingContext.scale(devicePixelRatio, devicePixelRatio);
 
     // Store dimensions for game logic calculations
@@ -201,6 +233,7 @@ class SuperStudentGame {
    */
   displayWelcomeScreen() {
     const welcomeScreen = new WelcomeScreen(this.canvas, this.canvasRenderingContext, this.assetResourceManager);
+    eventTracker.trackEvent('ui', 'welcome_screen_shown');
 
     // Configure callbacks for user interactions
     welcomeScreen.setCallbacks(
@@ -216,6 +249,7 @@ class SuperStudentGame {
    * Called when user selects a display mode
    */
   handleGameStartRequest() {
+    eventTracker.trackEvent('game', 'start_requested');
     console.log('🎮 Game starting with selected display mode');
     // TODO: [ENHANCEMENT] Implement game start logic with level selection
   }
@@ -225,6 +259,7 @@ class SuperStudentGame {
    * Called when user requests game options
    */
   handleOptionsMenuRequest() {
+    eventTracker.trackEvent('ui', 'options_requested');
     console.log('⚙️ Options menu requested');
     // TODO: [ENHANCEMENT] Implement options menu with sound/display settings
   }

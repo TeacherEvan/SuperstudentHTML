@@ -240,12 +240,15 @@ export default class SoundManager {
   }
 
   playMusic(name, loop = true, volume = 1.0) {
+    if (!this.audioContext) {
+      console.warn('AudioContext not available, cannot play music');
+      return null;
+    }
+
     const entry = this.buffers[name];
     if (!entry) return null;
 
-    if (this.activeSources[name]) {
-      this.activeSources[name].stop();
-    }
+    this.safeStopSource(this.activeSources[name]);
 
     const source = this.audioContext.createBufferSource();
     source.buffer = entry.buffer;
@@ -258,17 +261,25 @@ export default class SoundManager {
 
     source.start(0);
     this.activeSources[name] = source;
+    source.onended = () => {
+      if (this.activeSources[name] === source) {
+        delete this.activeSources[name];
+      }
+    };
 
     return source;
   }
 
   playAmbient(name, loop = true, volume = 1.0) {
+    if (!this.audioContext) {
+      console.warn('AudioContext not available, cannot play ambient');
+      return null;
+    }
+
     const entry = this.buffers[name];
     if (!entry) return null;
 
-    if (this.activeSources[name]) {
-      this.activeSources[name].stop();
-    }
+    this.safeStopSource(this.activeSources[name]);
 
     const source = this.audioContext.createBufferSource();
     source.buffer = entry.buffer;
@@ -281,6 +292,11 @@ export default class SoundManager {
 
     source.start(0);
     this.activeSources[name] = source;
+    source.onended = () => {
+      if (this.activeSources[name] === source) {
+        delete this.activeSources[name];
+      }
+    };
 
     return source;
   }
@@ -367,7 +383,7 @@ export default class SoundManager {
   stop(name) {
     const source = this.activeSources[name];
     if (source) {
-      source.stop();
+      this.safeStopSource(source);
       delete this.activeSources[name];
     }
   }
@@ -377,7 +393,7 @@ export default class SoundManager {
     Object.values(this.activeSources).forEach(source => {
       if (source && typeof source.stop === 'function') {
         try {
-          source.stop();
+          this.safeStopSource(source);
         } catch (error) {
           console.warn('Error stopping audio source:', error);
         }
@@ -389,7 +405,7 @@ export default class SoundManager {
     this.activeSoundsList.forEach(source => {
       if (source && typeof source.stop === 'function') {
         try {
-          source.stop();
+          this.safeStopSource(source);
         } catch (error) {
           console.warn('Error stopping active sound:', error);
         }
@@ -434,7 +450,7 @@ export default class SoundManager {
 
   // Ensure AudioContext is running after user interaction
   async resumeContext() {
-    if (this.audioContext.state === 'suspended') {
+    if (this.audioContext && this.audioContext.state === 'suspended') {
       await this.audioContext.resume();
     }
   }
@@ -483,6 +499,11 @@ export default class SoundManager {
    * Create dynamic sound effect
    */
   createDynamicSound(frequency, duration, type = 'sine', volume = 0.3) {
+    if (!this.audioContext) {
+      console.warn('AudioContext not available, cannot create dynamic sound');
+      return null;
+    }
+
     const oscillator = this.audioContext.createOscillator();
     const gainNode = this.audioContext.createGain();
 
@@ -506,6 +527,20 @@ export default class SoundManager {
    */
   getAudioContext() {
     return this.audioContext;
+  }
+
+  safeStopSource(source) {
+    if (!source || typeof source.stop !== 'function') {
+      return;
+    }
+
+    try {
+      source.stop();
+    } catch (error) {
+      if (error?.name !== 'InvalidStateError') {
+        console.warn('Error stopping audio source:', error);
+      }
+    }
   }
 
   /**

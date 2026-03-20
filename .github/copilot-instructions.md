@@ -53,7 +53,7 @@ The game follows a modular architecture with clear separation of concerns:
 ├── tests/            # Test files organized by type
 │   ├── unit/         # Jest unit tests
 │   ├── integration/  # Integration tests
-│   ├── e2e/          # Playwright end-to-end tests
+│   ├── e2e-specs/    # Playwright end-to-end tests
 │   └── performance/  # Performance benchmarks
 └── dist/             # Webpack build output (auto-generated)
 ```
@@ -180,6 +180,22 @@ The following globals are available in the game context:
 - Verify game functionality in real browsers
 - Test responsive behavior and touch interactions
 - Validate audio/visual feedback
+- Include failure-path validation (runtime errors and fallback behavior)
+
+## Engineering Hygiene Expectations
+
+- Treat interactivity and visual consistency as product-level requirements.
+- Avoid runtime assumptions around browser APIs (audio, storage, canvas state).
+- Ensure listener/timer/resource cleanup is explicit when screens/components are hidden or destroyed.
+- Prefer structured tracking via `eventTracker` for startup, transitions, and runtime failures.
+- Keep debug tooling opt-in (`?debug=1` or `localStorage.superstudent_debug=1`).
+- When adding or fixing behavior in critical paths, update tests and CI gates accordingly.
+
+## CI Quality Gate Expectations
+
+- CI should run lint, unit tests, Playwright e2e tests, and production build.
+- E2E should validate core boot + interaction flows and fail on uncaught page errors.
+- Keep test execution deterministic and avoid importing unit test suites into Playwright test runs.
 
 ## Common Patterns
 

@@ -5,6 +5,8 @@
 import { ResourceManager } from '../../src/js/core/resourceManager.js';
 import { GameLoop } from '../../src/js/gameLoop.js';
 import { WelcomeScreen } from '../../src/js/ui/welcomeScreen.js';
+import SoundManager from '../../src/js/core/audio/soundManager.js';
+import { ProgressManager } from '../../src/js/game/managers/progressManager.js';
 
 describe('SuperStudent Game Core', () => {
   beforeEach(() => {
@@ -119,6 +121,43 @@ describe('SuperStudent Game Core', () => {
       const canvas = document.getElementById('game-canvas');
       const ctx = canvas.getContext('2d');
       expect(ctx).toBeTruthy();
+    });
+  });
+
+  describe('Runtime safety regressions', () => {
+    let consoleWarnSpy;
+
+    beforeEach(() => {
+      consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      consoleWarnSpy.mockRestore();
+    });
+
+    test('resource manager persists and reads display mode safely', () => {
+      const resourceManager = new ResourceManager();
+      resourceManager.setDisplayMode('QBOARD');
+      expect(window.localStorage.setItem).toHaveBeenCalledWith('displayMode', 'QBOARD');
+      window.localStorage.getItem.mockReturnValue('QBOARD');
+      expect(resourceManager.getDisplayMode()).toBe('QBOARD');
+    });
+
+    test('progress manager save is resilient to storage errors', () => {
+      const progressManager = new ProgressManager();
+      window.localStorage.setItem.mockImplementationOnce(() => {
+        throw new Error('quota');
+      });
+      expect(() => progressManager.saveProgress()).not.toThrow();
+      expect(consoleWarnSpy).toHaveBeenCalled();
+    });
+
+    test('sound manager returns null when audio context is unavailable', () => {
+      const soundManager = new SoundManager();
+      soundManager.audioContext = null;
+      expect(soundManager.playMusic('missing')).toBeNull();
+      expect(soundManager.playAmbient('missing')).toBeNull();
+      expect(soundManager.createDynamicSound(440, 0.1)).toBeNull();
     });
   });
 });

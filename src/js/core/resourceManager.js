@@ -258,6 +258,11 @@ export class ResourceManager {
    */
   setDisplayMode(mode) {
     this.currentDisplayMode = mode;
+    try {
+      localStorage.setItem('displayMode', mode);
+    } catch (error) {
+      console.warn('Failed to persist display mode:', error);
+    }
     console.log(`Display mode set to: ${mode}`);
   }
 
@@ -266,7 +271,12 @@ export class ResourceManager {
    * @returns {string} Current display mode
    */
   getDisplayMode() {
-    return this.currentDisplayMode;
+    try {
+      return localStorage.getItem('displayMode') || this.currentDisplayMode;
+    } catch (error) {
+      console.warn('Failed to read persisted display mode:', error);
+      return this.currentDisplayMode;
+    }
   }
 
   /**
