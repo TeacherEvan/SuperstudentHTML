@@ -4,12 +4,15 @@ import { BaseLevel } from './baseLevel.js';
 export default class NumbersLevel extends BaseLevel {
   constructor(canvas, ctx, managers, helpers) {
     super(canvas, ctx, managers, helpers);
-    this.sequence = GAME_CONFIG.SEQUENCES.numbers;
+    this.sequence = this.isE2EMode()
+      ? GAME_CONFIG.SEQUENCES.numbers.slice(0, 2)
+      : GAME_CONFIG.SEQUENCES.numbers;
     this.objects = [];
     this.currentIndex = 0;
     this.groupCount = 0;
     this.spawnTimer = 0;
-    this.spawnInterval = GAME_CONFIG.LETTER_SPAWN_INTERVAL;
+    this.spawnInterval = this.isE2EMode() ? 120 : this.getFrameIntervalMs(GAME_CONFIG.LETTER_SPAWN_INTERVAL);
+    this.targetAdvanceCount = this.isE2EMode() ? 1 : GAME_CONFIG.GROUP_SIZE;
     this.onPointerDown = this.onPointerDown.bind(this);
     this.lastSpawnTime = 0;
   }
@@ -85,6 +88,23 @@ export default class NumbersLevel extends BaseLevel {
   }
 
   spawnObject() {
+    if (this.isE2EMode()) {
+      const hasTarget = this.objects.some((obj) => obj.char === this.currentTarget);
+      const targetColor = `rgb(${GAME_CONFIG.COLORS.COLORS_LIST[this.currentIndex % GAME_CONFIG.COLORS.COLORS_LIST.length].join(',')})`;
+
+      if (!hasTarget) {
+        this.objects.push({
+          char: this.currentTarget,
+          x: this.canvas.width * (0.35 + (this.currentIndex * 0.2)),
+          y: this.canvas.height * 0.32,
+          dx: 0,
+          dy: 0,
+          color: targetColor
+        });
+        return;
+      }
+    }
+
     // Objects spawn from screen edges with random trajectories
     const buffer = GAME_CONFIG.TEXT_LEVEL_CONFIG.SPAWN_EDGE_BUFFER;
     const side = Math.floor(Math.random() * 4);
@@ -154,7 +174,7 @@ export default class NumbersLevel extends BaseLevel {
           this.groupCount++;
 
           // After destroying 5 targets, advance to next number
-          if (this.groupCount >= GAME_CONFIG.GROUP_SIZE) {
+          if (this.groupCount >= this.targetAdvanceCount) {
             this.advanceToNextTarget();
           }
         } else {
@@ -208,8 +228,18 @@ export default class NumbersLevel extends BaseLevel {
     this.ctx.textAlign = 'left';
     this.ctx.fillText(`Number: ${this.currentTarget}`, 20, 40);
     this.ctx.fillText(`Progress: ${this.currentIndex + 1}/${this.sequence.length}`, 20, 70);
-    this.ctx.fillText(`Targets: ${this.groupCount}/${GAME_CONFIG.TEXT_LEVEL_CONFIG.TARGET_ADVANCE_COUNT}`, 20, 100);
+    this.ctx.fillText(`Targets: ${this.groupCount}/${this.targetAdvanceCount}`, 20, 100);
     this.ctx.restore();
+  }
+
+  getTestSnapshot() {
+    return {
+      currentTarget: this.currentTarget,
+      progress: `${this.currentIndex + 1}/${this.sequence.length}`,
+      targets: this.objects
+        .filter((obj) => obj.char === this.currentTarget)
+        .map((obj, index) => this.toNormalizedPoint(obj.x, obj.y, { index, label: obj.char }))
+    };
   }
 
   cleanup() {

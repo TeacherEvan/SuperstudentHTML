@@ -36,6 +36,7 @@ export class PhonicsLevel extends BaseLevel {
     // Visual effects
     this.backgroundPhase = 0;
     this.targetLetterPulse = 0;
+    this.difficultyOrder = this.isE2EMode() ? ['easy', 'medium'] : ['easy', 'medium', 'hard'];
 
     // Bind methods
     this.onCorrectAnswer = this.onCorrectAnswer.bind(this);
@@ -111,7 +112,7 @@ export class PhonicsLevel extends BaseLevel {
     // Auto-hide instructions after 3 seconds
     setTimeout(() => {
       this.hideInstructions();
-    }, 3000);
+    }, this.isE2EMode() ? 250 : 3000);
   }
 
   hideInstructions() {
@@ -131,7 +132,7 @@ export class PhonicsLevel extends BaseLevel {
     this.updateScore(score);
 
     // Check if we need to advance difficulty
-    const targetCount = this.config.education.difficulty[this.currentDifficulty].targetCount;
+    const targetCount = this.isE2EMode() ? 1 : this.config.education.difficulty[this.currentDifficulty].targetCount;
     if (this.correctCount >= targetCount) {
       this.advanceDifficulty();
     } else {
@@ -172,11 +173,10 @@ export class PhonicsLevel extends BaseLevel {
   }
 
   advanceDifficulty() {
-    const difficulties = ['easy', 'medium', 'hard'];
-    const currentIndex = difficulties.indexOf(this.currentDifficulty);
+    const currentIndex = this.difficultyOrder.indexOf(this.currentDifficulty);
 
-    if (currentIndex < difficulties.length - 1) {
-      this.currentDifficulty = difficulties[currentIndex + 1];
+    if (currentIndex < this.difficultyOrder.length - 1) {
+      this.currentDifficulty = this.difficultyOrder[currentIndex + 1];
       this.setDifficulty(this.currentDifficulty);
       this.correctCount = 0; // Reset progress for new difficulty
       this.setNewTarget();
@@ -244,7 +244,17 @@ export class PhonicsLevel extends BaseLevel {
     // End the level after celebration
     setTimeout(() => {
       this.end();
-    }, 3000);
+    }, 3000 * this.getE2EConfig().speedMultiplier);
+  }
+
+  getTestSnapshot() {
+    return {
+      currentTarget: this.targetLetter,
+      difficulty: this.currentDifficulty,
+      targets: (this.bubbleSystem?.bubbles || [])
+        .filter((bubble) => bubble.active && bubble.isTarget && !bubble.isPopping)
+        .map((bubble, index) => this.toNormalizedPoint(bubble.x, bubble.y, { index, label: bubble.letter }))
+    };
   }
 
   update(deltaTime) {
@@ -585,8 +595,6 @@ export class PhonicsLevel extends BaseLevel {
   }
 
   cleanup() {
-    super.cleanup();
-
     if (this.bubbleSystem) {
       this.bubbleSystem.cleanup();
     }

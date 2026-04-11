@@ -34,10 +34,13 @@ export class LevelCompletionScreen {
 
     const percentage = Math.round((score / totalPossible) * 100);
     const grade = this.getGrade(percentage);
+    const celebrationCopy = this.getCelebrationCopy(levelName, percentage, grade);
 
     completionDiv.innerHTML = `
-      <div class="completion-content">
-        <h1 class="completion-title">Level Complete!</h1>
+      <div class="completion-content" data-testid="completion-content">
+        <div class="completion-badge">${celebrationCopy.badge}</div>
+        <h1 class="completion-title" data-testid="completion-title">${celebrationCopy.title}</h1>
+        <p class="completion-subtitle">${celebrationCopy.subtitle}</p>
         <div class="level-info">
           <h2>${this.formatLevelName(levelName)}</h2>
         </div>
@@ -50,9 +53,9 @@ export class LevelCompletionScreen {
           <div class="grade">${grade}</div>
         </div>
         <div class="completion-actions">
-          <button class="completion-btn restart" data-action="restart">Play Again</button>
-          <button class="completion-btn next" data-action="next">Next Level</button>
-          <button class="completion-btn menu" data-action="menu">Main Menu</button>
+          <button class="completion-btn restart" data-action="restart" data-testid="completion-restart">Play Again</button>
+          <button class="completion-btn next" data-action="next" data-testid="completion-next">Next Level</button>
+          <button class="completion-btn menu" data-action="menu" data-testid="completion-menu">Main Menu</button>
         </div>
       </div>
     `;
@@ -116,6 +119,20 @@ export class LevelCompletionScreen {
         transform: scale(1) translateY(0);
       }
 
+      .completion-badge {
+        display: inline-block;
+        margin-bottom: 16px;
+        padding: 8px 16px;
+        border-radius: 999px;
+        background: rgba(255, 215, 0, 0.12);
+        border: 1px solid rgba(255, 215, 0, 0.28);
+        color: #ffe27a;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        font-size: 0.82rem;
+      }
+
       /* Title with bounce animation */
       .completion-title {
         font-size: clamp(2.5rem, 8vw, 4rem);
@@ -128,6 +145,14 @@ export class LevelCompletionScreen {
         font-weight: 900;
         animation: gradientShift 2s ease-in-out infinite, bounceIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         opacity: 0;
+      }
+
+      .completion-subtitle {
+        max-width: 30rem;
+        margin: 0 auto 18px;
+        color: rgba(255, 255, 255, 0.82);
+        line-height: 1.5;
+        font-size: 1rem;
       }
 
       @keyframes gradientShift {
@@ -421,6 +446,30 @@ export class LevelCompletionScreen {
       'phonics': 'Phonics'
     };
     return names[levelName] || levelName;
+  }
+
+  getCelebrationCopy(levelName, percentage, grade) {
+    if (percentage >= 95) {
+      return {
+        title: 'You did it!',
+        subtitle: `That ${this.formatLevelName(levelName)} round was sparkling. ${grade} work!`,
+        badge: 'Classroom high-five'
+      };
+    }
+
+    if (percentage >= 75) {
+      return {
+        title: 'Nice job!',
+        subtitle: `You kept going, learned a lot, and finished strong in ${this.formatLevelName(levelName)}.`,
+        badge: 'Bright progress'
+      };
+    }
+
+    return {
+      title: 'Great effort!',
+      subtitle: `Every try helps you grow. Want another cheerful turn at ${this.formatLevelName(levelName)}?`,
+      badge: 'Keep shining'
+    };
   }
 
   getGrade(percentage) {

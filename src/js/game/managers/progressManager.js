@@ -1,7 +1,7 @@
 export class ProgressManager {
   constructor() {
     this.storageKey = 'superstudent_progress';
-    this.levels = ['colors', 'shapes', 'alphabet', 'numbers', 'clcase'];
+    this.levels = ['colors', 'shapes', 'alphabet', 'numbers', 'clcase', 'phonics'];
     this.progress = this.loadProgress();
   }
 
@@ -17,7 +17,7 @@ export class ProgressManager {
 
     // Default progress - ALL levels unlocked from start
     return {
-      unlockedLevels: ['colors', 'shapes', 'alphabet', 'numbers', 'clcase'],
+      unlockedLevels: ['colors', 'shapes', 'alphabet', 'numbers', 'clcase', 'phonics'],
       completedLevels: [],
       scores: {},
       totalScore: 0
@@ -72,7 +72,7 @@ export class ProgressManager {
 
   resetProgress() {
     this.progress = {
-      unlockedLevels: ['colors', 'shapes', 'alphabet', 'numbers', 'clcase'],
+      unlockedLevels: ['colors', 'shapes', 'alphabet', 'numbers', 'clcase', 'phonics'],
       completedLevels: [],
       scores: {},
       totalScore: 0

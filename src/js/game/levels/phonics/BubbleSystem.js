@@ -80,6 +80,10 @@ export class BubbleSystem {
     this.canvas.addEventListener('touchstart', this.onPointerDown);
   }
 
+  isE2EMode() {
+    return Boolean(window.__superStudentTestMode?.enabled);
+  }
+
   removeEventListeners() {
     this.canvas.removeEventListener('pointerdown', this.onPointerDown);
     this.canvas.removeEventListener('touchstart', this.onPointerDown);
@@ -87,6 +91,12 @@ export class BubbleSystem {
 
   setDifficulty(difficulty) {
     this.currentDifficulty = difficulty;
+    if (this.isE2EMode()) {
+      this.spawnRate = 250;
+      this.maxBubbles = 4;
+      return;
+    }
+
     this.spawnRate = this.config.education.difficulty[difficulty].spawnRate;
     this.maxBubbles = Math.floor(this.config.performance.maxBubbles *
       (difficulty === 'easy' ? 0.7 : difficulty === 'medium' ? 0.85 : 1.0));
@@ -140,6 +150,14 @@ export class BubbleSystem {
     this.bubbles.push(bubble);
     this.activeBubbles++;
 
+    if (this.isE2EMode() && isTarget) {
+      bubble.x = this.canvas.width * 0.5;
+      bubble.y = this.canvas.height * 0.68;
+      bubble.vx = 0;
+      bubble.vy = -0.05;
+      bubble.size = Math.max(80, bubble.size);
+    }
+
     // Play phonics sound if enabled
     if (this.config.audio.phonics.playOnSpawn) {
       this.soundManager.playPhonicsSound(bubble.letter, this.config.audio.phonics.volume);
@@ -173,6 +191,15 @@ export class BubbleSystem {
   updateSpawning(_deltaTime) {
     const now = performance.now();
     if (now - this.lastSpawnTime >= this.spawnRate) {
+      if (this.isE2EMode() && this.targetLetter) {
+        const hasTarget = this.bubbles.some((bubble) => bubble.active && bubble.isTarget && !bubble.isPopping);
+        if (!hasTarget) {
+          this.spawnBubble(this.targetLetter, true);
+          this.lastSpawnTime = now;
+          return;
+        }
+      }
+
       const shouldSpawnTarget = this.targetLetter &&
                                Math.random() < 0.4 &&
                                !this.bubbles.some(b => b.isTarget);

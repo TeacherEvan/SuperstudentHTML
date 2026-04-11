@@ -4,7 +4,9 @@ import { GAME_CONFIG } from '../../config/constants.js';
 export default class ColorsLevel extends BaseLevel {
   constructor(canvas, ctx, managers, helpers) {
     super(canvas, ctx, managers, helpers);
-    this.memoryTime = GAME_CONFIG.COLORS_LEVEL_CONFIG.MEMORY_DISPLAY_TIME;
+    this.memoryTime = this.isE2EMode()
+      ? 150
+      : GAME_CONFIG.COLORS_LEVEL_CONFIG.MEMORY_DISPLAY_TIME;
     this.dots = [];
     this.state = 'memory';
     this.targetDotsRemaining = 0;
@@ -53,14 +55,14 @@ export default class ColorsLevel extends BaseLevel {
     this.levelStartTime = performance.now();
 
     // Memory Phase: Player clicks to remember the target color, shown for ~2 seconds
-    setTimeout(() => this.disperse(), this.memoryTime);
+    this.createTimer(() => this.disperse(), this.memoryTime);
   }
 
   disperse() {
     // Dispersion Phase: Mother dot explodes into 85 total dots
     this.state = 'playing';
-    const totalDots = GAME_CONFIG.COLORS_LEVEL_CONFIG.TOTAL_DOTS;
-    const targetDots = GAME_CONFIG.COLORS_LEVEL_CONFIG.TARGET_DOTS;
+    const totalDots = this.isE2EMode() ? 6 : GAME_CONFIG.COLORS_LEVEL_CONFIG.TOTAL_DOTS;
+    const targetDots = this.isE2EMode() ? 3 : GAME_CONFIG.COLORS_LEVEL_CONFIG.TARGET_DOTS;
     this.targetDotsRemaining = targetDots;
     const distractorColors = GAME_CONFIG.COLORS.COLORS_LIST.filter(c => c !== this.targetColor);
 
@@ -79,6 +81,9 @@ export default class ColorsLevel extends BaseLevel {
   addDot(colArray, isTarget) {
     const angle = Math.random() * Math.PI * 2;
     const speed = Math.random() * (GAME_CONFIG.DOT_SPEED_RANGE[1] - GAME_CONFIG.DOT_SPEED_RANGE[0]) + GAME_CONFIG.DOT_SPEED_RANGE[0];
+    const isE2EMode = this.isE2EMode();
+    const targetIndex = this.dots.filter(dot => dot.isTarget).length;
+    const distractorIndex = this.dots.filter(dot => !dot.isTarget).length;
     const dot = {
       x: this.mother.x,
       y: this.mother.y,
@@ -91,6 +96,33 @@ export default class ColorsLevel extends BaseLevel {
       pulsePhase: Math.random() * Math.PI * 2,
       trail: []
     };
+
+    if (isE2EMode) {
+      if (isTarget) {
+        const targetLayouts = [
+          { x: 0.32, y: 0.36 },
+          { x: 0.5, y: 0.28 },
+          { x: 0.68, y: 0.36 }
+        ];
+        const layout = targetLayouts[targetIndex % targetLayouts.length];
+        dot.x = this.canvas.width * layout.x;
+        dot.y = this.canvas.height * layout.y;
+        dot.dx = 0;
+        dot.dy = 0;
+      } else {
+        const distractorLayouts = [
+          { x: 0.22, y: 0.72 },
+          { x: 0.5, y: 0.78 },
+          { x: 0.78, y: 0.72 }
+        ];
+        const layout = distractorLayouts[distractorIndex % distractorLayouts.length];
+        dot.x = this.canvas.width * layout.x;
+        dot.y = this.canvas.height * layout.y;
+        dot.dx = 0;
+        dot.dy = 0;
+      }
+    }
+
     this.dots.push(dot);
   }
 
@@ -354,7 +386,17 @@ export default class ColorsLevel extends BaseLevel {
     // End level after celebration
     this.createTimer(() => {
       this.end();
-    }, 3000);
+    }, 3000 * this.getE2EConfig().speedMultiplier);
+  }
+
+  getTestSnapshot() {
+    return {
+      state: this.state,
+      targetDotsRemaining: this.targetDotsRemaining,
+      targets: this.dots
+        .filter(dot => dot.isTarget)
+        .map((dot, index) => this.toNormalizedPoint(dot.x, dot.y, { index, color: dot.color }))
+    };
   }
 
   cleanup() {

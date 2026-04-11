@@ -1,183 +1,264 @@
-import { getDisplaySettings } from '../config/displayModes.js';
-// Lazy-loaded level modules - imported dynamically for code splitting
-// import AlphabetLevel from '../game/levels/alphabetLevel.js';
-// import ClCaseLevel from '../game/levels/clCaseLevel.js';
-// import ColorsLevel from '../game/levels/colorsLevel.js';
-// import NumbersLevel from '../game/levels/numbersLevel.js';
-// import { PhonicsLevel } from '../game/levels/phonics/PhonicsLevel.js';
-// import ShapesLevel from '../game/levels/shapesLevel.js';
+import { GAME_CONFIG } from '../config/constants.js';
 import CenterPieceManager from '../game/managers/centerPieceManager.js';
 import CheckpointManager from '../game/managers/checkpointManager.js';
 import FlamethrowerManager from '../game/managers/flamethrowerManager.js';
 import GlassShatterManager from '../game/managers/glassShatterManager.js';
 import HudManager from '../game/managers/hudManager.js';
 import MultiTouchManager from '../game/managers/multiTouchManager.js';
-import { InputHandler } from '../inputHandler.js';
+import { ProgressManager } from '../game/managers/progressManager.js';
 import { LevelMenu } from '../ui/components/levelMenu.js';
 import { LevelCompletionScreen } from '../ui/components/levelCompletionScreen.js';
-import { WelcomeScreen } from '../ui/components/welcomeScreen.js';
 import { eventTracker } from '../utils/eventTracker.js';
-import { loadLevelModule, preloadAllLevels } from '../utils/lazyLevelLoader.js';
+import { loadLevelModule } from '../utils/lazyLevelLoader.js';
 import { performanceMonitor } from '../utils/performanceMonitor.js';
 import { getAudioConfig } from './audio/audioConfig.js';
 import SoundManager from './audio/soundManager.js';
 import { GameLoop } from './engine/gameLoop.js';
 import { Renderer } from './engine/renderer.js';
 import ParticleManager from './graphics/particleSystem.js';
-import ResourceManager from './resources/resourceManager.js';
 
-// Core rendering components
-let canvas;
-let renderer;
-let ctx;
-
-// System managers
-let displaySettings;
-let resourceManager;
-let particleManager;
-let soundManager;
-const managers = {};
-
-// Game state
-let currentLevel = null;
-let currentLevelName = '';
-let gameState = 'menu'; // menu, playing, paused, gameOver
-let gameLoop;
-
-// UI components
-let welcomeScreen;
-let levelCompletionScreen;
-
-// Timing and lifecycle
-let lastTime = 0;
-let levelCompletionTimer = null;
-const isInitialized = false;
-
-// Circuit breaker to prevent infinite loops
+const LEVEL_COMPLETION_DELAY_MS = 3000;
 const MAX_RETRY_ATTEMPTS = 3;
-const retryAttempts = { showLevelMenu: 0, startLevel: 0, initializeWelcomeScreen: 0 };
+const LEVEL_SEQUENCE = ['colors', 'shapes', 'alphabet', 'numbers', 'clcase', 'phonics'];
 
-// Timing constants
-const LEVEL_COMPLETION_DELAY_MS = 3000; // Time before returning to menu after level completion
+function getE2EConfig() {
+  const query = new URLSearchParams(window.location.search);
+  const queryEnabled = query.get('e2e') === '1';
+  const storedEnabled = localStorage.getItem('superstudent_e2e') === '1';
+  const enabled = queryEnabled || storedEnabled;
 
-/**
- * Display a critical error screen and halt further automatic retries.
- * @param {string} userMessage - Human-readable explanation of the failure.
- * @param {Error} [err] - Optional original error object for logging.
- */
-function showFatalErrorScreen(userMessage, err) {
-  if (err) {
-    console.error('🛑 Fatal error encountered:', err);
-  }
-  try {
-    document.body.innerHTML = `
-      <div style="color: white; background: #222; padding: 20px; font-family: Arial; text-align: center;">
-        <h1>Critical Error</h1>
-        <p>${userMessage}</p>
-        <p>Please refresh the page to try again.</p>
-        <button onclick="location.reload()">Refresh Page</button>
-      </div>
-    `;
-  } catch (uiErr) {
-    console.error('❌ Failed to display fatal error screen:', uiErr);
+  return {
+    enabled,
+    speedMultiplier: enabled ? 0.25 : 1,
+    deterministicSeed: query.get('seed') || 'superstudent-e2e'
+  };
+}
+
+function resolveDisplaySettings(resourceManager) {
+  const displayMode = resourceManager?.getDisplayMode?.() || GAME_CONFIG.DEFAULT_MODE;
+
+  return {
+    mode: displayMode,
+    maxParticles: GAME_CONFIG.MAX_PARTICLES[displayMode] || GAME_CONFIG.MAX_PARTICLES[GAME_CONFIG.DEFAULT_MODE]
+  };
+}
+
+function applyDisplaySettings(runtime) {
+  runtime.displaySettings = resolveDisplaySettings(runtime.resourceManager);
+  runtime.managers.displaySettings = runtime.displaySettings;
+
+  if (runtime.particleManager) {
+    runtime.particleManager.maxParticles = runtime.displaySettings.maxParticles;
   }
 }
 
-function resizeCanvas() {
-  if (!renderer) {
-    console.warn('Renderer not available for resize');
-    return;
+export class SuperStudentRuntime {
+  constructor({ canvas, resourceManager } = {}) {
+    this.canvas = canvas || document.getElementById('game-canvas');
+    this.ctx = this.canvas?.getContext('2d') || null;
+    this.resourceManager = resourceManager;
+    this.renderer = null;
+    this.displaySettings = null;
+    this.particleManager = null;
+    this.soundManager = null;
+    this.gameLoop = null;
+    this.currentLevel = null;
+    this.currentLevelName = '';
+    this.gameState = 'menu';
+    this.levelCompletionScreen = null;
+    this.levelCompletionTimer = null;
+    this.progressManager = new ProgressManager();
+    this.isInitialized = false;
+    this.retryAttempts = {
+      showLevelMenu: 0,
+      startLevel: 0
+    };
+    this.e2eConfig = getE2EConfig();
+    this.performanceListener = null;
+    this.boundKeydownHandler = this.handleGlobalKeydown.bind(this);
+    this.boundGameLoopErrorHandler = this.handleGameLoopError.bind(this);
+    this.boundViewportResizeHandler = this.handleViewportResize.bind(this);
+
+    this.managers = {};
   }
 
-  try {
-    renderer.setupCanvas();
-    eventTracker.trackEvent('system', 'canvas_resized', {
-      width: canvas.width,
-      height: canvas.height
+  async initialize() {
+    if (this.isInitialized) {
+      return this;
+    }
+
+    if (!this.canvas) {
+      throw new Error('Canvas element with id "game-canvas" not found');
+    }
+
+    this.renderer = new Renderer(this.canvas);
+    this.ctx = this.renderer.ctx;
+    applyDisplaySettings(this);
+    this.particleManager = new ParticleManager(this.displaySettings.maxParticles);
+    this.soundManager = new SoundManager();
+    performanceMonitor.setParticleManager(this.particleManager);
+
+    const audioConfig = getAudioConfig();
+    this.soundManager.setGlobalVolume(audioConfig.masterVolume);
+
+    this.managers.displaySettings = this.displaySettings;
+    this.managers.particleManager = this.particleManager;
+    this.managers.sound = this.soundManager;
+    this.managers.runtime = this;
+
+    this.attachRuntimeListeners();
+
+    this.gameLoop = new GameLoop(
+      (deltaTime) => this.update(deltaTime),
+      () => this.render()
+    );
+    this.gameLoop.start();
+
+    this.isInitialized = true;
+    this.syncPublicApi();
+    this.handleViewportResize();
+    eventTracker.trackEvent('system', 'runtime_initialized', {
+      entry: 'src/js/core/main.js',
+      e2eMode: this.e2eConfig.enabled
     });
 
-    // Update managers and level with new canvas size
-    if (managers.hud) managers.hud.resize(renderer.canvas);
-    if (managers.centerPiece) managers.centerPiece.resize(renderer.canvas);
-    if (currentLevel && typeof currentLevel.resize === 'function') {
-      currentLevel.resize(renderer.canvas);
-    }
-  } catch (error) {
-    eventTracker.trackError(error, { context: 'canvas_resize' });
+    return this;
   }
-}
 
-// Initialize and show welcome screen with animated background
-function initializeWelcomeScreen() {
-  try {
-    eventTracker.trackEvent('ui', 'welcome_screen_init_start');
+  attachRuntimeListeners() {
+    if (!this.performanceListener) {
+      this.performanceListener = (event) => {
+        const { level, settings } = event.detail;
+        eventTracker.trackEvent('performance', 'adaptive_adjustment', {
+          level,
+          settings
+        });
 
-    // Create welcome screen instance
-    welcomeScreen = new WelcomeScreen(canvas, ctx, resourceManager);
+        if (this.particleManager && typeof this.particleManager.setPerformanceMode === 'function') {
+          this.particleManager.setPerformanceMode(level);
+        }
+      };
+      window.addEventListener('PerformanceLevelChanged', this.performanceListener);
+    }
 
-    // Set up callbacks
-    welcomeScreen.onStartGame = () => {
-      eventTracker.trackEvent('ui', 'start_game_clicked');
-      showLevelMenu();
+    window.addEventListener('keydown', this.boundKeydownHandler);
+    window.addEventListener('GameLoopError', this.boundGameLoopErrorHandler);
+  }
+
+  syncPublicApi() {
+    const api = this.getPublicApi();
+    window.__superStudentRuntime = api;
+    window.__superStudentTestMode = this.e2eConfig;
+    window.gameInitialized = () => this.isInitialized;
+    window.startLevel = (levelName) => this.startLevel(levelName);
+  }
+
+  getPublicApi() {
+    return {
+      showLevelMenu: () => this.showLevelMenu(),
+      showOptions: () => this.showOptions(),
+      startLevel: (levelName) => this.startLevel(levelName),
+      forceCompleteCurrentLevel: () => this.forceCompleteCurrentLevel(),
+      getStateSnapshot: () => this.getStateSnapshot(),
+      getLevelSnapshot: () => this.currentLevel?.getTestSnapshot?.() || null,
+      isE2EMode: () => this.e2eConfig.enabled,
+      speedMultiplier: this.e2eConfig.speedMultiplier,
+      seed: this.e2eConfig.deterministicSeed
     };
+  }
 
-    welcomeScreen.onShowOptions = () => {
-      eventTracker.trackEvent('ui', 'options_clicked');
-      // TODO: Implement options screen
-      showLevelMenu(); // For now, just go to level menu
+  getStateSnapshot() {
+    return {
+      isInitialized: this.isInitialized,
+      gameState: this.gameState,
+      currentLevelName: this.currentLevelName,
+      menuVisible: Boolean(document.getElementById('level-menu-container')),
+      completionVisible: Boolean(document.getElementById('completion-screen')),
+      loadingVisible: Boolean(document.getElementById('level-loading-overlay')),
+      errorVisible: Boolean(document.getElementById('error-container')),
+      e2eMode: this.e2eConfig.enabled
     };
+  }
 
-    // Show the welcome screen
-    welcomeScreen.show();
-    gameState = 'menu';
+  handleViewportResize() {
+    if (!this.renderer) {
+      return;
+    }
 
-    // Reset retry counter on success
-    retryAttempts.initializeWelcomeScreen = 0;
-    eventTracker.trackEvent('ui', 'welcome_screen_init_success');
-  } catch (error) {
-    eventTracker.trackError(error, { context: 'welcome_screen_init' });
-    retryAttempts.initializeWelcomeScreen++;
+    try {
+      this.renderer.setupCanvas();
 
-    if (retryAttempts.initializeWelcomeScreen < MAX_RETRY_ATTEMPTS) {
-      console.log(
-        `🔄 Retrying welcome screen initialization (attempt ${retryAttempts.initializeWelcomeScreen}/${MAX_RETRY_ATTEMPTS})`
-      );
-      setTimeout(() => initializeWelcomeScreen(), 1000);
-    } else {
-      console.error(
-        '💥 Max retry attempts reached for welcome screen. Falling back to level menu.'
-      );
-      // Only call showLevelMenu if we haven't exceeded its retry attempts
-      if (retryAttempts.showLevelMenu < MAX_RETRY_ATTEMPTS) {
-        showLevelMenu();
-      } else {
-        handleCriticalFailure(
-          'Unable to initialize welcome screen or level menu'
-        );
+      if (this.managers.hud) {
+        this.managers.hud.resize(this.renderer.canvas);
       }
+      if (this.managers.centerPiece) {
+        this.managers.centerPiece.resize(this.renderer.canvas);
+      }
+      if (this.currentLevel && typeof this.currentLevel.resize === 'function') {
+        this.currentLevel.resize(this.renderer.canvas);
+      }
+    } catch (error) {
+      eventTracker.trackError(error, { context: 'canvas_resize' });
     }
   }
-}
 
-// Show level selection menu
-function showLevelMenu() {
-  try {
-    console.log('🎮 Showing level menu...');
-
-    // Hide welcome screen if it is visible
-    if (welcomeScreen) {
-      welcomeScreen.hide();
+  handleGlobalKeydown(event) {
+    try {
+      switch (event.code) {
+      case 'Space':
+        event.preventDefault();
+        if (this.gameState === 'playing') {
+          this.togglePause();
+        }
+        break;
+      case 'KeyR':
+        if (this.gameState === 'gameOver' || this.gameState === 'paused') {
+          this.restartGame();
+        }
+        break;
+      case 'Escape':
+        if (this.gameState === 'playing') {
+          this.pauseGame();
+        } else if (this.gameState === 'paused') {
+          this.resumeGame();
+        }
+        break;
+      }
+    } catch (error) {
+      eventTracker.trackError(error, { context: 'keyboard_input' });
     }
+  }
 
-    // Remove any existing level-menu container to avoid duplicates
-    let menuContainer = document.getElementById('level-menu-container');
+  handleGameLoopError(event) {
+    const detail = event?.detail instanceof Error ? event.detail : new Error('Unknown game loop error');
+    this.handleCriticalFailure(detail.message, detail);
+  }
+
+  resetRetryCounters() {
+    this.retryAttempts.showLevelMenu = 0;
+    this.retryAttempts.startLevel = 0;
+  }
+
+  clearLevelCompletionTimer() {
+    if (this.levelCompletionTimer) {
+      clearTimeout(this.levelCompletionTimer);
+      this.levelCompletionTimer = null;
+    }
+  }
+
+  clearLevelMenu() {
+    const menuContainer = document.getElementById('level-menu-container');
     if (menuContainer) {
       menuContainer.remove();
     }
+  }
 
-    // Build the level-menu container
-    menuContainer = document.createElement('div');
+  ensureMenuContainer() {
+    this.clearLevelMenu();
+
+    const menuContainer = document.createElement('div');
     menuContainer.id = 'level-menu-container';
+    menuContainer.dataset.testid = 'level-menu-container';
     menuContainer.style.cssText = `
       position: fixed;
       top: 0;
@@ -194,657 +275,424 @@ function showLevelMenu() {
       font-family: Arial, sans-serif;
       text-align: center;
     `;
+
     document.body.appendChild(menuContainer);
-
-    // Instantiate the actual menu component
-    const menu = new LevelMenu('level-menu-container', startLevel);
-    menu.show();
-    gameState = 'menu';
-
-    // Success – reset retry counter
-    retryAttempts.showLevelMenu = 0;
-  } catch (error) {
-    console.error('❌ Error showing level menu:', error);
-    retryAttempts.showLevelMenu++;
-    if (retryAttempts.showLevelMenu < MAX_RETRY_ATTEMPTS) {
-      console.log(
-        `🔄 Retrying level menu display (attempt ${retryAttempts.showLevelMenu}/${MAX_RETRY_ATTEMPTS})`
-      );
-      setTimeout(showLevelMenu, 1000);
-    } else {
-      console.error(
-        '💥 Max retry attempts reached for level menu. Attempting fallback to colors level.'
-      );
-      if (retryAttempts.startLevel < MAX_RETRY_ATTEMPTS) {
-        startLevel('colors');
-      } else {
-        handleCriticalFailure(
-          'Unable to show level menu or start fallback level'
-        );
-      }
-    }
+    return menuContainer;
   }
-}
 
-// Start a specific level with lazy loading
-async function startLevel(levelName) {
-  try {
-    console.log(`🎯 Starting level: ${levelName}`);
-
-    // Cancel any pending completion timers
-    if (levelCompletionTimer) {
-      clearTimeout(levelCompletionTimer);
-      levelCompletionTimer = null;
-    }
-
-    // Remove the menu container if it is present
-    const menuContainer = document.getElementById('level-menu-container');
-    if (menuContainer) {
-      menuContainer.remove();
-    }
-
-    gameState = 'loading'; // New loading state
-    currentLevelName = levelName;
-    eventTracker.trackState('currentLevel', levelName);
-
-    // TODO: [OPTIMIZATION] Consider prefetching adjacent levels during idle time
-    // Lazy load the level module dynamically
-    const LevelClass = await loadLevelModule(levelName);
-
-    // After loading, initialize managers and set up level
-    initializeManagers();
-
-    const helpers = {
-      createExplosion: (x, y, color, intensity) => {
-        const count = Math.floor(20 * intensity);
-        for (let i = 0; i < count; i++) {
-          const angle = Math.random() * Math.PI * 2;
-          const speed = 2 + Math.random() * 4;
-          particleManager.createParticle(
-            x,
-            y,
-            color,
-            2 + Math.random() * 3,
-            Math.cos(angle) * speed,
-            Math.sin(angle) * speed,
-            500 + Math.random() * 1000
-          );
-        }
-      },
-      applyExplosionEffect: (x, y, _radius, force) => {
-        managers.glassShatter.triggerShatter(x, y, force * 0.5);
-      },
-      applyScreenShake: (_intensity, _duration) => {
-        // TODO: [ENHANCEMENT] Implement screen shake through centerPiece manager
-        // Simple screen shake effect using canvas translation
-        if (managers.centerPiece) {
-          // Could implement screen shake through centerPiece manager
-          // For now, just trigger a visual effect
-        }
-      },
-      onLevelComplete: (score) => {
-        handleLevelComplete(levelName, score);
-      },
-    };
-
-    lastTime = performance.now();
-
-    // Create level instance from dynamically loaded class
-    currentLevel = new LevelClass(canvas, ctx, managers, helpers);
-
-    gameState = 'playing';
-    currentLevel.start();
-    retryAttempts.startLevel = 0;
-    console.log(`✅ Level ${levelName} started successfully`);
-  } catch (error) {
-    console.error('❌ Error starting level:', error);
-    retryAttempts.startLevel++;
-    if (retryAttempts.startLevel < MAX_RETRY_ATTEMPTS) {
-      setTimeout(() => startLevel(levelName), 1000);
-    } else {
-      console.error(
-        '💥 Max retry attempts reached for starting level. Reverting to menu.'
-      );
-      gameState = 'menu';
-      if (retryAttempts.showLevelMenu < MAX_RETRY_ATTEMPTS) {
-        showLevelMenu();
-      } else {
-        handleCriticalFailure(
-          `Unable to start level ${levelName} or return to menu`
-        );
-      }
-    }
+  initializeManagers() {
+    this.managers.hud = new HudManager(this.canvas, this.ctx);
+    this.managers.checkpoint = new CheckpointManager(this.canvas, this.ctx);
+    this.managers.flamethrower = new FlamethrowerManager(this.canvas, this.ctx, this.particleManager);
+    this.managers.centerPiece = new CenterPieceManager(this.canvas, this.ctx, this.particleManager);
+    this.managers.multiTouch = new MultiTouchManager(this.canvas);
+    this.managers.glassShatter = new GlassShatterManager(this.canvas, this.ctx, this.particleManager);
+    this.managers.particleManager = this.particleManager;
+    this.managers.sound = this.soundManager;
   }
-}
 
-// Show options menu
-function showOptions() {
-  try {
-    let modal = document.getElementById('settings-modal');
-    if (!modal) {
-      modal = document.createElement('div');
-      modal.id = 'settings-modal';
-      document.body.appendChild(modal);
-    }
-
-    modal.innerHTML = `
-      <div class="modal-background"></div>
-      <div class="modal-content">
-        <h2>Options</h2>
-        <label>Display Mode:</label>
-        <select id="display-mode-select">
-          <option value="DEFAULT">Default</option>
-          <option value="QBOARD">QBoard</option>
-        </select>
-        <label>Volume:</label>
-        <input type="range" id="volume-range" min="0" max="1" step="0.01">
-        <button id="save-options">Save</button>
-        <button id="close-options">Close</button>
-      </div>
-    `;
-    modal.style.display = 'block';
-
-    const select = document.getElementById('display-mode-select');
-    select.value = resourceManager.getDisplayMode();
-    document.getElementById('volume-range').value = soundManager.volume;
-
-    document.getElementById('save-options').addEventListener('click', () => {
-      resourceManager.setDisplayMode(select.value);
-      soundManager.setGlobalVolume(
-        parseFloat(document.getElementById('volume-range').value)
-      );
-      modal.style.display = 'none';
-    });
-    document.getElementById('close-options').addEventListener('click', () => {
-      modal.style.display = 'none';
-    });
-  } catch (error) {
-    console.error('❌ Error showing options:', error);
-  }
-}
-
-function initializeManagers() {
-  try {
-    console.log('🔧 Initializing managers...');
-    managers.hud = new HudManager(canvas, ctx);
-    managers.checkpoint = new CheckpointManager(canvas, ctx);
-    managers.flamethrower = new FlamethrowerManager(
-      canvas,
-      ctx,
-      particleManager
-    );
-    managers.centerPiece = new CenterPieceManager(canvas, ctx, particleManager);
-    managers.multiTouch = new MultiTouchManager(canvas);
-    managers.glassShatter = new GlassShatterManager(
-      canvas,
-      ctx,
-      particleManager
-    );
-    managers.particleManager = particleManager;
-    managers.sound = soundManager;
-    console.log('✅ Managers initialized successfully');
-  } catch (error) {
-    console.error('❌ Error initializing managers:', error);
-  }
-}
-
-function setupGlobalEventListeners() {
-  // Keyboard controls
-  window.addEventListener('keydown', (e) => {
+  showLevelMenu() {
     try {
-      switch (e.code) {
-      case 'Space':
-        e.preventDefault();
-        if (gameState === 'playing') {
-          togglePause();
-        }
-        break;
-      case 'KeyR':
-        if (gameState === 'gameOver' || gameState === 'paused') {
-          restartGame();
-        }
-        break;
-      case 'Escape':
-        if (gameState === 'playing') {
-          pauseGame();
-        } else if (gameState === 'paused') {
-          resumeGame();
-        }
-        break;
+      applyDisplaySettings(this);
+      this.clearLevelCompletionTimer();
+      if (this.levelCompletionScreen) {
+        this.levelCompletionScreen.hide();
       }
+
+      const container = this.ensureMenuContainer();
+      const menu = new LevelMenu('level-menu-container', (levelName) => this.startLevel(levelName));
+      menu.show();
+      this.gameState = 'menu';
+      this.resetRetryCounters();
+      this.syncPublicApi();
+      eventTracker.trackEvent('ui', 'level_menu_shown');
+      return container;
     } catch (error) {
-      console.error('❌ Error handling keyboard event:', error);
-    }
-  });
+      eventTracker.trackError(error, { context: 'show_level_menu' });
+      this.retryAttempts.showLevelMenu += 1;
 
-  // Prevent right-click context menu
-  canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-}
-
-function togglePause() {
-  if (gameState === 'playing') {
-    pauseGame();
-  } else if (gameState === 'paused') {
-    resumeGame();
-  }
-}
-
-function pauseGame() {
-  if (gameState === 'playing') {
-    gameState = 'paused';
-    if (currentLevel) {
-      currentLevel.pause();
-    }
-    managers.checkpoint.showCheckpoint('Game Paused');
-  }
-}
-
-function resumeGame() {
-  if (gameState === 'paused') {
-    gameState = 'playing';
-    if (currentLevel) {
-      currentLevel.resume();
-    }
-  }
-}
-
-function restartGame() {
-  gameState = 'playing';
-  if (currentLevel) {
-    currentLevel.reset();
-    currentLevel.start();
-  }
-}
-
-/*
-function cleanupGame() {
-  // Cleanup current level
-  if (currentLevel && typeof currentLevel.destroy === "function") {
-    currentLevel.destroy();
-  }
-
-  // Cleanup managers
-  if (managers.input && typeof managers.input.destroy === "function") {
-    managers.input.destroy();
-  }
-  if (
-    managers.multiTouch &&
-    typeof managers.multiTouch.destroy === "function"
-  ) {
-    managers.multiTouch.destroy();
-  }
-}
-*/
-
-// Reset all retry counters (useful for manual resets or successful state transitions)
-function resetRetryCounters() {
-  retryAttempts.showLevelMenu = 0;
-  retryAttempts.startLevel = 0;
-  retryAttempts.initializeWelcomeScreen = 0;
-  eventTracker.trackEvent('system', 'retry_counters_reset');
-}
-
-// Handle critical failures when all retry attempts are exhausted
-function handleCriticalFailure(message) {
-  console.error('💥 CRITICAL FAILURE:', message);
-
-  // Reset all retry counters
-  resetRetryCounters();
-
-  // Set game to a safe error state
-  gameState = 'error';
-
-  // Clean up any existing UI elements
-  const menuContainer = document.getElementById('level-menu-container');
-  if (menuContainer) {
-    menuContainer.remove();
-  }
-
-  // Display error message to user
-  const errorContainer = document.createElement('div');
-  errorContainer.id = 'error-container';
-  errorContainer.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(139, 0, 0, 0.9);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
-    color: white;
-    font-family: Arial, sans-serif;
-    text-align: center;
-    padding: 20px;
-  `;
-
-  errorContainer.innerHTML = `
-    <h1>⚠️ Game Error</h1>
-    <p style="font-size: 18px; margin: 20px 0;">${message}</p>
-    <p style="font-size: 14px; margin: 20px 0;">Please refresh the page to restart the game.</p>
-    <button onclick="window.location.reload()" style="
-      padding: 15px 30px;
-      font-size: 16px;
-      background: #ff4444;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-top: 20px;
-    ">Reload Game</button>
-  `;
-
-  document.body.appendChild(errorContainer);
-
-  // Stop the game loop to prevent further issues
-  if (gameLoop) {
-    gameLoop.stop();
-  }
-}
-
-function handleLevelComplete(levelName, score) {
-  try {
-    console.log(`Level ${levelName} completed with score: ${score}`);
-    gameState = 'completed';
-
-    resetRetryCounters();
-
-    if (levelCompletionTimer) {
-      clearTimeout(levelCompletionTimer);
-      levelCompletionTimer = null;
-    }
-
-    managers.checkpoint.showCheckpoint(
-      `Level Complete!<br>Score: ${score}<br>Next level unlocked!`
-    );
-
-    levelCompletionTimer = setTimeout(() => {
-      if (gameState === 'completed') {
-        showLevelMenu();
-      }
-      levelCompletionTimer = null;
-    }, LEVEL_COMPLETION_DELAY_MS);
-
-    // Calculate total possible score for this level
-    let totalPossible = 1000; // Default
-    if (levelName === 'colors') {
-      totalPossible = 1700; // 17 targets * 100 points each
-    } else if (['alphabet', 'numbers', 'clcase', 'shapes'].includes(levelName)) {
-      totalPossible = 2600; // 26 letters/numbers * 100 points each
-    }
-
-    // Show completion screen
-    if (!levelCompletionScreen) {
-      levelCompletionScreen = new LevelCompletionScreen();
-      levelCompletionScreen.setCallbacks(
-        () => startLevel(levelName), // Restart current level
-        () => showLevelMenu(), // Go to level menu
-        () => showLevelMenu() // Back to menu
-      );
-    }
-
-    levelCompletionScreen.show(levelName, score, totalPossible);
-
-  } catch (error) {
-    eventTracker.trackError(error, { context: 'level_completion' });
-    showLevelMenu();
-  }
-}
-
-window.addEventListener('resize', resizeCanvas);
-
-// Game loop functions
-function update(deltaTime) {
-  try {
-    if (gameState === 'playing' && currentLevel) {
-      currentLevel.update(deltaTime);
-    }
-
-    // Update managers
-    if (managers.centerPiece) managers.centerPiece.update(deltaTime);
-    if (managers.flamethrower) managers.flamethrower.update(deltaTime);
-    if (managers.glassShatter) managers.glassShatter.update(deltaTime);
-    if (managers.hud) managers.hud.update(deltaTime);
-    if (managers.checkpoint) managers.checkpoint.update(deltaTime);
-
-    // Update particle count for performance monitoring
-    if (managers.particleManager) {
-      performanceMonitor.updateParticleCount(
-        managers.particleManager.activeParticles || 0
-      );
-    }
-  } catch (error) {
-    eventTracker.trackError(error, {
-      context: 'update_loop',
-      gameState,
-      currentLevel: currentLevelName,
-      deltaTime,
-    });
-  }
-}
-
-function render() {
-  const frameStartTime = performanceMonitor.frameStart();
-
-  try {
-    renderer.clear();
-
-    if (gameState === 'playing' && currentLevel) {
-      currentLevel.render();
-    }
-
-    // Render managers
-    if (managers.centerPiece) managers.centerPiece.draw(ctx);
-    if (managers.particleManager)
-      managers.particleManager.updateAndDraw(
-        ctx,
-        gameLoop ? gameLoop.lastDeltaTime : 16
-      );
-    if (managers.flamethrower) managers.flamethrower.draw(ctx);
-    if (managers.glassShatter) managers.glassShatter.draw(ctx);
-    if (managers.hud) managers.hud.draw(ctx);
-    if (managers.checkpoint) managers.checkpoint.draw(ctx);
-  } catch (error) {
-    eventTracker.trackError(error, {
-      context: 'render_loop',
-      gameState,
-      currentLevel: currentLevelName,
-    });
-  }
-
-  // Complete performance monitoring for this frame
-  performanceMonitor.frameEnd(frameStartTime);
-}
-
-/*
-// Enhanced canvas setup with better error handling
-function setupCanvas() {
-  console.log("� Setting up canvas...");
-
-  // Get canvas element
-  canvas = document.getElementById("game-canvas");
-  if (!canvas) {
-    throw new Error('Canvas element with id "game-canvas" not found!');
-  }
-
-  // Ensure canvas has proper dimensions
-  if (!canvas.style.width && !canvas.style.height) {
-    canvas.style.width = "100vw";
-    canvas.style.height = "100vh";
-  }
-
-  // Initialize renderer
-  renderer = new Renderer(canvas);
-  ctx = renderer.ctx;
-
-  if (!ctx) {
-    throw new Error("Could not get 2D rendering context from canvas!");
-  }
-
-  console.log("✅ Canvas setup complete:", canvas.width, "x", canvas.height);
-  return true;
-}
-
-window.addEventListener("resize", resizeCanvas);
-
-window.onload = async () => {
-  console.log("🎮 Super Student: Starting initialization...");
-
-  try {
-    // Initialize event tracker first for comprehensive monitoring
-    eventTracker.initialize();
-    eventTracker.trackEvent("system", "game_initialization_start");
-
-    // Setup canvas and renderer first
-    setupCanvas();
-
-    resizeCanvas();
-    console.log("✅ Canvas resized");
-
-    // Determine display settings
-    displaySettings = getDisplaySettings();
-    console.log("✅ Display settings loaded:", displaySettings);
-
-    // Initialize core managers
-    console.log("⚙️ Initializing core managers...");
-    resourceManager = new ResourceManager();
-    particleManager = new ParticleManager(displaySettings.maxParticles);
-    soundManager = new SoundManager();
-    console.log("✅ Core managers initialized");
-
-    // Link particle manager to performance monitor for pool verification
-    performanceMonitor.setParticleManager(particleManager);
-    console.log("✅ Particle pool verification linked");
-
-    // Setup input handler
-    managers.input = new InputHandler(canvas);
-    console.log("✅ Input handler setup");
-
-    // Setup performance monitoring integration
-    window.addEventListener('PerformanceLevelChanged', (event) => {
-      const { level, settings } = event.detail;
-      eventTracker.trackEvent('performance', 'adaptive_adjustment', {
-        level,
-        settings,
-      });
-
-      // Adjust particle system
-      if (
-        particleManager &&
-        typeof particleManager.setPerformanceMode === 'function'
-      ) {
-        particleManager.setPerformanceMode(level);
+      if (this.retryAttempts.showLevelMenu < MAX_RETRY_ATTEMPTS) {
+        setTimeout(() => this.showLevelMenu(), 500);
+        return null;
       }
 
-      // Adjust other systems as needed
-      if (
-        managers.particleManager &&
-        typeof managers.particleManager.setPerformanceMode === 'function'
-      ) {
-        managers.particleManager.setPerformanceMode(level);
-      }
-    });
-    console.log('✅ Performance monitoring integrated');
+      this.handleCriticalFailure('Unable to show the level menu.', error);
+      return null;
+    }
+  }
 
-    let resources = {};
+  async startLevel(levelName) {
     try {
-      console.log("📦 Loading game resources...");
-      resources = await resourceManager.initializeGameResources();
-      console.log("✅ Resources loaded successfully");
-
-      // Register preloaded audio with SoundManager
-      if (resources.audio) {
-        soundManager.sounds = resources.audio;
-        console.log("🔊 Audio resources registered with SoundManager");
+      applyDisplaySettings(this);
+      this.clearLevelCompletionTimer();
+      this.clearLevelMenu();
+      if (this.levelCompletionScreen) {
+        this.levelCompletionScreen.hide();
       }
+
+      if (this.currentLevel && typeof this.currentLevel.cleanup === 'function') {
+        this.currentLevel.cleanup();
+      }
+
+      this.gameState = 'loading';
+      this.currentLevelName = levelName;
+      eventTracker.trackState('currentLevel', levelName);
+
+      const LevelClass = await loadLevelModule(levelName);
+      this.initializeManagers();
+
+      const helpers = {
+        createExplosion: (x, y, color, intensity) => {
+          const count = Math.floor(20 * intensity);
+          for (let index = 0; index < count; index += 1) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 2 + Math.random() * 4;
+            this.particleManager.createParticle(
+              x,
+              y,
+              color,
+              2 + Math.random() * 3,
+              Math.cos(angle) * speed,
+              Math.sin(angle) * speed,
+              500 + Math.random() * 1000
+            );
+          }
+        },
+        applyExplosionEffect: (x, y, _radius, force) => {
+          if (this.managers.glassShatter) {
+            this.managers.glassShatter.triggerShatter(x, y, force * 0.5);
+          }
+        },
+        applyScreenShake: () => {},
+        onLevelComplete: (score) => {
+          this.handleLevelComplete(levelName, score);
+        }
+      };
+
+      this.currentLevel = new LevelClass(this.canvas, this.ctx, this.managers, helpers);
+      this.gameState = 'playing';
+      this.syncPublicApi();
+      await this.currentLevel.start();
+      this.retryAttempts.startLevel = 0;
+      eventTracker.trackEvent('level', 'start_success', { levelName });
+      return this.currentLevel;
     } catch (error) {
-      console.warn(
-        "⚠️ Some resources failed to load, continuing with defaults:",
-        error
-      );
-    }
+      eventTracker.trackError(error, { context: 'start_level', levelName });
+      this.retryAttempts.startLevel += 1;
 
-    // Configure audio settings
-    try {
-      const audioConf = getAudioConfig();
-      soundManager.setGlobalVolume(audioConf.masterVolume);
-      console.log("✅ Audio configured");
-    } catch (error) {
-      console.warn("⚠️ Audio configuration failed:", error);
-    }
-
-    // Add display settings to managers
-    managers.displaySettings = displaySettings;
-
-    // Setup performance monitoring integration
-    window.addEventListener("PerformanceLevelChanged", (event) => {
-      const { level, settings } = event.detail;
-      eventTracker.trackEvent("performance", "adaptive_adjustment", {
-        level,
-        settings,
-      });
-
-      // Adjust particle system
-      if (
-        particleManager &&
-        typeof particleManager.setPerformanceMode === "function"
-      ) {
-        particleManager.setPerformanceMode(level);
+      if (this.retryAttempts.startLevel < MAX_RETRY_ATTEMPTS) {
+        setTimeout(() => this.startLevel(levelName), 500);
+        return null;
       }
 
-      // Adjust other systems as needed
-      if (
-        managers.particleManager &&
-        typeof managers.particleManager.setPerformanceMode === "function"
-      ) {
-        managers.particleManager.setPerformanceMode(level);
-      }
-    });
-    console.log("✅ Performance monitoring integrated");
+      this.handleCriticalFailure(`Unable to start the ${levelName} level.`, error);
+      return null;
+    }
+  }
 
-    // Initialize and start game loop
-    console.log("🔄 Starting game loop...");
-    gameLoop = new GameLoop(update, render);
-    gameLoop.start();
-    console.log("✅ Game loop started");
-
-    // Setup event listeners
-    setupGlobalEventListeners();
-    console.log("✅ Event listeners setup");
-
-    // Show welcome screen
-    console.log("🎯 Initializing welcome screen...");
-    initializeWelcomeScreen();
-
-    // Mark as initialized
-    isInitialized = true;
-    console.log("🎉 Game initialization complete!");
-  } catch (error) {
-    console.error("❌ CRITICAL ERROR during initialization:", error);
-    console.error("Stack trace:", error.stack);
-
-    // Try to show a fallback interface
+  showOptions() {
     try {
-      document.body.innerHTML = `
-        <div style="color: white; background: #222; padding: 20px; font-family: Arial;">
-          <h1>Game Initialization Error</h1>
-          <p>There was an error starting the game: ${error.message}</p>
-          <p>Please refresh the page to try again.</p>
-          <button onclick="location.reload()">Refresh Page</button>
+      let modal = document.getElementById('settings-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'settings-modal';
+        document.body.appendChild(modal);
+      }
+
+      modal.dataset.testid = 'settings-modal';
+      modal.innerHTML = `
+        <div class="modal-background"></div>
+        <div class="modal-content">
+          <h2>Options</h2>
+          <label for="display-mode-select">Display Mode:</label>
+          <select id="display-mode-select">
+            <option value="DEFAULT">Default</option>
+            <option value="QBOARD">QBoard</option>
+          </select>
+          <label for="volume-range">Volume:</label>
+          <input type="range" id="volume-range" min="0" max="1" step="0.01">
+          <button id="save-options">Save</button>
+          <button id="close-options">Close</button>
         </div>
       `;
-    } catch (fallbackError) {
-      console.error("❌ Even fallback interface failed:", fallbackError);
+      modal.style.display = 'block';
+
+      const displayModeSelect = modal.querySelector('#display-mode-select');
+      const volumeRange = modal.querySelector('#volume-range');
+      displayModeSelect.value = this.resourceManager?.getDisplayMode?.() || 'DEFAULT';
+      volumeRange.value = this.soundManager?.volume ?? 1;
+
+      modal.querySelector('#save-options').addEventListener('click', () => {
+        this.resourceManager?.setDisplayMode?.(displayModeSelect.value);
+        applyDisplaySettings(this);
+        this.soundManager?.setGlobalVolume(Number.parseFloat(volumeRange.value));
+        modal.style.display = 'none';
+      });
+      modal.querySelector('#close-options').addEventListener('click', () => {
+        modal.style.display = 'none';
+      });
+
+      eventTracker.trackEvent('ui', 'options_shown');
+    } catch (error) {
+      eventTracker.trackError(error, { context: 'show_options' });
     }
   }
-};
 
-// Export initialization status for debugging
-window.gameInitialized = () => isInitialized;
+  getLevelTotalPossible(levelName) {
+    if (levelName === 'colors') {
+      return 1700;
+    }
 
-// Export startLevel function for global access
-window.startLevel = startLevel;
-*/
+    if (['alphabet', 'numbers', 'clcase', 'shapes'].includes(levelName)) {
+      return 2600;
+    }
+
+    if (levelName === 'phonics') {
+      return 1500;
+    }
+
+    return 1000;
+  }
+
+  getNextLevelName(levelName) {
+    const currentIndex = LEVEL_SEQUENCE.indexOf(levelName);
+
+    if (currentIndex === -1 || currentIndex === LEVEL_SEQUENCE.length - 1) {
+      return null;
+    }
+
+    return LEVEL_SEQUENCE[currentIndex + 1];
+  }
+
+  handleLevelComplete(levelName, score) {
+    try {
+      this.gameState = 'completed';
+      this.resetRetryCounters();
+      this.clearLevelCompletionTimer();
+
+      if (this.managers.checkpoint) {
+        this.managers.checkpoint.showCheckpoint(
+          `Level Complete!<br>Score: ${score}<br>Next adventure unlocked!`
+        );
+      }
+
+      this.progressManager.completeLevel(levelName, score);
+
+      if (!this.e2eConfig.enabled) {
+        this.levelCompletionTimer = setTimeout(() => {
+          if (this.gameState === 'completed') {
+            this.showLevelMenu();
+          }
+          this.levelCompletionTimer = null;
+        }, LEVEL_COMPLETION_DELAY_MS * this.e2eConfig.speedMultiplier);
+      }
+
+      if (!this.levelCompletionScreen) {
+        this.levelCompletionScreen = new LevelCompletionScreen();
+      }
+
+      const nextLevelName = this.getNextLevelName(levelName);
+      this.levelCompletionScreen.setCallbacks(
+        () => this.startLevel(levelName),
+        () => (nextLevelName ? this.startLevel(nextLevelName) : this.showLevelMenu()),
+        () => this.showLevelMenu()
+      );
+      this.levelCompletionScreen.show(levelName, score, this.getLevelTotalPossible(levelName));
+      this.syncPublicApi();
+      eventTracker.trackEvent('level', 'completed', { levelName, score });
+    } catch (error) {
+      eventTracker.trackError(error, { context: 'level_completion', levelName });
+      this.showLevelMenu();
+    }
+  }
+
+  forceCompleteCurrentLevel() {
+    if (!this.currentLevel) {
+      return false;
+    }
+
+    if (typeof this.currentLevel.completeLevel === 'function') {
+      this.currentLevel.completeLevel();
+      return true;
+    }
+
+    if (typeof this.currentLevel.end === 'function') {
+      this.currentLevel.end();
+      return true;
+    }
+
+    return false;
+  }
+
+  update(deltaTime) {
+    try {
+      if (this.gameState === 'playing' && this.currentLevel) {
+        this.currentLevel.update(deltaTime);
+      }
+
+      if (this.managers.centerPiece) this.managers.centerPiece.update(deltaTime);
+      if (this.managers.flamethrower) this.managers.flamethrower.update(deltaTime);
+      if (this.managers.glassShatter) this.managers.glassShatter.update(deltaTime);
+      if (this.managers.hud) this.managers.hud.update(deltaTime);
+      if (this.managers.checkpoint) this.managers.checkpoint.update(deltaTime);
+
+      if (this.managers.particleManager) {
+        performanceMonitor.updateParticleCount(this.managers.particleManager.activeParticles || 0);
+      }
+    } catch (error) {
+      eventTracker.trackError(error, {
+        context: 'update_loop',
+        gameState: this.gameState,
+        currentLevel: this.currentLevelName,
+        deltaTime
+      });
+    }
+  }
+
+  render() {
+    const frameStartTime = performanceMonitor.frameStart();
+
+    try {
+      this.renderer.clear();
+
+      if (this.gameState === 'playing' && this.currentLevel) {
+        this.currentLevel.render();
+      }
+
+      if (this.managers.centerPiece) this.managers.centerPiece.draw(this.ctx);
+      if (this.managers.particleManager) {
+        this.managers.particleManager.updateAndDraw(
+          this.ctx,
+          this.gameLoop ? this.gameLoop.lastDeltaTime : 16
+        );
+      }
+      if (this.managers.flamethrower) this.managers.flamethrower.draw(this.ctx);
+      if (this.managers.glassShatter) this.managers.glassShatter.draw(this.ctx);
+      if (this.managers.hud) this.managers.hud.draw(this.ctx);
+      if (this.managers.checkpoint) this.managers.checkpoint.draw(this.ctx);
+    } catch (error) {
+      eventTracker.trackError(error, {
+        context: 'render_loop',
+        gameState: this.gameState,
+        currentLevel: this.currentLevelName
+      });
+    }
+
+    performanceMonitor.frameEnd(frameStartTime);
+  }
+
+  togglePause() {
+    if (this.gameState === 'playing') {
+      this.pauseGame();
+    } else if (this.gameState === 'paused') {
+      this.resumeGame();
+    }
+  }
+
+  pauseGame() {
+    if (this.gameState !== 'playing') {
+      return;
+    }
+
+    this.gameState = 'paused';
+    if (this.currentLevel) {
+      this.currentLevel.pause();
+    }
+    if (this.managers.checkpoint) {
+      this.managers.checkpoint.showCheckpoint('Game Paused');
+    }
+  }
+
+  resumeGame() {
+    if (this.gameState !== 'paused') {
+      return;
+    }
+
+    this.gameState = 'playing';
+    if (this.currentLevel) {
+      this.currentLevel.resume();
+    }
+  }
+
+  restartGame() {
+    if (!this.currentLevel) {
+      return;
+    }
+
+    this.gameState = 'playing';
+    this.currentLevel.reset();
+    this.currentLevel.start();
+  }
+
+  handleCriticalFailure(userMessage, error) {
+    if (error) {
+      eventTracker.trackError(error, { context: 'critical_failure', userMessage });
+    }
+
+    this.resetRetryCounters();
+    this.gameState = 'error';
+    this.clearLevelCompletionTimer();
+    this.clearLevelMenu();
+
+    const existing = document.getElementById('error-container');
+    if (existing) {
+      existing.remove();
+    }
+
+    const errorContainer = document.createElement('div');
+    errorContainer.id = 'error-container';
+    errorContainer.dataset.testid = 'error-container';
+    errorContainer.style.cssText = `
+      position: fixed;
+      inset: 0;
+      background: rgba(139, 0, 0, 0.9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    `;
+    errorContainer.innerHTML = `
+      <h1>Something went wrong</h1>
+      <p style="font-size: 18px; margin: 20px 0;">${userMessage}</p>
+      <p style="font-size: 14px; margin: 20px 0;">Please reload the page to try again.</p>
+      <button type="button" id="reload-game-button">Reload Game</button>
+    `;
+
+    errorContainer.querySelector('#reload-game-button').addEventListener('click', () => {
+      window.location.reload();
+    });
+
+    document.body.appendChild(errorContainer);
+    if (this.gameLoop) {
+      this.gameLoop.stop();
+    }
+  }
+
+  destroy() {
+    this.clearLevelCompletionTimer();
+    window.removeEventListener('keydown', this.boundKeydownHandler);
+    window.removeEventListener('GameLoopError', this.boundGameLoopErrorHandler);
+
+    if (this.performanceListener) {
+      window.removeEventListener('PerformanceLevelChanged', this.performanceListener);
+      this.performanceListener = null;
+    }
+
+    if (this.currentLevel && typeof this.currentLevel.cleanup === 'function') {
+      this.currentLevel.cleanup();
+    }
+
+    if (this.managers.multiTouch && typeof this.managers.multiTouch.destroy === 'function') {
+      this.managers.multiTouch.destroy();
+    }
+
+    if (this.gameLoop) {
+      this.gameLoop.stop();
+    }
+  }
+}

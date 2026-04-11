@@ -1,5 +1,7 @@
 import { eventTracker } from '../../utils/eventTracker.js';
 
+const FRAME_DURATION_MS = 1000 / 60;
+
 export class BaseLevel {
   // Accept core level parameters
   constructor(canvas, ctx, managers, helpers) {
@@ -82,5 +84,36 @@ export class BaseLevel {
   // Handle canvas resize
   resize(canvas) {
     this.canvas = canvas;
+  }
+
+  isE2EMode() {
+    return Boolean(this.managers?.runtime?.e2eConfig?.enabled);
+  }
+
+  getE2EConfig() {
+    return this.managers?.runtime?.e2eConfig || { enabled: false, speedMultiplier: 1 };
+  }
+
+  getDisplayMode() {
+    return this.managers?.displaySettings?.mode || 'DEFAULT';
+  }
+
+  getFrameIntervalMs(frameCount) {
+    return frameCount * FRAME_DURATION_MS;
+  }
+
+  toNormalizedPoint(x, y, extra = {}) {
+    return {
+      x: x / Math.max(this.canvas.width, 1),
+      y: y / Math.max(this.canvas.height, 1),
+      ...extra
+    };
+  }
+
+  getTestSnapshot() {
+    return {
+      level: this.constructor.name,
+      targets: []
+    };
   }
 }

@@ -16,6 +16,12 @@ const loadingState = {
 
 // Level completion screen transition delay (ms)
 const LEVEL_LOAD_ANIMATION_DELAY = 200;
+const LOADING_MESSAGES = [
+  'Warming up the classroom magic...',
+  'Gathering bright ideas and bouncy bubbles...',
+  'Getting your next adventure ready...',
+  'Sharpening pencils and powering up smiles...'
+];
 
 /**
  * Core level import function - shared by loadLevelModule and preloadLevel
@@ -78,16 +84,17 @@ function createLoadingOverlay() {
   overlay.id = 'level-loading-overlay';
   overlay.className = 'level-loading-overlay';
   overlay.innerHTML = `
-    <div class="loading-content">
+    <div class="loading-content" data-testid="loading-content">
       <div class="loading-icon-container">
         <div class="loading-spinner"></div>
         <div class="loading-glow"></div>
       </div>
-      <p class="loading-text">Loading Level...</p>
+      <p class="loading-text" data-testid="loading-title">Loading Level...</p>
+      <p class="loading-message" data-testid="loading-message">${LOADING_MESSAGES[0]}</p>
       <div class="loading-progress">
         <div class="loading-progress-bar"></div>
       </div>
-      <p class="loading-hint">Preparing educational content...</p>
+      <p class="loading-hint" data-testid="loading-tip">Preparing educational content...</p>
     </div>
   `;
 
@@ -192,6 +199,13 @@ function addLoadingStyles() {
       letter-spacing: 1px;
     }
 
+    .loading-message {
+      margin: 0 0 14px;
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 1rem;
+      letter-spacing: 0.02em;
+    }
+
     .loading-progress {
       width: 240px;
       height: 8px;
@@ -264,8 +278,13 @@ function showLoadingOverlay(levelName) {
 
   const overlay = createLoadingOverlay();
   const text = overlay.querySelector('.loading-text');
+  const message = overlay.querySelector('.loading-message');
   if (text) {
     text.textContent = `Loading ${formatLevelName(levelName)}...`;
+  }
+  if (message) {
+    const messageIndex = Math.floor(Math.random() * LOADING_MESSAGES.length);
+    message.textContent = LOADING_MESSAGES[messageIndex];
   }
 
   // Show with animation

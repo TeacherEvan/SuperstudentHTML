@@ -7,6 +7,7 @@ export default class HudManager {
     this.score = 0;
     this.level = 1;
     this.lives = 3;
+    this.statsText = '';
     this.abilities = {
       flamethrower: { cooldown: 0, maxCooldown: 5000 },
       explosion: { cooldown: 0, maxCooldown: 3000 },
@@ -37,6 +38,11 @@ export default class HudManager {
     if (newLives < previousLives) {
       eventTracker.trackEvent('game', 'life_lost', { remaining: newLives });
     }
+  }
+
+  updateStats(statsText) {
+    this.statsText = statsText;
+    eventTracker.trackState('hudStats', statsText);
   }
 
   updateAbilityCooldown(abilityName, cooldown) {
@@ -82,6 +88,11 @@ export default class HudManager {
       );
       yOffset += 40;
     });
+
+    if (this.statsText) {
+      this.ctx.fillStyle = '#FFE082';
+      this.ctx.fillText(this.statsText, 20, yOffset + 10);
+    }
 
     this.ctx.restore();
   }

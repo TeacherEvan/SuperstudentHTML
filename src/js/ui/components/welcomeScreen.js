@@ -55,6 +55,20 @@ export class WelcomeScreen {
     this.attachEventListeners();
   }
 
+  getGreetingMessage() {
+    const hour = new Date().getHours();
+
+    if (hour < 12) {
+      return 'Good morning, superstar learners!';
+    }
+
+    if (hour < 18) {
+      return 'Ready for a bright new challenge?';
+    }
+
+    return 'One more cozy learning adventure?';
+  }
+
   createWelcomeScreenHTML() {
     // Remove existing welcome screen if present
     const existing = document.getElementById('welcome-screen');
@@ -68,15 +82,17 @@ export class WelcomeScreen {
     welcomeDiv.appendChild(this.bgCanvas);
 
     welcomeDiv.innerHTML += `
-      <div class="welcome-content">
+      <div class="welcome-content" data-testid="welcome-content">
+        <p class="welcome-tagline" data-testid="welcome-tagline">${this.getGreetingMessage()}</p>
         <h1 class="game-title">Super Student</h1>
+        <p class="welcome-helper-text">Choose the display that fits your classroom best, then let the fun begin.</p>
         <div class="display-size-section">
           <p class="choose-text">Choose Display Size</p>
           <div class="display-btn-group">
-            <button class="display-btn default" data-mode="DEFAULT">Default</button>
-            <button class="display-btn qboard" data-mode="QBOARD">QBoard</button>
+            <button class="display-btn default" data-mode="DEFAULT" data-testid="display-mode-default">Default</button>
+            <button class="display-btn qboard" data-mode="QBOARD" data-testid="display-mode-qboard">QBoard</button>
           </div>
-          <p class="mode-selected-text" style="display:none;"></p>
+          <p class="mode-selected-text" data-testid="mode-selected-text" style="display:none;"></p>
         </div>
         <footer class="collaboration-footer">
           <p>In collaboration with <span class="highlight">SANGSOM Kindergarten</span></p>
@@ -133,6 +149,19 @@ export class WelcomeScreen {
         opacity: 1;
       }
 
+      .welcome-tagline {
+        display: inline-block;
+        margin: 0 0 14px 0;
+        padding: 8px 18px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        color: #fff4c2;
+        font-size: 0.95rem;
+        letter-spacing: 0.04em;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      }
+
       /* Game title with golden gradient and glow animation */
       .game-title {
         font-size: clamp(3rem, 10vw, 6rem);
@@ -168,6 +197,14 @@ export class WelcomeScreen {
         color: rgba(255, 255, 255, 0.9);
         opacity: 0;
         animation: fadeInUp 0.6s ease-out 0.5s forwards;
+      }
+
+      .welcome-helper-text {
+        max-width: 34rem;
+        margin: 0 auto 22px;
+        color: rgba(255, 255, 255, 0.78);
+        font-size: 1rem;
+        line-height: 1.5;
       }
 
       @keyframes fadeInUp {
@@ -394,7 +431,7 @@ export class WelcomeScreen {
       const textEl = document.querySelector('.mode-selected-text');
       if (textEl) {
         textEl.style.display = 'block';
-        textEl.textContent = `Display mode set to ${mode}. Loading...`;
+        textEl.textContent = `${mode} mode is ready. Let's jump into a bright new challenge!`;
       }
       clearTimeout(this.startTimeoutId);
       this.startTimeoutId = setTimeout(() => {
@@ -406,7 +443,14 @@ export class WelcomeScreen {
     };
 
     setTimeout(() => {
-      document.querySelectorAll('.display-btn').forEach(btn => {
+      const buttons = Array.from(document.querySelectorAll('.display-btn'));
+      const activeMode = this.resourceManager?.getDisplayMode?.();
+      const activeButton = buttons.find(button => button.dataset.mode === activeMode);
+      if (activeButton) {
+        activeButton.classList.add('selected');
+      }
+
+      buttons.forEach(btn => {
         btn.addEventListener('click', () => updateSelection(btn));
       });
     }, 100);

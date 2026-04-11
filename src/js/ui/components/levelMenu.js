@@ -60,29 +60,57 @@ export class LevelMenu {
     ];
   }
 
+  getProgressSummary() {
+    const progress = this.progressManager.getProgress();
+    const completionPercentage = this.progressManager.getCompletionPercentage();
+    const completedCount = progress.completedLevels.length;
+
+    let encouragement = 'Pick a colorful activity and let the class shine.';
+    if (completedCount > 0 && completionPercentage < 100) {
+      encouragement = 'Look at that progress! Choose the next bright adventure.';
+    } else if (completionPercentage === 100) {
+      encouragement = 'Amazing work! Every activity has a shining star today.';
+    }
+
+    return {
+      completionPercentage,
+      completedCount,
+      encouragement
+    };
+  }
+
   show() {
     // Add styles first
     this.addMenuStyles();
+    const summary = this.getProgressSummary();
 
     // Build menu markup with enhanced cards
     const html = `
-      <div class="level-menu">
+      <div class="level-menu" data-testid="level-menu">
         <h2 class="menu-title">Select Level</h2>
+        <div class="menu-progress-banner" data-testid="progress-banner">
+          <div class="menu-progress-copy">
+            <strong>${summary.completionPercentage}% complete</strong>
+            <span>${summary.encouragement}</span>
+          </div>
+          <div class="menu-progress-badge">${summary.completedCount} completed</div>
+        </div>
         <div class="level-grid">
           ${this.levels.map((level, index) => `
-            <div class="level-card unlocked" data-level="${level.name}" style="--card-color: ${level.color}; --card-delay: ${index * 0.1}s">
+            <div class="level-card unlocked ${this.progressManager.isLevelCompleted(level.name) ? 'completed' : ''}" data-level="${level.name}" data-testid="level-card-${level.name}" style="--card-color: ${level.color}; --card-delay: ${index * 0.1}s">
               <div class="card-icon">${level.icon}</div>
               <h3 class="card-title">${level.label}</h3>
               <p class="level-description">${level.description}</p>
+              <p class="level-status">${this.progressManager.isLevelCompleted(level.name) ? 'Shining star earned' : 'Ready to play'}</p>
               <div class="card-footer">
                 <span class="level-difficulty">${level.difficulty}</span>
-                <span class="play-indicator">Play →</span>
+                <span class="play-indicator">${this.progressManager.isLevelCompleted(level.name) ? 'Play again →' : 'Play →'}</span>
               </div>
             </div>
           `).join('')}
         </div>
         <div class="menu-actions">
-          <button class="back-button">← Back</button>
+          <button class="back-button" data-testid="level-menu-back">← Back</button>
         </div>
       </div>
     `;
@@ -138,6 +166,44 @@ export class LevelMenu {
         background-clip: text;
         animation: shimmer 3s ease-in-out infinite;
         font-weight: 800;
+      }
+
+      .menu-progress-banner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 28px;
+        padding: 16px 20px;
+        border-radius: 18px;
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.05) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 14px 30px rgba(0, 0, 0, 0.18);
+      }
+
+      .menu-progress-copy {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        color: rgba(255, 255, 255, 0.82);
+        text-align: left;
+      }
+
+      .menu-progress-copy strong {
+        color: #fff6bf;
+        font-size: 1.05rem;
+      }
+
+      .menu-progress-badge {
+        flex-shrink: 0;
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: rgba(255, 215, 0, 0.14);
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        color: #ffe27a;
+        font-weight: 700;
+        font-size: 0.95rem;
       }
 
       @keyframes shimmer {
@@ -235,6 +301,16 @@ export class LevelMenu {
         margin: 0 0 20px 0;
       }
 
+      .level-status {
+        margin: 0 0 14px;
+        color: rgba(255, 255, 255, 0.78);
+        font-size: 0.9rem;
+      }
+
+      .level-card.completed .level-status {
+        color: #ffe27a;
+      }
+
       .card-footer {
         display: flex;
         justify-content: space-between;
@@ -293,6 +369,11 @@ export class LevelMenu {
 
       /* Mobile responsive */
       @media (max-width: 768px) {
+        .menu-progress-banner {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
         .level-grid {
           grid-template-columns: 1fr;
           gap: 20px;

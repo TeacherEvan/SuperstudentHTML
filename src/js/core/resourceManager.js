@@ -23,6 +23,9 @@ const IMAGE_FORMAT_DETECTION_DATA = {
   avif: 'data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAIAAAACAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQ0MAAAAABNjb2xybmNseAACAAIAAYAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKBzgADlAgIGkyCR/wAABAAAAfAAEAAAAV'
 };
 
+const QBOARD_AUTO_DETECT_MIN_WIDTH = 2560;
+const QBOARD_AUTO_DETECT_MIN_HEIGHT = 1440;
+
 // Lazy load observer configuration
 const LAZY_LOAD_ROOT_MARGIN = '50px 0px'; // Start loading 50px before element enters viewport
 const LAZY_LOAD_THRESHOLD = 0.01; // Trigger when 1% of element is visible
@@ -33,7 +36,7 @@ export class ResourceManager {
     this.currentLoadingProgress = 0;
     this.totalAssetCount = 0;
     this.loadedAssetCount = 0;
-    this.currentDisplayMode = 'DEFAULT';
+    this.currentDisplayMode = this.detectDisplayMode();
     this.assetLoadingQueue = [];
     this.isProcessingLoadingQueue = false;
 
@@ -252,6 +255,18 @@ export class ResourceManager {
     return this.loadedAssets.get(assetId);
   }
 
+  detectDisplayMode() {
+    if (typeof window === 'undefined') {
+      return 'DEFAULT';
+    }
+
+    const viewportWidth = window.innerWidth || 0;
+    const viewportHeight = window.innerHeight || 0;
+    return viewportWidth > QBOARD_AUTO_DETECT_MIN_WIDTH && viewportHeight > QBOARD_AUTO_DETECT_MIN_HEIGHT
+      ? 'QBOARD'
+      : 'DEFAULT';
+  }
+
   /**
    * Set the display mode for responsive asset loading
    * @param {string} mode - Display mode (DEFAULT or QBOARD)
@@ -271,11 +286,12 @@ export class ResourceManager {
    * @returns {string} Current display mode
    */
   getDisplayMode() {
+    const autoDetectedMode = this.detectDisplayMode();
     try {
-      return localStorage.getItem('displayMode') || this.currentDisplayMode;
+      return localStorage.getItem('displayMode') || autoDetectedMode;
     } catch (error) {
       console.warn('Failed to read persisted display mode:', error);
-      return this.currentDisplayMode;
+      return autoDetectedMode;
     }
   }
 

@@ -25,9 +25,9 @@
     "@babel/preset-env": "^7.22.0",
     "acorn": "^8.15.0",
     "babel-loader": "^9.1.0",
-    "compression-webpack-plugin": "^11.1.0",
+    "compression-webpack-plugin": "^12.0.0",
     "css-loader": "^6.8.0",
-    "css-minimizer-webpack-plugin": "^7.0.2",
+    "css-minimizer-webpack-plugin": "^8.0.0",
     "eslint": "^8.42.0",
     "html-webpack-plugin": "^5.5.0",
     "identity-obj-proxy": "^3.0.0",
@@ -56,5 +56,8 @@
   "license": "MIT",
   "engines": {
     "node": ">=16.0.0"
+  },
+  "dependencies": {
+    "docker": "^0.2.14"
   }
 }
