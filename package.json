@@ -10,7 +10,10 @@
     "serve": "vite preview --port 3000"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/core": "^8.5.0",
     "terser": "^5.43.1",
+    "typescript": "^7.0.2",
     "vite": "^5.0.0"
   },
   "keywords": [
