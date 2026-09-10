@@ -153,3 +153,15 @@ derived from the structural signals above — they name concrete extractions
   its next tick.
 - implementer: `cron_surgical_impl.py` will pick this plan up once the reviewer
   marks it `READY` or `READY-WITH-WARNINGS`.
+
+
+## REVIEW 2026-09-11T00:04:07.252844+07:00
+
+**Verdict:** `NEEDS-REVISION`
+
+**Structural check:** objectives=12 file_header=✓ imports=✓ why=✓ dod=✓ security=✓
+
+**Gaps:**
+1. **OBJ-006–OBJ-011 are identical boilerplate filler** — six "Hardening pass N" entries with verbatim duplicate text, contradicting the plan's own claim that objectives are "derived from structural analysis … NOT a generic N-slice filler." OBJ-012 is truncated/incomplete. These must be replaced with distinct, signal-derived objectives or removed.
+2. **Missing DOD and security sections** — structural check reports `has_dod=None`, `has_security=None`. No Definition of Done, no security/privacy considerations for a file handling game state, user progress, and event tracking.
+3. **`.js`/`.ts` extension inconsistency** — plan references `./constants.ts`, `src/js/core/components/index.ts` but the actual file is `main.js` and imports use `.js` extensions. The barrel path `src/js/core/components/index.ts` may not exist; this must be verified before OBJ-004 can proceed.
