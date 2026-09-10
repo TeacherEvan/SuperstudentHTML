@@ -16,10 +16,12 @@ import SoundManager from './audio/soundManager.js';
 import { GameLoop } from './engine/gameLoop.js';
 import { Renderer } from './engine/renderer.js';
 import ParticleManager from './graphics/particleSystem.js';
-
-const LEVEL_COMPLETION_DELAY_MS = 3000;
-const MAX_RETRY_ATTEMPTS = 3;
-const LEVEL_SEQUENCE = ['colors', 'shapes', 'alphabet', 'numbers', 'clcase', 'phonics'];
+import {
+  LEVEL_COMPLETION_DELAY_MS,
+  LEVEL_MENU_CONTAINER_ID,
+  LEVEL_SEQUENCE,
+  MAX_RETRY_ATTEMPTS
+} from './constants.js';
 
 function getE2EConfig() {
   const query = new URLSearchParams(window.location.search);
@@ -172,7 +174,7 @@ export class SuperStudentRuntime {
       isInitialized: this.isInitialized,
       gameState: this.gameState,
       currentLevelName: this.currentLevelName,
-      menuVisible: Boolean(document.getElementById('level-menu-container')),
+      menuVisible: Boolean(document.getElementById(LEVEL_MENU_CONTAINER_ID)),
       completionVisible: Boolean(document.getElementById('completion-screen')),
       loadingVisible: Boolean(document.getElementById('level-loading-overlay')),
       errorVisible: Boolean(document.getElementById('error-container')),
@@ -247,7 +249,7 @@ export class SuperStudentRuntime {
   }
 
   clearLevelMenu() {
-    const menuContainer = document.getElementById('level-menu-container');
+    const menuContainer = document.getElementById(LEVEL_MENU_CONTAINER_ID);
     if (menuContainer) {
       menuContainer.remove();
     }
@@ -257,8 +259,8 @@ export class SuperStudentRuntime {
     this.clearLevelMenu();
 
     const menuContainer = document.createElement('div');
-    menuContainer.id = 'level-menu-container';
-    menuContainer.dataset.testid = 'level-menu-container';
+    menuContainer.id = LEVEL_MENU_CONTAINER_ID;
+    menuContainer.dataset.testid = LEVEL_MENU_CONTAINER_ID;
     menuContainer.style.cssText = `
       position: fixed;
       top: 0;
@@ -300,7 +302,7 @@ export class SuperStudentRuntime {
       }
 
       const container = this.ensureMenuContainer();
-      const menu = new LevelMenu('level-menu-container', (levelName) => this.startLevel(levelName));
+      const menu = new LevelMenu(LEVEL_MENU_CONTAINER_ID, (levelName) => this.startLevel(levelName));
       menu.show();
       this.gameState = 'menu';
       this.resetRetryCounters();
