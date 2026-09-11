@@ -3,6 +3,7 @@
  * Handles lazy loading, asset compression detection, and memory cleanup
  */
 import { eventTracker } from './eventTracker.js';
+import { PERFORMANCE_LEVEL_CHANGED_EVENT } from '../core/constants.js';
 
 export class ResourceOptimizer {
   constructor() {
@@ -30,7 +31,7 @@ export class ResourceOptimizer {
     }, this.cleanupInterval);
 
     // Listen for performance level changes
-    window.addEventListener('PerformanceLevelChanged', (event) => {
+    window.addEventListener(PERFORMANCE_LEVEL_CHANGED_EVENT, (event) => {
       const { level } = event.detail;
       this.adjustCacheSettings(level);
     });

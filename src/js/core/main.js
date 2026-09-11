@@ -20,7 +20,12 @@ import {
   LEVEL_COMPLETION_DELAY_MS,
   LEVEL_MENU_CONTAINER_ID,
   LEVEL_SEQUENCE,
-  MAX_RETRY_ATTEMPTS
+  MAX_RETRY_ATTEMPTS,
+  ERROR_CONTAINER_ID,
+  COMPLETION_SCREEN_ID,
+  LEVEL_LOADING_OVERLAY_ID,
+  SETTINGS_MODAL_ID,
+  PERFORMANCE_LEVEL_CHANGED_EVENT
 } from './constants.js';
 
 function getE2EConfig() {
@@ -140,7 +145,7 @@ export class SuperStudentRuntime {
           this.particleManager.setPerformanceMode(level);
         }
       };
-      window.addEventListener('PerformanceLevelChanged', this.performanceListener);
+      window.addEventListener(PERFORMANCE_LEVEL_CHANGED_EVENT, this.performanceListener);
     }
 
     window.addEventListener('keydown', this.boundKeydownHandler);
@@ -175,9 +180,9 @@ export class SuperStudentRuntime {
       gameState: this.gameState,
       currentLevelName: this.currentLevelName,
       menuVisible: Boolean(document.getElementById(LEVEL_MENU_CONTAINER_ID)),
-      completionVisible: Boolean(document.getElementById('completion-screen')),
-      loadingVisible: Boolean(document.getElementById('level-loading-overlay')),
-      errorVisible: Boolean(document.getElementById('error-container')),
+      completionVisible: Boolean(document.getElementById(COMPLETION_SCREEN_ID)),
+      loadingVisible: Boolean(document.getElementById(LEVEL_LOADING_OVERLAY_ID)),
+      errorVisible: Boolean(document.getElementById(ERROR_CONTAINER_ID)),
       e2eMode: this.e2eConfig.enabled
     };
   }
@@ -394,14 +399,14 @@ export class SuperStudentRuntime {
 
   showOptions() {
     try {
-      let modal = document.getElementById('settings-modal');
+      let modal = document.getElementById(SETTINGS_MODAL_ID);
       if (!modal) {
         modal = document.createElement('div');
-        modal.id = 'settings-modal';
+        modal.id = SETTINGS_MODAL_ID;
         document.body.appendChild(modal);
       }
 
-      modal.dataset.testid = 'settings-modal';
+      modal.dataset.testid = SETTINGS_MODAL_ID;
       modal.innerHTML = `
         <div class="modal-background"></div>
         <div class="modal-content">
@@ -636,14 +641,14 @@ export class SuperStudentRuntime {
     this.clearLevelCompletionTimer();
     this.clearLevelMenu();
 
-    const existing = document.getElementById('error-container');
+    const existing = document.getElementById(ERROR_CONTAINER_ID);
     if (existing) {
       existing.remove();
     }
 
     const errorContainer = document.createElement('div');
-    errorContainer.id = 'error-container';
-    errorContainer.dataset.testid = 'error-container';
+    errorContainer.id = ERROR_CONTAINER_ID;
+    errorContainer.dataset.testid = ERROR_CONTAINER_ID;
     errorContainer.style.cssText = `
       position: fixed;
       inset: 0;
@@ -681,7 +686,7 @@ export class SuperStudentRuntime {
     window.removeEventListener('GameLoopError', this.boundGameLoopErrorHandler);
 
     if (this.performanceListener) {
-      window.removeEventListener('PerformanceLevelChanged', this.performanceListener);
+      window.removeEventListener(PERFORMANCE_LEVEL_CHANGED_EVENT, this.performanceListener);
       this.performanceListener = null;
     }
 

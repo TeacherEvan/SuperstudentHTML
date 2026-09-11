@@ -4,6 +4,7 @@
  * Integrates with the event tracking system for comprehensive debugging
  */
 import { eventTracker } from '../utils/eventTracker.js';
+import { PERFORMANCE_LEVEL_CHANGED_EVENT } from '../core/constants.js';
 
 export class PerformanceMonitor {
   constructor(options = {}) {
@@ -176,7 +177,7 @@ export class PerformanceMonitor {
     // Dispatch event for systems to adjust their settings
     if (typeof window !== 'undefined') {
       window.dispatchEvent(
-        new CustomEvent('PerformanceLevelChanged', {
+        new CustomEvent(PERFORMANCE_LEVEL_CHANGED_EVENT, {
           detail: {
             level,
             previousLevel,
