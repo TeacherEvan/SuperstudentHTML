@@ -32,10 +32,7 @@ test.describe('Super Student app flow', () => {
     page.on('pageerror', error => pageErrors.push(error.message));
 
     await page.goto('/?debug=1');
-    await page.waitForTimeout(500);
-
-    const trackerAvailable = await page.evaluate(() => Boolean(window.__superStudentEventTracker));
-    expect(trackerAvailable).toBeTruthy();
+    await expect.poll(async () => Boolean(await page.evaluate(() => window.__superStudentEventTracker)), { timeout: 5000 }).toBeTruthy();
     expect(pageErrors).toEqual([]);
   });
 });

@@ -101,8 +101,20 @@ async function completeLevelByPlaying(page, maxInteractions = 8) {
       return;
     }
 
+    const targetId = snapshot.targets[0].id ?? null;
     await clickCanvasPoint(page, snapshot.targets[0]);
-    await page.waitForTimeout(180);
+    // Best-effort: confirm the click registered (target consumed or completion reached).
+    await expect.poll(async () => {
+      const completed = await page.getByTestId('completion-content').isVisible().catch(() => false);
+      if (completed) {
+        return true;
+      }
+      const snap = await page.evaluate(() => window.__superStudentRuntime?.getLevelSnapshot?.() ?? null);
+      if (!snap || !snap.targets || !snap.targets.length) {
+        return true; // snapshot cleared mid-transition — click registered
+      }
+      return !snap.targets.some((t) => (t.id ?? null) === targetId);
+    }, { timeout: 2000 }).toBeTruthy().catch(() => {});
   }
 
   await expect(page.getByTestId('completion-content')).toBeVisible({ timeout: 15000 });
@@ -131,15 +143,15 @@ test.describe('Super Student feature journeys', () => {
 
     await enableE2EMode(page);
     await page.goto('/?debug=1&e2e=1');
-    await page.waitForTimeout(500);
+    await expect.poll(async () => {
+      const h = await page.evaluate(() => ({
+        tracker: Boolean(window.__superStudentEventTracker),
+        runtime: Boolean(window.__superStudentRuntime),
+        e2e: window.__superStudentRuntime?.isE2EMode?.() || false
+      }));
+      return h.tracker && h.runtime && h.e2e;
+    }, { timeout: 5000 }).toBeTruthy();
 
-    const hooks = await page.evaluate(() => ({
-      tracker: Boolean(window.__superStudentEventTracker),
-      runtime: Boolean(window.__superStudentRuntime),
-      e2e: window.__superStudentRuntime?.isE2EMode?.() || false
-    }));
-
-    expect(hooks).toEqual({ tracker: true, runtime: true, e2e: true });
     expect(pageErrors).toEqual([]);
   });
 
