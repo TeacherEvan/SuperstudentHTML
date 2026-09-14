@@ -25,9 +25,8 @@ The game follows a modular architecture with clear separation of concerns:
 - **Screen System** (`src/js/ui/`): Welcome screen, game screens, UI management
 
 ### Game Systems
-- **Managers** (`src/js/managers/`): HUD, checkpoint, effects, multi-touch handling
-- **Effects** (`src/js/effects/`): Particle system, glass shatter, visual feedback
-- **Levels** (`src/js/levels/`): Educational game mode implementations
+- **Managers** (`src/js/game/managers/`): HUD, checkpoint, effects, multi-touch handling
+- **Levels** (`src/js/game/levels/`): Educational game mode implementations
 - **Utils** (`src/js/utils/`): Helper functions and utilities
 
 ## File Organization
@@ -38,9 +37,7 @@ The game follows a modular architecture with clear separation of concerns:
 │   ├── main.js       # Application entry point
 │   ├── gameLoop.js   # Core game loop
 │   ├── core/         # Core engine components
-│   ├── managers/     # Game system managers
-│   ├── effects/      # Visual effects and particles
-│   ├── levels/       # Educational game modes
+│   ├── game/         # Game logic (levels + managers)
 │   ├── ui/           # User interface components
 │   └── utils/        # Helper utilities
 ├── src/css/          # Stylesheets (imported by JS)

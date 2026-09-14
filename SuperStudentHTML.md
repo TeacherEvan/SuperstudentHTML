@@ -383,12 +383,10 @@ README.md                    # Project overview and setup
 - Immutable configuration objects
 - Type definitions and validation helpers
 
-**5. `src/js/config/displayModes.js`**
 - Display mode detection logic
 - Screen size breakpoints and adaptive settings
 - Performance optimization switches
 
-**6. `src/js/config/gameSettings.js`**
 - Level-specific parameters and rules
 - Difficulty progression settings
 - Checkpoint and scoring configuration
@@ -401,19 +399,16 @@ README.md                    # Project overview and setup
 - Image and audio preloading
 - Caching strategies and memory management
 
-**8. `src/js/core/particleSystem.js`**
 - Particle object pooling and recycling
 - Particle behavior definitions
 - Culling and performance optimization
 - Visual effect coordination
 
-**9. `src/js/core/soundManager.js`**
 - Web Audio API integration
 - Sound effect playback and mixing
 - Volume controls and audio context management
 - Spatial audio for enhanced immersion
 
-**10. `src/js/core/renderer.js`**
 - Canvas rendering utilities and optimizations
 - Draw call batching and state management
 - Text rendering with font caching
@@ -427,13 +422,11 @@ README.md                    # Project overview and setup
 
 ### Game Logic
 
-**12. `src/js/levels/baseLevel.js`**
 - Abstract base class defining level interface
 - Common level functionality (scoring, progression)
 - Shared event handling and state management
 - Template methods for level lifecycle
 
-**13. `src/js/levels/*.js` (specific levels)**
 - Inherit from baseLevel.js for consistent interface
 - Level-specific game logic and rules
 - Collision detection and object management
@@ -447,18 +440,15 @@ README.md                    # Project overview and setup
 - Display mode selection interface
 - Credits and collaboration text
 
-**15. `src/js/ui/levelMenu.js`**
 - Mission selection with visual previews
 - Progress tracking and level unlock status
 - Smooth transitions between menu states
 
-**16. `src/js/ui/hudComponents.js`**
 - Score display with animated counters
 - Target visualization and progress indicators
 - Ability icons with cooldown timers
 - Real-time performance metrics
 
-**17. `src/js/ui/modalSystem.js`**
 - Reusable modal/overlay framework
 - Settings panels and confirmation dialogs
 - Checkpoint screens with progress save
@@ -466,7 +456,6 @@ README.md                    # Project overview and setup
 
 ### Visual Effects
 
-**18. `src/js/effects/*.js`**
 - Specialized effect systems (explosions, lasers, particles)
 - Animation sequences and transitions
 - Screen shake and camera effects
@@ -678,8 +667,8 @@ tests/
 module.exports = {
   entry: {
     main: './src/js/main.js',
-    levels: './src/js/levels/index.js',
-    effects: './src/js/effects/index.js'
+    levels: './src/js/game/levels/index.js',
+    
   },
   optimization: {
     splitChunks: {
@@ -834,7 +823,7 @@ class SuperStudentGame {
 
 ### Canvas Setup with High-DPI Support
 ```javascript
-// src/js/core/renderer.js
+// src/js/core/engine/renderer.js
 export class Renderer {
   constructor(canvas) {
     this.canvas = canvas;
@@ -896,7 +885,7 @@ export function validateConfig(config) {
 
 ### Level Base Class Implementation
 ```javascript
-// src/js/levels/baseLevel.js
+// src/js/game/levels/baseLevel.js
 export class BaseLevel {
   constructor(renderer, inputHandler, resourceManager) {
     this.renderer = renderer;
@@ -934,7 +923,7 @@ export class BaseLevel {
 
 ### Component-Based UI System
 ```javascript
-// src/js/ui/modalSystem.js
+// src/js/ui/components/modalSystem.js
 export class ModalSystem {
   constructor(container) {
     this.container = container;
@@ -970,7 +959,7 @@ export class ModalSystem {
 
 ### Performance Monitoring Integration
 ```javascript
-// src/js/utils/performance.js
+// src/js/utils/performanceMonitor.js
 export class PerformanceMonitor {
   constructor() {
     this.frameCount = 0;
@@ -1307,7 +1296,7 @@ module.exports = (env, argv) => {
 ### Testing Strategy
 ```javascript
 // tests/unit/core/particleSystem.test.js
-import { ParticleManager } from '../../../src/js/core/particleSystem.js';
+import { ParticleManager } from '../../../src/js/core/graphics/particleSystem.js';
 
 describe('ParticleManager', () => {
   let particleManager;
